@@ -111,12 +111,18 @@ vp check     # format, lint and type-check
 vp test      # story and scene tests
 ```
 
-Foldkit is vendored as a git subtree under `repos/foldkit`, pinned to the
-release tag matching the installed `foldkit` package, so its source, examples
-and docs always describe the APIs this app compiles against. Re-pin it after an
-upgrade:
+Foldkit's own source, examples and docs are the reference this app was written
+against, and they are worth having on disk while working on it. They are not
+carried in this repository — that is 12 MB of files belonging to another
+project — so `repos/` is ignored, and a checkout adds them if it wants them,
+pinned to the release this app installs:
 
 ```sh
-git subtree pull --prefix=repos/foldkit https://github.com/foldkit/foldkit.git \
-  "foldkit@$(node -p "require('./node_modules/foldkit/package.json').version")" --squash
+git clone --depth 1 \
+  --branch "foldkit@$(node -p "require('./node_modules/foldkit/package.json').version")" \
+  https://github.com/foldkit/foldkit.git repos/foldkit
+rm -rf repos/foldkit/.git repos/foldkit/repos
 ```
+
+The last path is Foldkit's own vendored copy of Effect: 36 MB of source
+already sitting in `node_modules/effect` at the same pinned version.

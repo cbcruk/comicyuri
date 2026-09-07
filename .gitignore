@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Reference checkouts. `repos/foldkit` is a git subtree of the framework,
+# pinned to the release this app installs; useful locally, not worth carrying
+# in the repository. See README.
+repos
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
