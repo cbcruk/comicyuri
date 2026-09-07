@@ -1,5 +1,8 @@
-import type { Book, Page } from './types.ts'
+import { Effect } from 'effect'
+import type { LoadedBook, Page } from './types.ts'
 import type { StoredBook } from './db.ts'
+import { EmptyBookError, NoComicFilesError } from './errors.ts'
+import type { ArchiveError } from './errors.ts'
 import { ZipArchive } from './zip.ts'
 import type { ZipEntry } from './zip.ts'
 
@@ -42,9 +45,8 @@ class BlobPage implements Page {
     this.name = name
     this.blob = blob
   }
-  async load(): Promise<string> {
-    if (!this.url) this.url = URL.createObjectURL(this.blob)
-    return this.url
+  load(): Effect.Effect<string> {
+    return Effect.sync(() => (this.url ??= URL.createObjectURL(this.blob)))
   }
   unload(): void {
     if (this.url) {
@@ -64,12 +66,15 @@ class ZipPage implements Page {
     this.archive = archive
     this.entry = entry
   }
-  async load(): Promise<string> {
-    if (!this.url) {
-      const bytes = await this.archive.extract(this.entry)
-      this.url = URL.createObjectURL(new Blob([bytes as BlobPart]))
-    }
-    return this.url
+  load(): Effect.Effect<string, ArchiveError> {
+    // Suspended so the cache is consulted at run time, not at construction.
+    return Effect.suspend(() =>
+      this.url !== null
+        ? Effect.succeed(this.url)
+        : this.archive
+            .extract(this.entry)
+            .pipe(Effect.map((bytes) => (this.url = URL.createObjectURL(new Blob([bytes]))))),
+    )
   }
   unload(): void {
     if (this.url) {
@@ -83,56 +88,69 @@ class ZipPage implements Page {
  * Turn a flat list of picked files into shelf records. Each archive becomes its
  * own book; loose images are grouped into one book.
  */
-export function storedBooksFromFiles(files: File[], groupTitle = 'Imported images'): StoredBook[] {
-  const now = Date.now()
-  const archives = files.filter((f) => isArchiveName(f.name)).sort(byName((f) => f.name))
-  const images = files
-    .filter((f) => isImageName(f.name))
-    .sort(byName((f) => f.webkitRelativePath || f.name))
-  const books: StoredBook[] = []
+export function storedBooksFromFiles(
+  files: ReadonlyArray<File>,
+  groupTitle = 'Imported images',
+): Effect.Effect<StoredBook[], NoComicFilesError> {
+  return Effect.gen(function* () {
+    const now = Date.now()
+    const archives = files.filter((f) => isArchiveName(f.name)).sort(byName((f) => f.name))
+    const images = files
+      .filter((f) => isImageName(f.name))
+      .sort(byName((f) => f.webkitRelativePath || f.name))
+    const books: StoredBook[] = []
 
-  for (const file of archives) {
-    books.push({
-      id: bookId(file.name, file.size),
-      title: stripExt(file.name),
-      source: 'zip',
-      names: [file.name],
-      blobs: [file],
-      createdAt: now,
-    })
-  }
+    for (const file of archives) {
+      books.push({
+        id: bookId(file.name, file.size),
+        title: stripExt(file.name),
+        source: 'zip',
+        names: [file.name],
+        blobs: [file],
+        createdAt: now,
+      })
+    }
 
-  if (images.length) {
-    const folder = images[0]?.webkitRelativePath?.split('/')[0]
-    const size = images.reduce((sum, f) => sum + f.size, 0)
-    books.push({
-      id: bookId(folder || groupTitle, size),
-      title: folder || groupTitle,
-      source: folder ? 'folder' : 'images',
-      names: images.map((f) => f.webkitRelativePath || f.name),
-      blobs: images,
-      createdAt: now,
-    })
-  }
+    if (images.length) {
+      const folder = images[0]?.webkitRelativePath?.split('/')[0]
+      const size = images.reduce((sum, f) => sum + f.size, 0)
+      books.push({
+        id: bookId(folder || groupTitle, size),
+        title: folder || groupTitle,
+        source: folder ? 'folder' : 'images',
+        names: images.map((f) => f.webkitRelativePath || f.name),
+        blobs: images,
+        createdAt: now,
+      })
+    }
 
-  if (!books.length) throw new Error('No comic files found (images or .cbz/.zip)')
-  return books
+    if (!books.length) return yield* new NoComicFilesError()
+    return books
+  })
 }
 
-/** Reconstruct a live Book (with lazy pages) from a shelf record. */
-export async function bookFromStored(stored: StoredBook): Promise<Book> {
-  if (stored.source === 'zip') {
-    const archive = await ZipArchive.open(stored.blobs[0]!)
+/** Reconstruct a live book (with lazy pages) from a shelf record. */
+export function bookFromStored(
+  stored: StoredBook,
+): Effect.Effect<LoadedBook, ArchiveError | EmptyBookError> {
+  return Effect.gen(function* () {
+    if (stored.source !== 'zip') {
+      const pages: Page[] = stored.blobs.map(
+        (blob, i) => new BlobPage(baseName(stored.names[i] ?? `page ${i + 1}`), blob),
+      )
+      return { id: stored.id, title: stored.title, source: stored.source, pages }
+    }
+
+    const file = stored.blobs[0]
+    if (!file) return yield* new EmptyBookError({ title: stored.title })
+
+    const archive = yield* ZipArchive.open(file)
     const pages: Page[] = archive.entries
       .filter((e) => isImageName(e.name) && !e.name.includes('__MACOSX'))
       .sort(byName((e) => e.name))
       .map((e) => new ZipPage(baseName(e.name), archive, e))
-    if (!pages.length) throw new Error(`No images found in "${stored.title}"`)
-    return { id: stored.id, title: stored.title, source: 'zip', pages }
-  }
+    if (!pages.length) return yield* new EmptyBookError({ title: stored.title })
 
-  const pages = stored.blobs.map(
-    (blob, i) => new BlobPage(baseName(stored.names[i] ?? `page ${i + 1}`), blob),
-  )
-  return { id: stored.id, title: stored.title, source: stored.source, pages }
+    return { id: stored.id, title: stored.title, source: 'zip', pages }
+  })
 }

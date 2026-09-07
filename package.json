@@ -9,7 +9,18 @@
     "preview": "vp preview",
     "prepare": "vp config"
   },
+  "dependencies": {
+    "@foldkit/ui": "^0.158.0",
+    "clsx": "^2.1.1",
+    "effect": "4.0.0-rc.112",
+    "foldkit": "^0.158.0"
+  },
   "devDependencies": {
+    "@foldkit/oxlint-plugin": "^0.12.0",
+    "@foldkit/vite-plugin": "^0.20.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "happy-dom": "^20.14.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "catalog:",
     "vite-plus": "catalog:"
