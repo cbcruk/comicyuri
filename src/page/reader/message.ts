@@ -1,7 +1,7 @@
 import { Schema } from 'effect'
 import { defineMessageUnion } from 'foldkit/message'
 
-import { Slider } from '@foldkit/ui'
+import { Slider, VirtualList } from '@foldkit/ui'
 
 import { Settings } from '../../types.ts'
 import { Point } from './gesture.ts'
@@ -42,6 +42,17 @@ export const Message = defineMessageUnion({
   ElapsedChromeIdle: { token: Schema.Number },
 
   GotSliderMessage: { message: Slider.Message },
+
+  ClickedToggleBookmark: {},
+
+  ClickedToggleFullscreen: {},
+  CompletedToggleFullscreen: {},
+  ChangedFullscreen: { isFullscreen: Schema.Boolean },
+
+  ClickedToggleThumbs: {},
+  GotThumbsMessage: { message: VirtualList.Message },
+  SelectedThumb: { page: Schema.Number },
+  CompletedLoadThumbs: { panels: Schema.Array(Panel) },
 })
 
 export type Message = typeof Message.Type

@@ -56,3 +56,38 @@ export const PreloadNeighbours = Command.define('PreloadNeighbours', {
       return Message.CompletedPreloadNeighbours()
     }).pipe(Effect.catch(() => Effect.succeed(Message.CompletedPreloadNeighbours()))),
 })
+
+/**
+ * Thumbnails come from the same lazily-extracted pages the stage shows, so a
+ * page already on screen costs nothing to put in the grid as well.
+ */
+export const LoadThumbs = Command.define('LoadThumbs', {
+  args: { pages: Schema.Array(Schema.Number) },
+  messages: [Message.CompletedLoadThumbs],
+  execute: ({ pages }) =>
+    Effect.gen(function* () {
+      const book = yield* OpenBook.get
+      const panels = yield* Effect.forEach(
+        Array.filter(pages, (index) => index < book.pages.length),
+        (index) => panelFor(book.pages[index]!, index),
+      )
+      return Message.CompletedLoadThumbs({ panels })
+    }).pipe(
+      // A thumbnail that will not resolve is not worth reporting.
+      Effect.catch(() => Effect.succeed(Message.CompletedLoadThumbs({ panels: [] }))),
+    ),
+})
+
+/**
+ * The Fullscreen API is a promise that rejects when the browser declines, and
+ * the document reports the result through its own event either way, so this
+ * Command only has to ask.
+ */
+export const ToggleFullscreen = Command.define('ToggleFullscreen', {
+  args: { wantFullscreen: Schema.Boolean },
+  messages: [Message.CompletedToggleFullscreen],
+  execute: ({ wantFullscreen }) =>
+    Effect.tryPromise(() =>
+      wantFullscreen ? document.documentElement.requestFullscreen() : document.exitFullscreen(),
+    ).pipe(Effect.ignore, Effect.as(Message.CompletedToggleFullscreen())),
+})

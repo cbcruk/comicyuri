@@ -1,10 +1,10 @@
 import { Schema } from 'effect'
 import { defineTaggedUnion } from 'foldkit/schema'
 
-import { Slider } from '@foldkit/ui'
+import { Slider, VirtualList } from '@foldkit/ui'
 
 import { Settings } from '../../types.ts'
-import { SLIDER_ID } from './constant.ts'
+import { SLIDER_ID, THUMBS_ID, THUMB_ROW_HEIGHT } from './constant.ts'
 import { ORIGIN, Point, ZOOM_MIN } from './gesture.ts'
 
 /** How far along opening the archive is. */
@@ -89,6 +89,12 @@ export const Model = Schema.Struct({
   lastTapAt: Schema.Number,
 
   slider: Slider.Model,
+
+  isFullscreen: Schema.Boolean,
+  isThumbsOpen: Schema.Boolean,
+  thumbs: VirtualList.Model,
+  /** Thumbnails resolved so far; the grid only asks for what it can show. */
+  thumbPanels: Schema.Array(Panel),
 })
 
 export type Model = typeof Model.Type
@@ -115,4 +121,11 @@ export const init = (config: InitConfig): Model => ({
   lastTapAt: 0,
   // The range is empty until the book says how many pages it has.
   slider: Slider.init({ id: SLIDER_ID, min: 0, max: 0, step: 1 }),
+  isFullscreen: false,
+  isThumbsOpen: false,
+  thumbs: VirtualList.init({
+    id: THUMBS_ID,
+    rowHeightPx: THUMB_ROW_HEIGHT,
+  }),
+  thumbPanels: [],
 })

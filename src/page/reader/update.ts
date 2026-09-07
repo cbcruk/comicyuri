@@ -1,9 +1,9 @@
-import { Array, Option } from 'effect'
+import { Array, Option, Order } from 'effect'
 import { Update } from 'foldkit'
 import { evo } from 'foldkit/struct'
 
 import type { FitMode } from '../../types.ts'
-import { LoadSpread, PreloadNeighbours } from './command.ts'
+import { LoadSpread, LoadThumbs, PreloadNeighbours, ToggleFullscreen } from './command.ts'
 import {
   DOUBLE_TAP_MILLIS,
   DOUBLE_TAP_ZOOM,
@@ -20,11 +20,12 @@ import {
   zoneAt,
 } from './gesture.ts'
 import type { Point } from './gesture.ts'
-import { Slider } from '@foldkit/ui'
+import { Slider, VirtualList } from '@foldkit/ui'
 
 import { Message, OutMessage } from './message.ts'
 import { Gesture, Model, OpenState, SpreadState } from './model.ts'
 import type { OpenBookService } from './resource.ts'
+import { loadedPages, missingFrom, pagesInView } from './thumbs.ts'
 import {
   indexOfPage,
   neighbourPages,
@@ -70,7 +71,9 @@ const showPage = (model: Model, page: number): UpdateReturn =>
           LoadSpread({ page, pages }),
           PreloadNeighbours({
             warm: neighbourPages(spreads, index),
-            keep: pagesToKeep(spreads, index),
+            // Thumbnails on screen hold URLs from these same pages, so
+            // releasing them would blank the grid.
+            keep: Array.appendAll(pagesToKeep(spreads, index), loadedPages(model.thumbPanels)),
           }),
         ],
         outMessage: OutMessage.UpdatedProgress({
@@ -119,14 +122,24 @@ const messageForKey = (model: Model, key: string): Option.Option<Message> => {
     return Option.some(Message.ClickedPrevious())
   }
 
+  // Escape peels one layer at a time rather than always leaving the book.
+  if (key === 'Escape') {
+    if (model.isThumbsOpen) return Option.some(Message.ClickedToggleThumbs())
+    if (model.isFullscreen) return Option.some(Message.ClickedToggleFullscreen())
+    return Option.some(Message.ClickedExit())
+  }
+
   return Option.fromNullishOr(
     {
       Home: Message.ClickedFirst(),
       End: Message.ClickedLast(),
-      Escape: Message.ClickedExit(),
       d: Message.ClickedToggleDirection(),
       v: Message.ClickedToggleView(),
-      f: Message.ClickedCycleFit(),
+      f: Message.ClickedToggleFullscreen(),
+      t: Message.ClickedToggleThumbs(),
+      b: Message.ClickedToggleBookmark(),
+      '+': Message.ClickedZoomIn(),
+      '-': Message.ClickedZoomOut(),
     }[key],
   )
 }
@@ -291,6 +304,29 @@ const foldSlider = Update.foldChild({
   foldOutMessage: foldSliderOutMessage,
 })
 
+/** Asks for whatever the grid could show and has not extracted yet. */
+const fillThumbs = (model: Model): UpdateReturn => {
+  const pageCount = OpenState.match(model.openState, {
+    Opening: () => 0,
+    Failed: () => 0,
+    Ready: ({ pageCount }) => pageCount,
+  })
+
+  const missing = missingFrom(model.thumbPanels, pagesInView(model.thumbs, pageCount))
+
+  return Array.match(missing, {
+    onEmpty: () => ({ model }),
+    onNonEmpty: (pages) => ({ model, commands: [LoadThumbs({ pages })] }),
+  })
+}
+
+const foldThumbs = Update.foldChild({
+  update: VirtualList.update,
+  read: (model: Model) => Option.some(model.thumbs),
+  write: (model, nextThumbs) => evo(model, { thumbs: () => nextThumbs }),
+  toParentMessage: (message) => Message.GotThumbsMessage({ message }),
+})
+
 export const update = (model: Model, message: Message): UpdateReturn =>
   Message.match<UpdateReturn>(message, {
     CompletedOpenBook: ({ title, pageCount }) =>
@@ -357,6 +393,76 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     ClickedCycleFit: () => withSettings(model, evo(model.settings, { fit: nextFit })),
 
     GotSliderMessage: ({ message }) => foldSlider(model, message),
+
+    ClickedToggleBookmark: () => {
+      const bookmarks = Array.contains(model.bookmarks, model.page)
+        ? Array.filter(model.bookmarks, (page) => page !== model.page)
+        : Array.sort(Array.append(model.bookmarks, model.page), Order.Number)
+
+      return {
+        model: evo(model, { bookmarks: () => bookmarks }),
+        outMessage: OutMessage.UpdatedProgress({
+          bookId: model.bookId,
+          page: model.page,
+          bookmarks,
+        }),
+      }
+    },
+
+    // The document reports the outcome through `ChangedFullscreen`, including
+    // the times the browser declines or the reader leaves with Escape.
+    ClickedToggleFullscreen: () => ({
+      model,
+      commands: [ToggleFullscreen({ wantFullscreen: !model.isFullscreen })],
+    }),
+
+    CompletedToggleFullscreen: () => ({ model }),
+
+    ChangedFullscreen: ({ isFullscreen }) => ({
+      model: evo(model, { isFullscreen: () => isFullscreen }),
+    }),
+
+    ClickedToggleThumbs: () =>
+      model.isThumbsOpen
+        ? {
+            model: evo(model, {
+              isThumbsOpen: () => false,
+              // Nothing is showing them any more, and the pages they came
+              // from are free to be released on the next turn.
+              thumbPanels: () => [],
+            }),
+          }
+        : fillThumbs(
+            evo(model, {
+              isThumbsOpen: () => true,
+              isChromeVisible: () => true,
+              activityToken: (token) => token + 1,
+            }),
+          ),
+
+    GotThumbsMessage: ({ message }) => {
+      const scrolled = foldThumbs(model, message)
+      const filled = fillThumbs(scrolled.model)
+
+      return {
+        model: filled.model,
+        commands: Array.appendAll(scrolled.commands ?? [], filled.commands ?? []),
+      }
+    },
+
+    CompletedLoadThumbs: ({ panels }) => ({
+      model: evo(model, {
+        thumbPanels: (existing) => Array.appendAll(existing, panels),
+      }),
+    }),
+
+    SelectedThumb: ({ page }) => {
+      const jumped = showPage(evo(model, { isThumbsOpen: () => false }), page)
+      return {
+        ...jumped,
+        model: evo(jumped.model, { thumbPanels: () => [] }),
+      }
+    },
 
     PressedPointer: ({ pointerId, at }) => ({
       model: pressed(withActivity(model), pointerId, at),

@@ -10,7 +10,7 @@ import {
 import { describe, expect, test } from 'vite-plus/test'
 
 import { defaultSettings } from '../../types.ts'
-import { LoadSpread, PreloadNeighbours } from './command.ts'
+import { LoadSpread, LoadThumbs, PreloadNeighbours, ToggleFullscreen } from './command.ts'
 import { Message, OutMessage } from './message.ts'
 import { DOUBLE_TAP_ZOOM, ORIGIN, ZOOM_MIN } from './gesture.ts'
 import { Model, OpenState, SpreadState, init } from './model.ts'
@@ -460,6 +460,174 @@ describe('page slider', () => {
         expect(model.slider.min).toBe(0)
         expect(model.slider.max).toBe(PAGE_COUNT - 1)
       }),
+    )
+  })
+})
+
+describe('bookmarks', () => {
+  test('bookmarking a page reports the new set, and unbookmarking removes it', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ClickedToggleBookmark()),
+      expectOutMessage(
+        OutMessage.UpdatedProgress({
+          bookId: 'volume-1::42',
+          page: 0,
+          bookmarks: [0],
+        }),
+      ),
+      model((model) => {
+        expect(model.bookmarks).toStrictEqual([0])
+      }),
+      message(Message.ClickedToggleBookmark()),
+      model((model) => {
+        expect(model.bookmarks).toStrictEqual([])
+      }),
+    )
+  })
+
+  test('bookmarks stay in page order however they were added', () => {
+    story(
+      update,
+      given({ ...openingModel(), bookmarks: [4] }),
+      ...opened(0),
+      message(Message.ClickedToggleBookmark()),
+      model((model) => {
+        expect(model.bookmarks).toStrictEqual([0, 4])
+      }),
+    )
+  })
+})
+
+describe('fullscreen', () => {
+  test('the control asks, and the document reports what happened', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ClickedToggleFullscreen()),
+      Command.expectExact(ToggleFullscreen({ wantFullscreen: true })),
+      Command.resolve(ToggleFullscreen, Message.CompletedToggleFullscreen()),
+      model((model) => {
+        // Asking is not entering; the document has not said so yet.
+        expect(model.isFullscreen).toBe(false)
+      }),
+      message(Message.ChangedFullscreen({ isFullscreen: true })),
+      model((model) => {
+        expect(model.isFullscreen).toBe(true)
+      }),
+    )
+  })
+
+  test('leaving fullscreen outside the app is still noticed', () => {
+    story(
+      update,
+      given({ ...openingModel(), isFullscreen: true }),
+      ...opened(0),
+      message(Message.ChangedFullscreen({ isFullscreen: false })),
+      model((model) => {
+        expect(model.isFullscreen).toBe(false)
+      }),
+    )
+  })
+})
+
+describe('thumbnails', () => {
+  test('opening the grid asks only for the thumbnails it can show', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ClickedToggleThumbs()),
+      model((model) => {
+        expect(model.isThumbsOpen).toBe(true)
+      }),
+      Command.resolve(
+        LoadThumbs,
+        Message.CompletedLoadThumbs({
+          panels: [{ page: 0, url: 'blob:t0' }],
+        }),
+      ),
+      model((model) => {
+        expect(model.thumbPanels).toStrictEqual([{ page: 0, url: 'blob:t0' }])
+      }),
+    )
+  })
+
+  test('picking a thumbnail jumps there and closes the grid', () => {
+    story(
+      update,
+      given({ ...openingModel(), isThumbsOpen: true }),
+      ...opened(0),
+      message(Message.SelectedThumb({ page: 3 })),
+      model((model) => {
+        expect(model.page).toBe(3)
+        expect(model.isThumbsOpen).toBe(false)
+        // The grid is gone, so its thumbnails are free to be released.
+        expect(model.thumbPanels).toStrictEqual([])
+      }),
+      ...settle(3),
+    )
+  })
+
+  test('a page turn does not release pages the grid is showing', () => {
+    story(
+      update,
+      given({
+        ...openingModel(),
+        isThumbsOpen: true,
+        thumbPanels: [{ page: 5, url: 'blob:t5' }],
+      }),
+      ...opened(0),
+      message(Message.ClickedNext()),
+      Command.expectHas(
+        PreloadNeighbours({
+          warm: [0, 1, 2],
+          // Page 5 is not near the reader, but the grid is showing it.
+          keep: [0, 1, 2, 3, 4, 5],
+        }),
+      ),
+      ...settle(1),
+    )
+  })
+})
+
+describe('escape', () => {
+  test('escape closes the grid before it leaves anything', () => {
+    story(
+      update,
+      given({ ...openingModel(), isThumbsOpen: true, isFullscreen: true }),
+      ...opened(0),
+      message(Message.PressedKey({ key: 'Escape' })),
+      expectNoOutMessage(),
+      model((model) => {
+        expect(model.isThumbsOpen).toBe(false)
+        expect(model.isFullscreen).toBe(true)
+      }),
+    )
+  })
+
+  test('escape then leaves fullscreen before it leaves the book', () => {
+    story(
+      update,
+      given({ ...openingModel(), isFullscreen: true }),
+      ...opened(0),
+      message(Message.PressedKey({ key: 'Escape' })),
+      expectNoOutMessage(),
+      Command.expectExact(ToggleFullscreen({ wantFullscreen: false })),
+      Command.resolve(ToggleFullscreen, Message.CompletedToggleFullscreen()),
+    )
+  })
+
+  test('escape with nothing left open goes back to the shelf', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.PressedKey({ key: 'Escape' })),
+      expectOutMessage(OutMessage.RequestedExit()),
     )
   })
 })

@@ -1,7 +1,7 @@
 import { Duration, Effect, Option, Schema, Stream } from 'effect'
 import { Subscription } from 'foldkit'
 
-import { Slider } from '@foldkit/ui'
+import { Slider, VirtualList } from '@foldkit/ui'
 
 import { STAGE_ID } from './constant.ts'
 import type { Point } from './gesture.ts'
@@ -36,6 +36,15 @@ const sliderSubscriptions = Subscription.lift({
 })<Model, Message>({
   toChildModel: (model) => model.slider,
   toParentMessage: (message) => Message.GotSliderMessage({ message }),
+})
+
+/** The grid measures its own container and follows its own scroll. */
+const thumbsSubscriptions = Subscription.lift({
+  thumbsContainer: VirtualList.subscriptions.containerEvents,
+})<Model, Message>({
+  toChildModel: (model) => model.thumbs,
+  toParentMessage: (message) => Message.GotThumbsMessage({ message }),
+  when: (model) => model.isThumbsOpen,
 })
 
 const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
@@ -160,6 +169,24 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
     },
   ),
 
+  fullscreen: entry(
+    {},
+    {
+      modelToDependencies: () => ({}),
+      dependenciesToStream: () =>
+        Subscription.fromEventFilterMap<Event, Message>({
+          target: document,
+          type: 'fullscreenchange',
+          toMessage: () =>
+            Option.some(
+              Message.ChangedFullscreen({
+                isFullscreen: document.fullscreenElement !== null,
+              }),
+            ),
+        }),
+    },
+  ),
+
   chromeIdle: entry(
     { isChromeVisible: Schema.Boolean, activityToken: Schema.Number },
     {
@@ -182,4 +209,5 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
 export const subscriptions = Subscription.aggregate<Model, Message>()(
   readerSubscriptions,
   sliderSubscriptions,
+  thumbsSubscriptions,
 )

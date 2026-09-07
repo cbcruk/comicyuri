@@ -2,17 +2,18 @@ import { Array, Option } from 'effect'
 import type { Attribute, Html, HtmlBuilder } from 'foldkit/html'
 import { defineView } from 'foldkit/submodel'
 
-import { Button, Slider } from '@foldkit/ui'
+import { Button, Slider, VirtualList } from '@foldkit/ui'
 import clsx from 'clsx'
 
 import type { FitMode, Settings } from '../../types.ts'
-import { STAGE_ID } from './constant.ts'
+import { STAGE_ID, THUMB_ROW_HEIGHT } from './constant.ts'
 import { ZOOM_MIN } from './gesture.ts'
 import type { Point } from './gesture.ts'
 import { Message } from './message.ts'
 import { Model, OpenState, SpreadState } from './model.ts'
 import type { Panel } from './model.ts'
 import { indexOfPage, spreadsFor } from './spread.ts'
+import { rowsFor, urlFor } from './thumbs.ts'
 
 const FIT_LABEL: Record<FitMode, string> = {
   contain: 'Fit',
@@ -63,7 +64,7 @@ const counterLabel = (pages: ReadonlyArray<number>, pageCount: number): string =
 }
 
 const toolbarView = (
-  settings: Settings,
+  model: Model,
   counter: string,
   isVisible: boolean,
   h: HtmlBuilder<Message>,
@@ -83,7 +84,38 @@ const toolbarView = (
       h.span([h.Class('mx-auto text-sm text-muted')], [counter]),
       controlView(
         {
-          label: settings.direction === 'rtl' ? 'RTL' : 'LTR',
+          label: model.bookmarks.includes(model.page) ? '★' : '☆',
+          message: Message.ClickedToggleBookmark(),
+          attributes: [
+            h.AriaLabel(
+              model.bookmarks.includes(model.page)
+                ? 'Remove bookmark from this page'
+                : 'Bookmark this page',
+            ),
+            h.AriaPressed(model.bookmarks.includes(model.page) ? 'true' : 'false'),
+          ],
+        },
+        h,
+      ),
+      controlView(
+        {
+          label: 'Pages',
+          message: Message.ClickedToggleThumbs(),
+          attributes: [h.AriaLabel('Show every page'), h.AriaExpanded(model.isThumbsOpen)],
+        },
+        h,
+      ),
+      controlView(
+        {
+          label: model.isFullscreen ? 'Exit full' : 'Full',
+          message: Message.ClickedToggleFullscreen(),
+          attributes: [h.AriaLabel(model.isFullscreen ? 'Leave fullscreen' : 'Enter fullscreen')],
+        },
+        h,
+      ),
+      controlView(
+        {
+          label: model.settings.direction === 'rtl' ? 'RTL' : 'LTR',
           message: Message.ClickedToggleDirection(),
           attributes: [h.AriaLabel('Toggle reading direction')],
         },
@@ -91,7 +123,7 @@ const toolbarView = (
       ),
       controlView(
         {
-          label: settings.view === 'spread' ? 'Two' : 'One',
+          label: model.settings.view === 'spread' ? 'Two' : 'One',
           message: Message.ClickedToggleView(),
           attributes: [h.AriaLabel('Toggle one or two pages')],
         },
@@ -99,7 +131,7 @@ const toolbarView = (
       ),
       controlView(
         {
-          label: FIT_LABEL[settings.fit],
+          label: FIT_LABEL[model.settings.fit],
           message: Message.ClickedCycleFit(),
           attributes: [h.AriaLabel('Change how pages are fitted')],
         },
@@ -207,6 +239,70 @@ const sliderView = (model: Model, h: HtmlBuilder<Message>): Html =>
     toParentMessage: (message) => Message.GotSliderMessage({ message }),
   })
 
+const thumbView = (model: Model, page: number, h: HtmlBuilder<Message>): Html =>
+  h.keyed('button')(
+    String(page),
+    [
+      h.Class(
+        clsx(
+          'flex flex-1 flex-col items-center gap-1 rounded-lg border p-1 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+          model.bookmarks.includes(page)
+            ? 'border-accent text-accent'
+            : 'border-transparent text-muted hover:border-edge',
+        ),
+      ),
+      h.Style({ height: `${THUMB_ROW_HEIGHT - 24}px` }),
+      h.OnClick(Message.SelectedThumb({ page })),
+      h.AriaLabel(`Go to page ${page + 1}`),
+    ],
+    [
+      Option.match(urlFor(model.thumbPanels, page), {
+        onNone: () => h.div([h.Class('w-full flex-1 rounded bg-surface-2')]),
+        onSome: (url) =>
+          h.img([h.Class('min-h-0 flex-1 rounded object-contain'), h.Src(url), h.Alt('')]),
+      }),
+      h.span([], [String(page + 1)]),
+    ],
+  )
+
+/**
+ * Every page at once, windowed by the list so a five-hundred-page book does
+ * not extract five hundred images just to draw a grid.
+ */
+const thumbsView = (model: Model, pageCount: number, h: HtmlBuilder<Message>): Html =>
+  h.div(
+    [
+      h.Class('absolute inset-0 z-10 flex flex-col bg-bg/95 backdrop-blur-sm'),
+      h.Role('dialog'),
+      h.AriaLabel('Every page'),
+    ],
+    [
+      h.div(
+        [h.Class('flex items-center gap-2 border-b border-edge px-4 py-2')],
+        [
+          h.span([h.Class('mr-auto text-sm text-muted')], ['Every page']),
+          controlView({ label: 'Close', message: Message.ClickedToggleThumbs() }, h),
+        ],
+      ),
+      h.submodel({
+        slotId: model.thumbs.id,
+        model: model.thumbs,
+        view: VirtualList.view<ReadonlyArray<number>>(),
+        viewInputs: {
+          items: rowsFor(pageCount),
+          itemToKey: (_row, index) => String(index),
+          containerClassName: 'flex-1 overflow-y-auto p-4',
+          itemToView: (row) =>
+            h.div(
+              [h.Class('flex gap-3 px-1')],
+              Array.map(row, (page) => thumbView(model, page, h)),
+            ),
+        },
+        toParentMessage: (message) => Message.GotThumbsMessage({ message }),
+      }),
+    ],
+  )
+
 const turnView = (model: Model, isVisible: boolean, h: HtmlBuilder<Message>): Html =>
   h.footer(
     [
@@ -245,10 +341,10 @@ export const view = defineView<Model, Message>((model, h): Html =>
       const index = indexOfPage(spreads, model.page)
 
       return h.main(
-        [h.Class('flex h-full flex-col'), h.AriaLabel(title)],
+        [h.Class('relative flex h-full flex-col'), h.AriaLabel(title)],
         [
           toolbarView(
-            model.settings,
+            model,
             counterLabel(
               Option.getOrElse(Array.get(spreads, index), () => []),
               pageCount,
@@ -258,6 +354,7 @@ export const view = defineView<Model, Message>((model, h): Html =>
           ),
           stageView(model.spread, model.settings, model.zoom, model.pan, h),
           turnView(model, model.isChromeVisible, h),
+          model.isThumbsOpen ? thumbsView(model, pageCount, h) : h.empty,
         ],
       )
     },

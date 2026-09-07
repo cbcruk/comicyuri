@@ -22,19 +22,19 @@ Everything runs client-side — your files never leave the browser.
 
 ## Keyboard shortcuts
 
-| Key                              | Action                                        |
-| -------------------------------- | --------------------------------------------- |
-| `←` / `→`                        | Turn page in the visual direction             |
-| `↑` / `↓`, `PageUp` / `PageDown` | Previous / next                               |
-| `Space` / `Shift`+`Space`        | Next / previous                               |
-| `Home` / `End`                   | First / last page                             |
-| `d`                              | Toggle reading direction                      |
-| `v`                              | Toggle one / two pages                        |
-| `t`                              | Thumbnail grid                                |
-| `b`                              | Bookmark current page                         |
-| `f`                              | Fullscreen                                    |
-| `+` / `-`                        | Zoom in / out                                 |
-| `Esc`                            | Close panel / exit fullscreen / back to shelf |
+| Key                              | Action                                         |
+| -------------------------------- | ---------------------------------------------- |
+| `←` / `→`                        | Turn page in the visual direction              |
+| `↑` / `↓`, `PageUp` / `PageDown` | Previous / next                                |
+| `Space`                          | Next                                           |
+| `Home` / `End`                   | First / last page                              |
+| `d`                              | Toggle reading direction                       |
+| `v`                              | Toggle one / two pages                         |
+| `t`                              | Thumbnail grid                                 |
+| `b`                              | Bookmark current page                          |
+| `f`                              | Fullscreen                                     |
+| `+` / `-`                        | Zoom in / out                                  |
+| `Esc`                            | Close the grid, then fullscreen, then the book |
 
 ## How CBZ files are read
 
@@ -93,7 +93,11 @@ deliberately undecided until it lifts: a tap on the outer thirds turns a page,
 a tap in the middle shows or hides the chrome, a sideways drag is a swipe, two
 taps zoom, and once zoomed the same drag pans instead.
 
-The thumbnail grid, bookmarks and fullscreen are still to come.
+The thumbnail grid is `@foldkit/ui`'s `VirtualList` over rows of pages, and
+`src/page/reader/thumbs.ts` reads the window back out of the list's own scroll
+state to decide which pages to extract — so a five-hundred-page book draws a
+grid without unpacking five hundred images. Pages the grid is showing are
+added to what a page turn keeps loaded, or turning would blank it.
 
 ## Development
 
