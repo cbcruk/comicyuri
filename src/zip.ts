@@ -87,8 +87,7 @@ export class ZipArchive {
 
       const entries = yield* Effect.try({
         try: () => readCentralDirectory(buffer, view, eocd),
-        catch: (cause) =>
-          new ArchiveError({ reason: 'The archive directory is corrupt', cause }),
+        catch: (cause) => new ArchiveError({ reason: 'The archive directory is corrupt', cause }),
       })
 
       return new ZipArchive(buffer, entries)

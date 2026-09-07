@@ -74,7 +74,9 @@ class ZipPage implements Page {
         : this.archive
             .extract(this.entry)
             .pipe(
-              Effect.map((bytes) => (this.url = URL.createObjectURL(new Blob([bytes as BlobPart])))),
+              Effect.map(
+                (bytes) => (this.url = URL.createObjectURL(new Blob([bytes as BlobPart]))),
+              ),
             ),
     )
   }
