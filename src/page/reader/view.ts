@@ -2,10 +2,13 @@ import { Array, Option } from 'effect'
 import type { Attribute, Html, HtmlBuilder } from 'foldkit/html'
 import { defineView } from 'foldkit/submodel'
 
-import { Button } from '@foldkit/ui'
+import { Button, Slider } from '@foldkit/ui'
 import clsx from 'clsx'
 
 import type { FitMode, Settings } from '../../types.ts'
+import { STAGE_ID } from './constant.ts'
+import { ZOOM_MIN } from './gesture.ts'
+import type { Point } from './gesture.ts'
 import { Message } from './message.ts'
 import { Model, OpenState, SpreadState } from './model.ts'
 import type { Panel } from './model.ts'
@@ -48,6 +51,10 @@ const controlView = (config: ControlConfig, h: HtmlBuilder<Message>): Html =>
     h,
   )
 
+/** Chrome fades out while reading, and takes its tab stops with it. */
+const chromeClassName = (isVisible: boolean): string =>
+  clsx('transition-opacity', { 'pointer-events-none opacity-0': !isVisible })
+
 const counterLabel = (pages: ReadonlyArray<number>, pageCount: number): string => {
   const first = Option.getOrElse(Array.head(pages), () => 0)
   const last = Option.getOrElse(Array.last(pages), () => first)
@@ -55,9 +62,22 @@ const counterLabel = (pages: ReadonlyArray<number>, pageCount: number): string =
   return `${shown} / ${pageCount}`
 }
 
-const toolbarView = (settings: Settings, counter: string, h: HtmlBuilder<Message>): Html =>
+const toolbarView = (
+  settings: Settings,
+  counter: string,
+  isVisible: boolean,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.header(
-    [h.Class('flex flex-wrap items-center gap-2 border-b border-edge px-4 py-2')],
+    [
+      h.Class(
+        clsx(
+          'flex flex-wrap items-center gap-2 border-b border-edge px-4 py-2',
+          chromeClassName(isVisible),
+        ),
+      ),
+      h.AriaHidden(!isVisible),
+    ],
     [
       controlView({ label: '← Shelf', message: Message.ClickedExit() }, h),
       h.span([h.Class('mx-auto text-sm text-muted')], [counter]),
@@ -85,6 +105,22 @@ const toolbarView = (settings: Settings, counter: string, h: HtmlBuilder<Message
         },
         h,
       ),
+      controlView(
+        {
+          label: '−',
+          message: Message.ClickedZoomOut(),
+          attributes: [h.AriaLabel('Zoom out')],
+        },
+        h,
+      ),
+      controlView(
+        {
+          label: '+',
+          message: Message.ClickedZoomIn(),
+          attributes: [h.AriaLabel('Zoom in')],
+        },
+        h,
+      ),
     ],
   )
 
@@ -95,34 +131,99 @@ const panelView = (panel: Panel, fit: FitMode, h: HtmlBuilder<Message>): Html =>
     h.Alt(`Page ${panel.page + 1}`),
   ])
 
-const stageView = (spread: SpreadState, settings: Settings, h: HtmlBuilder<Message>): Html =>
+/**
+ * The stage is the gesture surface, so it carries the id the pointer
+ * subscriptions look for and takes touch handling away from the browser. Zoom
+ * and pan are one transform on an inner element: the outer one has to stay
+ * still for the centre-relative coordinates the gesture maths uses to keep
+ * meaning what they say.
+ */
+const stageView = (
+  spread: SpreadState,
+  settings: Settings,
+  zoom: number,
+  pan: Point,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.div(
     [
-      h.Class(
-        clsx('flex flex-1 items-center justify-center gap-1 overflow-auto bg-black/20 p-2', {
-          'flex-row-reverse': settings.direction === 'rtl',
+      h.Id(STAGE_ID),
+      h.Class('flex flex-1 touch-none items-center justify-center overflow-hidden bg-black/20 p-2'),
+    ],
+    [
+      h.div(
+        [
+          h.Class(
+            clsx('flex items-center justify-center gap-1', {
+              'flex-row-reverse': settings.direction === 'rtl',
+              // Snapping back to unzoomed is worth animating; a live drag is not.
+              'transition-transform': zoom === ZOOM_MIN,
+            }),
+          ),
+          h.Style({
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          }),
+        ],
+        SpreadState.match(spread, {
+          Loading: () => [h.p([h.Class('text-sm text-muted')], ['Loading…'])],
+          Failed: ({ text }) => [h.p([h.Class('text-sm text-danger')], [text])],
+          Shown: ({ panels }) => Array.map(panels, (panel) => panelView(panel, settings.fit, h)),
         }),
       ),
     ],
-    SpreadState.match(spread, {
-      Loading: () => [h.p([h.Class('text-sm text-muted')], ['Loading…'])],
-      Failed: ({ text }) => [h.p([h.Class('text-sm text-danger')], [text])],
-      Shown: ({ panels }) => Array.map(panels, (panel) => panelView(panel, settings.fit, h)),
-    }),
   )
 
-/**
- * Previous and next sit either side of the stage in reading order, so the
- * control nearest a thumb turns the page that thumb expects.
- */
-const turnView = (h: HtmlBuilder<Message>): Html =>
+/** Scrubbing the whole book, with the keyboard support the component brings. */
+const sliderView = (model: Model, h: HtmlBuilder<Message>): Html =>
+  h.submodel({
+    slotId: model.slider.id,
+    model: model.slider,
+    view: Slider.view,
+    viewInputs: {
+      value: model.page,
+      ariaLabel: 'Page',
+      formatValue: (page) => `Page ${page + 1}`,
+      toView: (attributes) =>
+        h.div(
+          [
+            ...attributes.root,
+            h.Class('relative flex h-6 flex-1 touch-none items-center select-none'),
+          ],
+          [
+            h.div(
+              [...attributes.track, h.Class('h-1.5 w-full rounded-full bg-edge')],
+              [h.div([...attributes.filledTrack, h.Class('h-full rounded-full bg-accent')])],
+            ),
+            h.div([
+              ...attributes.thumb,
+              h.Class(
+                'h-4 w-4 cursor-grab rounded-full border-2 border-accent bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent data-dragging:cursor-grabbing',
+              ),
+            ]),
+            h.input(attributes.hiddenInput),
+          ],
+        ),
+    },
+    toParentMessage: (message) => Message.GotSliderMessage({ message }),
+  })
+
+const turnView = (model: Model, isVisible: boolean, h: HtmlBuilder<Message>): Html =>
   h.footer(
-    [h.Class('flex items-center justify-between gap-2 border-t border-edge px-4 py-2')],
     [
-      controlView({ label: 'Previous', message: Message.ClickedPrevious() }, h),
+      h.Class(
+        clsx(
+          'flex items-center justify-between gap-2 border-t border-edge px-4 py-2',
+          chromeClassName(isVisible),
+        ),
+      ),
+      h.AriaHidden(!isVisible),
+    ],
+    [
       controlView({ label: 'First', message: Message.ClickedFirst() }, h),
-      controlView({ label: 'Last', message: Message.ClickedLast() }, h),
+      controlView({ label: 'Previous', message: Message.ClickedPrevious() }, h),
+      sliderView(model, h),
       controlView({ label: 'Next', message: Message.ClickedNext() }, h),
+      controlView({ label: 'Last', message: Message.ClickedLast() }, h),
     ],
   )
 
@@ -152,10 +253,11 @@ export const view = defineView<Model, Message>((model, h): Html =>
               Option.getOrElse(Array.get(spreads, index), () => []),
               pageCount,
             ),
+            model.isChromeVisible,
             h,
           ),
-          stageView(model.spread, model.settings, h),
-          turnView(h),
+          stageView(model.spread, model.settings, model.zoom, model.pan, h),
+          turnView(model, model.isChromeVisible, h),
         ],
       )
     },

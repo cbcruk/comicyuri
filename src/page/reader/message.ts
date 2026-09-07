@@ -1,7 +1,10 @@
 import { Schema } from 'effect'
 import { defineMessageUnion } from 'foldkit/message'
 
+import { Slider } from '@foldkit/ui'
+
 import { Settings } from '../../types.ts'
+import { Point } from './gesture.ts'
 import { Panel } from './model.ts'
 
 export const Message = defineMessageUnion({
@@ -22,6 +25,23 @@ export const Message = defineMessageUnion({
   ClickedToggleView: {},
   ClickedCycleFit: {},
   PressedKey: { key: Schema.String },
+
+  PressedPointer: { pointerId: Schema.Number, at: Point },
+  MovedPointer: { pointerId: Schema.Number, at: Point },
+  ReleasedPointer: {
+    pointerId: Schema.Number,
+    at: Point,
+    timeStamp: Schema.Number,
+    viewportWidth: Schema.Number,
+  },
+  CancelledPointer: { pointerId: Schema.Number },
+  ScrolledToZoom: { delta: Schema.Number, at: Point },
+
+  ClickedZoomIn: {},
+  ClickedZoomOut: {},
+  ElapsedChromeIdle: { token: Schema.Number },
+
+  GotSliderMessage: { message: Slider.Message },
 })
 
 export type Message = typeof Message.Type

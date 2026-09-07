@@ -1,10 +1,24 @@
-import { Command, click, expect, expectOutMessage, given, role, scene, text } from 'foldkit/scene'
+import {
+  Command,
+  click,
+  expect,
+  expectOutMessage,
+  given,
+  keydown,
+  role,
+  scene,
+  text,
+} from 'foldkit/scene'
 import { describe, test } from 'vite-plus/test'
 
 import { defaultSettings } from '../../types.ts'
 import { LoadSpread, PreloadNeighbours } from './command.ts'
+import { Slider } from '@foldkit/ui'
+
+import { SLIDER_ID } from './constant.ts'
 import { Message, OutMessage } from './message.ts'
-import { Model, OpenState, SpreadState } from './model.ts'
+import { ORIGIN, ZOOM_MIN } from './gesture.ts'
+import { Gesture, Model, OpenState, SpreadState } from './model.ts'
 import { update } from './update.ts'
 import { view } from './view.ts'
 
@@ -17,6 +31,13 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   page,
   bookmarks: [],
   settings,
+  zoom: ZOOM_MIN,
+  pan: ORIGIN,
+  gesture: Gesture.Idle(),
+  isChromeVisible: true,
+  activityToken: 0,
+  lastTapAt: 0,
+  slider: Slider.init({ id: SLIDER_ID, min: 0, max: 5, step: 1 }),
 })
 
 const settleTurn = (page: number) => [
@@ -116,6 +137,26 @@ describe('failure', () => {
       expect(text('Not a valid ZIP/CBZ archive')).toExist(),
       click(role('button', { name: '← Shelf' })),
       expectOutMessage(OutMessage.RequestedExit()),
+    )
+  })
+})
+
+describe('page slider', () => {
+  test('the slider carries the reading position and moves it', () => {
+    scene(
+      program,
+      given(readingModel()),
+      expect(role('slider', { name: 'Page' })).toHaveAttr('aria-valuenow', '0'),
+      keydown(role('slider', { name: 'Page' }), 'ArrowRight'),
+      expectOutMessage(
+        OutMessage.UpdatedProgress({
+          bookId: 'volume-1::42',
+          page: 1,
+          bookmarks: [],
+        }),
+      ),
+      ...settleTurn(1),
+      expect(role('slider', { name: 'Page' })).toHaveAttr('aria-valuenow', '1'),
     )
   })
 })

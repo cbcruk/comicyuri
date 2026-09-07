@@ -1,7 +1,11 @@
 import { Schema } from 'effect'
 import { defineTaggedUnion } from 'foldkit/schema'
 
+import { Slider } from '@foldkit/ui'
+
 import { Settings } from '../../types.ts'
+import { SLIDER_ID } from './constant.ts'
+import { ORIGIN, Point, ZOOM_MIN } from './gesture.ts'
 
 /** How far along opening the archive is. */
 export const OpenState = defineTaggedUnion({
@@ -30,6 +34,33 @@ export const SpreadState = defineTaggedUnion({
 export type SpreadState = typeof SpreadState.Type
 
 /**
+ * What the pointers are currently doing.
+ *
+ * `Tracking` is deliberately undecided: the same press becomes a tap, a swipe
+ * or a pan depending on how far it travels and whether the page is zoomed in,
+ * and none of that is known until it moves or lifts.
+ */
+export const Gesture = defineTaggedUnion({
+  Idle: {},
+  Tracking: {
+    pointerId: Schema.Number,
+    origin: Point,
+    last: Point,
+    hasLeftSlop: Schema.Boolean,
+  },
+  Pinching: {
+    firstId: Schema.Number,
+    secondId: Schema.Number,
+    first: Point,
+    second: Point,
+    startSpan: Schema.Number,
+    startZoom: Schema.Number,
+  },
+})
+
+export type Gesture = typeof Gesture.Type
+
+/**
  * `page` rather than a spread index is the position of record: it survives a
  * one-page/two-page toggle, and it is what gets persisted. The spread is
  * derived from it, the page count and the settings on every render.
@@ -45,6 +76,19 @@ export const Model = Schema.Struct({
   page: Schema.Number,
   bookmarks: Schema.Array(Schema.Number),
   settings: Settings,
+
+  zoom: Schema.Number,
+  pan: Point,
+  gesture: Gesture,
+
+  /** Chrome hides itself while reading and comes back on any activity. */
+  isChromeVisible: Schema.Boolean,
+  /** Changing this restarts the wait that hides the chrome. */
+  activityToken: Schema.Number,
+  /** When the last tap lifted, so the next one can tell it is a double. */
+  lastTapAt: Schema.Number,
+
+  slider: Slider.Model,
 })
 
 export type Model = typeof Model.Type
@@ -63,4 +107,12 @@ export const init = (config: InitConfig): Model => ({
   page: config.page,
   bookmarks: config.bookmarks,
   settings: config.settings,
+  zoom: ZOOM_MIN,
+  pan: ORIGIN,
+  gesture: Gesture.Idle(),
+  isChromeVisible: true,
+  activityToken: 0,
+  lastTapAt: 0,
+  // The range is empty until the book says how many pages it has.
+  slider: Slider.init({ id: SLIDER_ID, min: 0, max: 0, step: 1 }),
 })

@@ -86,9 +86,14 @@ the parsed ZIP archive and the object URLs its pages hand out — is a
 ManagedResource keyed on Model state, so opening happens when the reader
 appears and every page URL is released when it goes away.
 
-Pointer gestures (zoom, pan, pinch, tap zones, swipe), the page slider, the
-thumbnail grid, bookmarks and fullscreen are still to come; today the reader
-turns pages by button and keyboard.
+Pointer gestures live in `src/page/reader/gesture.ts` as pure functions over
+coordinates measured from the centre of the viewport — the same origin the pan
+offset uses — so `update` never has to know the size of anything. One press is
+deliberately undecided until it lifts: a tap on the outer thirds turns a page,
+a tap in the middle shows or hides the chrome, a sideways drag is a swipe, two
+taps zoom, and once zoomed the same drag pans instead.
+
+The thumbnail grid, bookmarks and fullscreen are still to come.
 
 ## Development
 
