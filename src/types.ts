@@ -68,7 +68,7 @@ export interface Page {
   unload(): void
 }
 
-export interface Book {
+export interface LoadedBook {
   readonly id: string
   readonly title: string
   readonly source: BookSource

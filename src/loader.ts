@@ -1,5 +1,5 @@
 import { Effect } from 'effect'
-import type { Book, Page } from './types.ts'
+import type { LoadedBook, Page } from './types.ts'
 import type { StoredBook } from './db.ts'
 import { EmptyBookError, NoComicFilesError } from './errors.ts'
 import type { ArchiveError } from './errors.ts'
@@ -73,11 +73,7 @@ class ZipPage implements Page {
         ? Effect.succeed(this.url)
         : this.archive
             .extract(this.entry)
-            .pipe(
-              Effect.map(
-                (bytes) => (this.url = URL.createObjectURL(new Blob([bytes as BlobPart]))),
-              ),
-            ),
+            .pipe(Effect.map((bytes) => (this.url = URL.createObjectURL(new Blob([bytes]))))),
     )
   }
   unload(): void {
@@ -93,7 +89,7 @@ class ZipPage implements Page {
  * own book; loose images are grouped into one book.
  */
 export function storedBooksFromFiles(
-  files: File[],
+  files: ReadonlyArray<File>,
   groupTitle = 'Imported images',
 ): Effect.Effect<StoredBook[], NoComicFilesError> {
   return Effect.gen(function* () {
@@ -133,10 +129,10 @@ export function storedBooksFromFiles(
   })
 }
 
-/** Reconstruct a live Book (with lazy pages) from a shelf record. */
+/** Reconstruct a live book (with lazy pages) from a shelf record. */
 export function bookFromStored(
   stored: StoredBook,
-): Effect.Effect<Book, ArchiveError | EmptyBookError> {
+): Effect.Effect<LoadedBook, ArchiveError | EmptyBookError> {
   return Effect.gen(function* () {
     if (stored.source !== 'zip') {
       const pages: Page[] = stored.blobs.map(

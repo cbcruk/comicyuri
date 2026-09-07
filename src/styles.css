@@ -1,0 +1,56 @@
+@import 'tailwindcss';
+
+/* The palette carried over from the hand-written stylesheet, as Tailwind
+   theme tokens so `bg-surface`, `text-muted`, `border-edge` and friends exist.
+   `ink` and `edge` rather than `text` and `border` because those names would
+   collide with Tailwind's own utilities. */
+@theme {
+  --color-bg: #14141a;
+  --color-surface: #1e1e28;
+  --color-surface-2: #262633;
+  --color-ink: #ececf1;
+  --color-muted: #9a9ab0;
+  --color-edge: #33333f;
+  --color-accent: #e8578e;
+  --color-accent-ink: #ffffff;
+  --color-danger: #ff8080;
+
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', 'Noto Sans KR', sans-serif;
+}
+
+/* Redefining the same tokens is enough to retheme every utility built on them. */
+:root[data-theme='light'] {
+  --color-bg: #f4f2f7;
+  --color-surface: #ffffff;
+  --color-surface-2: #eceaf2;
+  --color-ink: #201d29;
+  --color-muted: #6a6577;
+  --color-edge: #dcd8e6;
+  --color-accent: #d43a77;
+  --color-accent-ink: #ffffff;
+  --color-danger: #b3261e;
+
+  color-scheme: light;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100dvh;
+}

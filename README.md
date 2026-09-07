@@ -44,10 +44,27 @@ extracts pages lazily; deflated entries are inflated with the platform's native
 
 ## Architecture
 
+The UI is [Foldkit](https://foldkit.dev/) — The Elm Architecture on top of
+[Effect](https://effect.website/) (v4, pinned to the current release
+candidate). One Schema-defined Model is the source of truth, events become
+fact-named Messages, and every side effect is an explicit Command the runtime
+runs.
+
+```
+src/entry.ts     Runtime.makeApplication + Runtime.run
+src/main.ts      Flags (settings, read before the first paint) and init
+src/model.ts     the Model schema
+src/message.ts   the Message union
+src/command.ts   Commands: the Effect core below, named and typed
+src/update.ts    the one exhaustive transition function
+src/route.ts     bidirectional routes: / and /book/:id
+src/view/        the shelf, and the root view that dispatches on the route
+src/domain/      BookSummary and the pure operations on it
+```
+
 Everything that can fail — IndexedDB, `localStorage`, ZIP parsing, image
-decoding — is expressed as an [Effect](https://effect.website/) (v4, pinned to
-the current release candidate), so the failure modes are in the type rather
-than in a `catch` block:
+decoding — lives underneath as plain Effect, so the failure modes are in the
+type rather than in a `catch` block:
 
 - `src/errors.ts` declares the tagged errors (`DbError`, `ArchiveError`,
   `EmptyBookError`, `NoComicFilesError`, `CoverError`) and the single
@@ -57,11 +74,12 @@ than in a `catch` block:
 - Settings and reading progress are **decoded** through a schema
   (`src/types.ts`) instead of cast, so a corrupt or stale `localStorage` entry
   degrades to the defaults rather than reaching the UI.
-- `src/app.ts` is the boundary: DOM handlers fork a fully-handled effect, and
-  the `pagehide` progress write runs synchronously so it cannot be lost.
+- `src/command.ts` is the seam: each of those Effects becomes a named Command,
+  and its success and failure arrive back in `update` as Messages.
 
-The DOM layers (`src/library.ts`, `src/viewer.ts`) stay plain imperative code
-and run effects at their own edges.
+Only the shelf runs on Foldkit today. The reader is being ported next, as a
+Submodel whose opened book is a ManagedResource, so the ZIP archive and its
+page object URLs are acquired and released by Model state.
 
 ## Development
 
@@ -72,4 +90,15 @@ vp install   # install dependencies
 vp dev       # start the dev server
 vp build     # production build
 vp check     # format, lint and type-check
+vp test      # story and scene tests
+```
+
+Foldkit is vendored as a git subtree under `repos/foldkit`, pinned to the
+release tag matching the installed `foldkit` package, so its source, examples
+and docs always describe the APIs this app compiles against. Re-pin it after an
+upgrade:
+
+```sh
+git subtree pull --prefix=repos/foldkit https://github.com/foldkit/foldkit.git \
+  "foldkit@$(node -p "require('./node_modules/foldkit/package.json').version")" --squash
 ```

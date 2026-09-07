@@ -22,12 +22,12 @@ export interface ZipEntry {
 const SIG_EOCD = 0x06054b50
 const SIG_CENTRAL = 0x02014b50
 
-const inflateRaw = (bytes: Uint8Array): Effect.Effect<Uint8Array, ArchiveError> =>
+const inflateRaw = (
+  bytes: Uint8Array<ArrayBuffer>,
+): Effect.Effect<Uint8Array<ArrayBuffer>, ArchiveError> =>
   Effect.tryPromise({
     try: async () => {
-      const stream = new Blob([bytes as BlobPart])
-        .stream()
-        .pipeThrough(new DecompressionStream('deflate-raw'))
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))
       return new Uint8Array(await new Response(stream).arrayBuffer())
     },
     catch: (cause) => new ArchiveError({ reason: 'Could not decompress an archive entry', cause }),
@@ -94,7 +94,7 @@ export class ZipArchive {
     })
   }
 
-  extract(entry: ZipEntry): Effect.Effect<Uint8Array, ArchiveError> {
+  extract(entry: ZipEntry): Effect.Effect<Uint8Array<ArrayBuffer>, ArchiveError> {
     return Effect.try({
       try: () => {
         const view = new DataView(this.buffer)

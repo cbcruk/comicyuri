@@ -6,7 +6,7 @@
  * place that turns a failure into text for the shelf status line.
  */
 
-import { Data, Match } from 'effect'
+import { Array, Data, Match, Predicate } from 'effect'
 
 /** IndexedDB refused an operation (`op` is the store call that failed). */
 export class DbError extends Data.TaggedError('DbError')<{
@@ -35,6 +35,17 @@ export class CoverError extends Data.TaggedError('CoverError')<{
 
 export type AppError = DbError | ArchiveError | EmptyBookError | NoComicFilesError | CoverError
 
+const APP_ERROR_TAGS = [
+  'DbError',
+  'ArchiveError',
+  'EmptyBookError',
+  'NoComicFilesError',
+  'CoverError',
+] as const
+
+const isAppError = (error: unknown): error is AppError =>
+  Array.some(APP_ERROR_TAGS, (tag) => Predicate.isTagged(error, tag))
+
 /** Human-readable text for the shelf status line. */
 export const describe: (error: AppError) => string = Match.type<AppError>().pipe(
   Match.tag('DbError', (e) => `Shelf storage is unavailable (${e.op})`),
@@ -44,3 +55,10 @@ export const describe: (error: AppError) => string = Match.type<AppError>().pipe
   Match.tag('CoverError', (e) => e.reason),
   Match.exhaustive,
 )
+
+/**
+ * `describe` for a channel typed `unknown`. A ManagedResource reports its
+ * acquire failure that way, so the tag has to be recovered before matching.
+ */
+export const describeUnknown = (error: unknown): string =>
+  isAppError(error) ? describe(error) : 'Something went wrong'
