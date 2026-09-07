@@ -10,7 +10,7 @@ import { describe } from './errors.ts'
 import type { AppError } from './errors.ts'
 import { bookFromStored, storedBooksFromFiles } from './loader.ts'
 import { Message } from './message.ts'
-import { saveSettings } from './storage.ts'
+import { loadProgress, saveProgress, saveSettings } from './storage.ts'
 import { makeCover } from './thumbnail.ts'
 import { Settings, Theme } from './types.ts'
 
@@ -153,6 +153,33 @@ export const WaitBeforeClearingNotice = Command.define('WaitBeforeClearingNotice
   execute: ({ token }) =>
     Effect.sleep(NOTICE_LINGER).pipe(
       Effect.as(Message.CompletedWaitBeforeClearingNotice({ token })),
+    ),
+})
+
+/** Reading position and bookmarks, read before the reader is built. */
+export const LoadProgress = Command.define('LoadProgress', {
+  args: { bookId: Schema.String },
+  messages: [Message.CompletedLoadProgress],
+  execute: ({ bookId }) =>
+    Effect.map(loadProgress(bookId), (progress) =>
+      Message.CompletedLoadProgress({
+        bookId,
+        page: progress.page,
+        bookmarks: progress.bookmarks,
+      }),
+    ),
+})
+
+export const SaveProgress = Command.define('SaveProgress', {
+  args: {
+    bookId: Schema.String,
+    page: Schema.Number,
+    bookmarks: Schema.Array(Schema.Number),
+  },
+  messages: [Message.CompletedSaveProgress],
+  execute: ({ bookId, page, bookmarks }) =>
+    saveProgress(bookId, { page, bookmarks, updatedAt: 0 }).pipe(
+      Effect.as(Message.CompletedSaveProgress()),
     ),
 })
 

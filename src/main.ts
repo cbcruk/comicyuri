@@ -1,15 +1,15 @@
-import { Effect, Schema } from 'effect'
+import { Effect, Option, Schema } from 'effect'
 import { Runtime } from 'foldkit'
 import type { Update } from 'foldkit'
 import type { Url } from 'foldkit/url'
 
 import { FileDrop } from '@foldkit/ui'
 
-import { ApplyTheme, LoadShelf } from './command.ts'
+import { ApplyTheme, LoadProgress, LoadShelf } from './command.ts'
 import { FILE_DROP_ID } from './constant.ts'
 import { Message } from './message.ts'
 import { Model, Notice, Shelf } from './model.ts'
-import { urlToAppRoute } from './route.ts'
+import { AppRoute, urlToAppRoute } from './route.ts'
 import { loadSettings } from './storage.ts'
 import { Settings } from './types.ts'
 
@@ -31,13 +31,27 @@ export const flags: Effect.Effect<Flags> = Effect.map(loadSettings, (settings) =
 export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (
   flags: Flags,
   url: Url,
-): Update.Return<Model, Message> => ({
-  model: {
-    route: urlToAppRoute(url),
-    settings: flags.settings,
-    shelf: Shelf.Loading(),
-    notice: Notice.Idle(),
-    fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
-  },
-  commands: [ApplyTheme({ theme: flags.settings.theme }), LoadShelf()],
-})
+): Update.Return<Model, Message> => {
+  const route = urlToAppRoute(url)
+
+  return {
+    model: {
+      route,
+      settings: flags.settings,
+      shelf: Shelf.Loading(),
+      notice: Notice.Idle(),
+      fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
+      // A deep link into a book still needs its saved position first.
+      maybeReader: Option.none(),
+    },
+    commands: [
+      ApplyTheme({ theme: flags.settings.theme }),
+      LoadShelf(),
+      ...AppRoute.match(route, {
+        Reader: ({ id }) => [LoadProgress({ bookId: id })],
+        Shelf: () => [],
+        NotFound: () => [],
+      }),
+    ],
+  }
+}

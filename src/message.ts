@@ -7,6 +7,7 @@ import { Url } from 'foldkit/url'
 import { FileDrop } from '@foldkit/ui'
 
 import { BookSummary } from './domain/book.ts'
+import { Reader } from './page/index.ts'
 
 export const Message = defineMessageUnion({
   ClickedLink: { request: UrlRequest },
@@ -34,6 +35,14 @@ export const Message = defineMessageUnion({
 
   CompletedRevokeCoverUrls: {},
   CompletedWaitBeforeClearingNotice: { token: Schema.Number },
+
+  GotReaderMessage: { message: Reader.Message },
+  CompletedLoadProgress: {
+    bookId: Schema.String,
+    page: Schema.Number,
+    bookmarks: Schema.Array(Schema.Number),
+  },
+  CompletedSaveProgress: {},
 })
 
 export type Message = typeof Message.Type

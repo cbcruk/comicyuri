@@ -1,7 +1,9 @@
+import { Option } from 'effect'
 import type { Document, Html, HtmlBuilder } from 'foldkit/html'
 
 import { Message } from '../message.ts'
 import { Model } from '../model.ts'
+import { Reader } from '../page/index.ts'
 import { AppRoute, shelfRouter } from '../route.ts'
 import { shelfView } from './shelf.ts'
 
@@ -28,11 +30,16 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document =>
     Shelf: () => ({ title: 'comicyuri', body: shelfView(model, h) }),
     Reader: ({ id }) => ({
       title: `comicyuri — ${id}`,
-      body: noticePageView(
-        'The reader is still being ported',
-        'Shelf import, deletion and theming already run on Foldkit. The reader lands next.',
-        h,
-      ),
+      body: Option.match(model.maybeReader, {
+        onNone: () => noticePageView('Opening…', id, h),
+        onSome: (reader) =>
+          h.submodel({
+            slotId: 'reader',
+            model: reader,
+            view: Reader.view,
+            toParentMessage: (message) => Message.GotReaderMessage({ message }),
+          }),
+      }),
     }),
     NotFound: ({ path }) => ({
       title: 'comicyuri — not found',

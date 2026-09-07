@@ -10,6 +10,7 @@ import { FileDrop } from '@foldkit/ui'
 
 import {
   ApplyTheme,
+  LoadProgress,
   SelectFiles,
   DeleteBook,
   ImportFiles,
@@ -46,6 +47,7 @@ const shelfModel = (shelf: Shelf = Shelf.Success({ data: [] })): Model => ({
   shelf,
   notice: Notice.Idle(),
   fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
+  maybeReader: Option.none(),
 })
 
 const readerUrl: Url = Option.getOrThrow(urlFromString('https://comicyuri.test/book/volume-1::42'))
@@ -291,13 +293,27 @@ describe('routing', () => {
     )
   })
 
-  test('a url change is what moves the route', () => {
+  test('a url change moves the route and asks for the saved position', () => {
     story(
       update,
       given(shelfModel()),
       message(Message.ChangedUrl({ url: readerUrl })),
       model((model) => {
         expect(model.route).toStrictEqual(AppRoute.Reader({ id: 'volume-1::42' }))
+        // The reader is not built until its saved position is known.
+        expect(model.maybeReader).toStrictEqual(Option.none())
+      }),
+      Command.expectExact(LoadProgress({ bookId: 'volume-1::42' })),
+      Command.resolve(
+        LoadProgress,
+        Message.CompletedLoadProgress({
+          bookId: 'volume-1::42',
+          page: 7,
+          bookmarks: [2],
+        }),
+      ),
+      model((model) => {
+        expect(Option.map(model.maybeReader, (reader) => reader.page)).toStrictEqual(Option.some(7))
       }),
     )
   })

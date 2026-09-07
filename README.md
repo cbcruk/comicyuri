@@ -59,6 +59,8 @@ src/command.ts   Commands: the Effect core below, named and typed
 src/update.ts    the one exhaustive transition function
 src/route.ts     bidirectional routes: / and /book/:id
 src/view/        the shelf, and the root view that dispatches on the route
+src/page/reader/ the reader Submodel: its own Model, Messages, Commands,
+                 ManagedResource and keyboard Subscription
 src/domain/      BookSummary and the pure operations on it
 ```
 
@@ -77,9 +79,16 @@ type rather than in a `catch` block:
 - `src/command.ts` is the seam: each of those Effects becomes a named Command,
   and its success and failure arrive back in `update` as Messages.
 
-Only the shelf runs on Foldkit today. The reader is being ported next, as a
-Submodel whose opened book is a ManagedResource, so the ZIP archive and its
-page object URLs are acquired and released by Model state.
+The reader lives in `src/page/reader/` as a Submodel that reports up through
+three OutMessages: it asks to leave, hands back settings it changed, and
+reports the reading position for the application to persist. Its opened book —
+the parsed ZIP archive and the object URLs its pages hand out — is a
+ManagedResource keyed on Model state, so opening happens when the reader
+appears and every page URL is released when it goes away.
+
+Pointer gestures (zoom, pan, pinch, tap zones, swipe), the page slider, the
+thumbnail grid, bookmarks and fullscreen are still to come; today the reader
+turns pages by button and keyboard.
 
 ## Development
 

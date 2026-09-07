@@ -5,6 +5,7 @@ import { defineTaggedUnion } from 'foldkit/schema'
 import { FileDrop } from '@foldkit/ui'
 
 import { BookSummary } from './domain/book.ts'
+import { Reader } from './page/index.ts'
 import { AppRoute } from './route.ts'
 import { Settings } from './types.ts'
 
@@ -41,6 +42,8 @@ export const Model = Schema.Struct({
   shelf: Shelf.schema,
   notice: Notice,
   fileDrop: FileDrop.Model,
+  /** Present exactly while the reader route is open. */
+  maybeReader: Schema.Option(Reader.Model),
 })
 
 export type Model = typeof Model.Type

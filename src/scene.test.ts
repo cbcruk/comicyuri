@@ -41,6 +41,7 @@ const shelfModel = (
   shelf,
   notice,
   fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
+  maybeReader: Option.none(),
 })
 
 const program = { update, view }
@@ -107,11 +108,11 @@ describe('shelf', () => {
     )
   })
 
-  test('the reader route is honest about not being ported yet', () => {
+  test('a reader route whose position is still loading says so', () => {
     scene(
       program,
       given({ ...shelfModel(), route: AppRoute.Reader({ id: 'volume-1::42' }) }),
-      expect(role('heading', { name: 'The reader is still being ported' })).toExist(),
+      expect(role('heading', { name: 'Opening…' })).toExist(),
       expect(role('link', { name: 'Back to the shelf' })).toHaveAttr('href', '/'),
     )
   })
