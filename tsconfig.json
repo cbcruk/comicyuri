@@ -7,6 +7,9 @@
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
 
+    /* Effect requires strict mode for its type-level machinery to work. */
+    "strict": true,
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

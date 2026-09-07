@@ -1,6 +1,7 @@
 import './style.css'
+import { Effect } from 'effect'
 import { App } from './app.ts'
 
 const root = document.querySelector<HTMLDivElement>('#app')!
-const app = new App(root)
-void app.start()
+
+Effect.runFork(App.make(root).pipe(Effect.flatMap((app) => app.start())))

@@ -1,3 +1,4 @@
+import { Effect } from 'effect'
 import type { Book, FitMode, Settings } from './types.ts'
 import { buildSpreads, spreadOfPage } from './spreads.ts'
 
@@ -69,7 +70,7 @@ export class Viewer {
     return this.el.querySelector(sel) as T
   }
 
-  open(book: Book, startPage: number, bookmarks: number[]): void {
+  open(book: Book, startPage: number, bookmarks: readonly number[]): void {
     this.book = book
     this.bookmarks = new Set(bookmarks)
     this.titleEl.textContent = book.title
@@ -162,7 +163,7 @@ export class Viewer {
       }
       img.hidden = false
       try {
-        img.src = await this.book.pages[pageIdx]!.load()
+        img.src = await Effect.runPromise(this.book.pages[pageIdx]!.load())
       } catch (err) {
         img.hidden = true
         console.error(err)
@@ -193,7 +194,10 @@ export class Viewer {
     }
     // Warm the immediate neighbours.
     for (let d = -PRELOAD; d <= PRELOAD; d++) {
-      this.spreads[this.index + d]?.forEach((p) => void this.book.pages[p]?.load())
+      this.spreads[this.index + d]?.forEach((p) => {
+        const page = this.book.pages[p]
+        if (page) Effect.runFork(Effect.ignore(page.load()))
+      })
     }
     // Release anything far away.
     this.book.pages.forEach((p, i) => {
@@ -261,7 +265,19 @@ export class Viewer {
         const cell = e.target as HTMLElement
         const i = Number(cell.dataset.page)
         const img = cell.querySelector('img')!
-        void this.book.pages[i]?.load().then((url) => (img.src = url))
+        const page = this.book.pages[i]
+        if (page) {
+          Effect.runFork(
+            page.load().pipe(
+              Effect.tap((url) =>
+                Effect.sync(() => {
+                  img.src = url
+                }),
+              ),
+              Effect.ignore,
+            ),
+          )
+        }
         obs.unobserve(cell)
       }
     })

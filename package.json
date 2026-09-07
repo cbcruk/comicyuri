@@ -14,5 +14,8 @@
     "vite": "catalog:",
     "vite-plus": "catalog:"
   },
-  "packageManager": "pnpm@11.10.0"
+  "packageManager": "pnpm@11.10.0",
+  "dependencies": {
+    "effect": "4.0.0-rc.112"
+  }
 }

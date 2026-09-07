@@ -1,51 +1,46 @@
-import type { BookProgress, Settings } from './types.ts'
+/**
+ * `localStorage` mirrors of the settings and per-book progress.
+ *
+ * Both reads decode through a schema, so a corrupt or stale entry degrades to
+ * the defaults instead of poisoning the UI with whatever JSON happened to be
+ * there. Writes are best-effort: storage may be unavailable (private mode) or
+ * full, and neither is worth interrupting the reader for.
+ */
+
+import { Effect, Schema } from 'effect'
+import { BookProgress, defaultSettings, Settings } from './types.ts'
+
+export { defaultSettings }
 
 const SETTINGS_KEY = 'comicyuri:settings'
 const PROGRESS_PREFIX = 'comicyuri:progress:'
 
-export const defaultSettings: Settings = {
-  direction: 'rtl',
-  view: 'single',
-  fit: 'contain',
-  theme: 'dark',
-  coverAlone: true,
-}
+const emptyProgress: BookProgress = { page: 0, bookmarks: [], updatedAt: 0 }
 
-export function loadSettings(): Settings {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY)
-    if (!raw) return { ...defaultSettings }
-    return { ...defaultSettings, ...(JSON.parse(raw) as Partial<Settings>) }
-  } catch {
-    return { ...defaultSettings }
-  }
-}
+const SettingsJson = Schema.fromJsonString(Settings)
+const decodeSettings = Schema.decodeUnknownSync(SettingsJson)
+const encodeSettings = Schema.encodeSync(SettingsJson)
 
-export function saveSettings(settings: Settings): void {
-  try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
-  } catch {
-    /* storage may be unavailable (private mode); ignore */
-  }
-}
+const ProgressJson = Schema.fromJsonString(BookProgress)
+const decodeProgress = Schema.decodeUnknownSync(ProgressJson)
+const encodeProgress = Schema.encodeSync(ProgressJson)
 
-export function loadProgress(bookId: string): BookProgress {
-  try {
-    const raw = localStorage.getItem(PROGRESS_PREFIX + bookId)
-    if (raw) return JSON.parse(raw) as BookProgress
-  } catch {
-    /* ignore */
-  }
-  return { page: 0, bookmarks: [], updatedAt: 0 }
-}
+export const loadSettings: Effect.Effect<Settings> = Effect.try(() =>
+  decodeSettings(localStorage.getItem(SETTINGS_KEY)),
+).pipe(Effect.orElseSucceed(() => ({ ...defaultSettings })))
 
-export function saveProgress(bookId: string, progress: BookProgress): void {
-  try {
+export const saveSettings = (settings: Settings): Effect.Effect<void> =>
+  Effect.try(() => localStorage.setItem(SETTINGS_KEY, encodeSettings(settings))).pipe(Effect.ignore)
+
+export const loadProgress = (bookId: string): Effect.Effect<BookProgress> =>
+  Effect.try(() => decodeProgress(localStorage.getItem(PROGRESS_PREFIX + bookId))).pipe(
+    Effect.orElseSucceed(() => emptyProgress),
+  )
+
+export const saveProgress = (bookId: string, progress: BookProgress): Effect.Effect<void> =>
+  Effect.try(() =>
     localStorage.setItem(
       PROGRESS_PREFIX + bookId,
-      JSON.stringify({ ...progress, updatedAt: Date.now() }),
-    )
-  } catch {
-    /* ignore */
-  }
-}
+      encodeProgress({ ...progress, updatedAt: Date.now() }),
+    ),
+  ).pipe(Effect.ignore)

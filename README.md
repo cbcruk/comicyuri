@@ -40,7 +40,28 @@ Everything runs client-side — your files never leave the browser.
 
 CBZ archives are ZIP files. `src/zip.ts` parses the central directory and
 extracts pages lazily; deflated entries are inflated with the platform's native
-`DecompressionStream`, so there are no third-party dependencies.
+`DecompressionStream`, so there is no third-party ZIP dependency.
+
+## Architecture
+
+Everything that can fail — IndexedDB, `localStorage`, ZIP parsing, image
+decoding — is expressed as an [Effect](https://effect.website/) (v4, pinned to
+the current release candidate), so the failure modes are in the type rather
+than in a `catch` block:
+
+- `src/errors.ts` declares the tagged errors (`DbError`, `ArchiveError`,
+  `EmptyBookError`, `NoComicFilesError`, `CoverError`) and the single
+  `describe` function that turns one into shelf status text.
+- `src/db.ts` holds each IndexedDB connection in a scope, so it is closed
+  however the operation ends.
+- Settings and reading progress are **decoded** through a schema
+  (`src/types.ts`) instead of cast, so a corrupt or stale `localStorage` entry
+  degrades to the defaults rather than reaching the UI.
+- `src/app.ts` is the boundary: DOM handlers fork a fully-handled effect, and
+  the `pagehide` progress write runs synchronously so it cannot be lost.
+
+The DOM layers (`src/library.ts`, `src/viewer.ts`) stay plain imperative code
+and run effects at their own edges.
 
 ## Development
 
