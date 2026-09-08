@@ -213,7 +213,8 @@ reader/scene "the fit control names the mode it is in"
 ✅ gesture "zoom is held between one and the maximum"
 
 **R-232 · 두 손가락 핀치로 확대·축소**
-손가락 사이 간격에 비례한다.
+손가락 사이 간격에 비례한다. 24px보다 가까운 두 지점은 핀치로 보지 않는다 —
+간격 비율로 배율을 정하므로 0에 가까운 간격에서 시작하면 배율이 무한대가 된다.
 ✅ reader/story "two fingers zoom, and lifting one leaves the other panning"
 ❓ **실기기 확인 필요**
 
@@ -223,6 +224,14 @@ reader/scene "the fit control names the mode it is in"
 
 **R-234 · Ctrl+휠 / 트랙패드 핀치로 확대·축소**
 📖 ❓ **브라우저 확인 필요**
+
+**R-244 · 브라우저가 닫아주지 않은 제스처는 버린다**
+창이 포커스를 잃거나 탭이 배경으로 가면 `pointerup`이 오지 않을 수 있다. 그
+상태로 남은 제스처는 돌아와서 누른 손가락을 두 번째 손가락으로 오인한다.
+✅ reader/story "leaving the page drops whatever the gesture was holding",
+"the same pointer pressing again restarts, it does not pinch",
+"a different pointer landing on a stale one is not a pinch either"
+❓ **브라우저 확인 필요** — 재현이 불안정한 종류
 
 **R-235 · 확대된 상태에서 끌면 페이지가 넘어가지 않고 이동한다**
 ✅ reader/story "a drag pans instead of turning the page once zoomed in"

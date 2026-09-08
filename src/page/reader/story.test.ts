@@ -530,6 +530,92 @@ describe('using a control keeps the chrome up', () => {
   })
 })
 
+describe('a gesture the browser never closed', () => {
+  const press = (pointerId: number, x: number) =>
+    message(Message.PressedPointer({ pointerId, at: { x, y: 0 } }))
+  const move = (pointerId: number, x: number) =>
+    message(Message.MovedPointer({ pointerId, at: { x, y: 0 } }))
+
+  test('the same pointer pressing again restarts, it does not pinch', () => {
+    // A window that loses focus mid-press may never deliver the release. The
+    // press that follows is the same pointer starting over, and reading it as
+    // a second finger spans a stale point to a fresh one — which is how a
+    // click after coming back to the tab sent the zoom to its limit.
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      press(1, -100),
+      press(1, -98),
+      model((model) => {
+        expect(model.gesture._tag).toBe('Tracking')
+        expect(model.zoom).toBe(ZOOM_MIN)
+      }),
+      move(1, -60),
+      model((model) => {
+        expect(model.zoom).toBe(ZOOM_MIN)
+      }),
+    )
+  })
+
+  test('a different pointer landing on a stale one is not a pinch either', () => {
+    // Touch pointers get a new id each time, so a stale sequence and a fresh
+    // press are two different ids sitting on almost the same spot. Scaling by
+    // how much that span grows is unbounded from there, which is how a click
+    // after coming back to the tab pushed the zoom to its limit.
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      press(5, -100),
+      press(6, -92),
+      model((model) => {
+        expect(model.gesture._tag).toBe('Tracking')
+      }),
+      move(6, 200),
+      model((model) => {
+        expect(model.zoom).toBe(ZOOM_MIN)
+      }),
+    )
+  })
+
+  test('two pointers a hand-width apart still pinch', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      press(5, -60),
+      press(6, 60),
+      model((model) => {
+        expect(model.gesture._tag).toBe('Pinching')
+      }),
+      move(6, 180),
+      model((model) => {
+        expect(model.zoom).toBeCloseTo(2)
+      }),
+    )
+  })
+
+  test('leaving the page drops whatever the gesture was holding', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      press(1, -100),
+      message(Message.AbandonedPointer()),
+      model((model) => {
+        expect(model.gesture._tag).toBe('Idle')
+      }),
+      // Coming back and pressing starts cleanly, with no zoom of its own.
+      press(2, 20),
+      model((model) => {
+        expect(model.gesture._tag).toBe('Tracking')
+        expect(model.zoom).toBe(ZOOM_MIN)
+      }),
+    )
+  })
+})
+
 describe('zoom across pages', () => {
   test('turning the page starts from an unzoomed, unpanned view', () => {
     // The pan offset was measured against the page being left, so carrying it

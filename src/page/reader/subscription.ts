@@ -160,6 +160,37 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
     },
   ),
 
+  /**
+   * A gesture only ends when the pointer is released, and a window that loses
+   * focus or a tab that goes to the background may never deliver that release.
+   * The gesture would then still be open when the reader comes back, and the
+   * next press would read as a second finger against a stale point.
+   */
+  pointerAbandon: entry(
+    { isGesturing: Schema.Boolean },
+    {
+      modelToDependencies: (model) => ({
+        isGesturing: model.gesture._tag !== 'Idle',
+      }),
+      dependenciesToStream: ({ isGesturing }) =>
+        isGesturing
+          ? Stream.merge(
+              Subscription.fromEventFilterMap<Event, Message>({
+                target: document,
+                type: 'visibilitychange',
+                toMessage: () =>
+                  document.hidden ? Option.some(Message.AbandonedPointer()) : Option.none(),
+              }),
+              Subscription.fromEventFilterMap<Event, Message>({
+                target: window,
+                type: 'blur',
+                toMessage: () => Option.some(Message.AbandonedPointer()),
+              }),
+            )
+          : Stream.empty,
+    },
+  ),
+
   // Ctrl+wheel is what a trackpad pinch and a mouse zoom both arrive as.
   wheel: entry(
     { isZoomed: Schema.Boolean },
