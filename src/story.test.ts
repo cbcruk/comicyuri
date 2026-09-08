@@ -119,6 +119,8 @@ describe('import', () => {
       Command.expectExact(ImportFiles({ files: [cbz] })),
       Command.resolve(ImportFiles, Message.SucceededImportFiles()),
       model((model) => {
+        // The import is over, so the status line stops saying it is running.
+        expect(model.notice._tag).toBe('Idle')
         // The books already on screen stay there while the reload runs.
         expect(model.shelf._tag).toBe('Refreshing')
         expect(titlesOf(model.shelf)).toStrictEqual(['Kept'])
@@ -167,6 +169,24 @@ describe('import', () => {
 })
 
 describe('notice', () => {
+  test('a failure that arrived during an import survives it finishing', () => {
+    story(
+      update,
+      given({
+        ...shelfModel(),
+        notice: Notice.Failed({ text: 'Shelf storage is unavailable', token: 0 }),
+      }),
+      message(Message.SucceededImportFiles()),
+      model((model) => {
+        expect(model.notice).toStrictEqual(
+          Notice.Failed({ text: 'Shelf storage is unavailable', token: 0 }),
+        )
+      }),
+      Command.resolve(LoadShelf, Message.SucceededLoadShelf({ books: [] })),
+      Command.resolve(RevokeCoverUrls, Message.CompletedRevokeCoverUrls()),
+    )
+  })
+
   const failedModel = (text: string, token: number): Model => ({
     ...shelfModel(),
     notice: Notice.Failed({ text, token }),
