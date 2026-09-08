@@ -250,9 +250,14 @@ reader/scene "the fit control names the mode it is in"
 ✅ reader/story "a wheel scroll moves a zoomed page"
 ❓ **브라우저 확인 필요**
 
-**R-237 · 두 번 탭하면 2.5배, 다시 두 번 탭하면 원래대로**
-세 번째 탭은 방금 한 줌을 되돌리지 않고 새 쌍을 연다. 300ms 안의 두 탭이 한 쌍.
-✅ reader/story "a double tap zooms in, and the next pair zooms back out"
+**R-237 · 가운데를 두 번 탭하면 2.5배, 다시 두 번 탭하면 원래대로**
+300ms 안의 두 탭이 한 쌍이고, 세 번째 탭은 방금 한 줌을 되돌리지 않고 새 쌍을
+연다. **가운데에서만** 성립한다 — 바깥 1/3은 페이지 넘김 전용이라, 빠르게 두 번
+탭하면 두 장이 넘어간다. 빨리 읽는 것과 확대 요청은 다른 일이다.
+✅ reader/story "two quick taps in the middle still zoom",
+"two quick taps on a turning zone turn two pages",
+"a turning tap does not pair with a middle tap that follows",
+"a double tap zooms in, and the next pair zooms back out"
 
 **R-238 · 툴바의 −/+ 버튼으로도 확대·축소**
 화면 중앙을 기준으로 1.25배씩.
@@ -261,7 +266,8 @@ reader/scene "the fit control names the mode it is in"
 ### 2.5 탭과 스와이프
 
 **R-241 · 화면 바깥쪽 1/3을 탭하면 페이지가 넘어간다**
-읽는 방향을 따른다 — RTL에서는 왼쪽 탭이 다음 쪽.
+읽는 방향을 따른다 — RTL에서는 왼쪽 탭이 다음 쪽. 이 영역은 페이지 넘김 외에
+아무 일도 하지 않는다.
 ✅ reader/story "a tap on the forward zone turns the page",
 gesture "the outer thirds turn pages and the middle shows the chrome"
 ❓ **실기기 확인 필요**
