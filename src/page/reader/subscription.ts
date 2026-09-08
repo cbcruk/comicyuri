@@ -4,6 +4,7 @@ import { Subscription } from 'foldkit'
 import { Slider, VirtualList } from '@foldkit/ui'
 
 import { STAGE_ID } from './constant.ts'
+import { ZOOM_MIN } from './gesture.ts'
 import { isReaderKey } from './keys.ts'
 import type { Point } from './gesture.ts'
 import { Message } from './message.ts'
@@ -161,16 +162,30 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
 
   // Ctrl+wheel is what a trackpad pinch and a mouse zoom both arrive as.
   wheel: entry(
-    {},
+    { isZoomed: Schema.Boolean },
     {
-      modelToDependencies: () => ({}),
-      dependenciesToStream: () =>
+      modelToDependencies: (model) => ({ isZoomed: model.zoom > ZOOM_MIN }),
+      dependenciesToStream: ({ isZoomed }) =>
         Subscription.fromEventFilterMap<WheelEvent, Message>({
           target: document,
           type: 'wheel',
           options: { passive: false },
           toMessage: (event) => {
-            if (!event.ctrlKey || !isOnStage(event)) return Option.none()
+            if (!isOnStage(event)) return Option.none()
+
+            // A zoomed page is larger than the stage, so a plain scroll moves
+            // it. Unzoomed there is nothing to move, and the page should
+            // scroll the way any page does.
+            if (!event.ctrlKey) {
+              if (!isZoomed) return Option.none()
+              event.preventDefault()
+              return Option.some(
+                Message.ScrolledToPan({
+                  delta: { x: event.deltaX, y: event.deltaY },
+                }),
+              )
+            }
+
             event.preventDefault()
             return Option.some(
               Message.ScrolledToZoom({
@@ -205,17 +220,23 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
   ),
 
   chromeIdle: entry(
-    { isChromeVisible: Schema.Boolean, activityToken: Schema.Number },
     {
+      isWaiting: Schema.Boolean,
+      activityToken: Schema.Number,
+    },
+    {
+      // The chrome does not time out from under an open thumbnail grid: it
+      // would be gone when the grid closes, which is not what the reader asked
+      // for by opening it.
       modelToDependencies: (model) => ({
-        isChromeVisible: model.isChromeVisible,
+        isWaiting: model.isChromeVisible && !model.isThumbsOpen,
         activityToken: model.activityToken,
       }),
       // Every activity changes the token, which restarts this wait.
       // `Stream.tick` emits at once and then on the interval, which would hide
       // the chrome the instant it appeared. Sleeping first is the wait.
-      dependenciesToStream: ({ isChromeVisible, activityToken }) =>
-        isChromeVisible
+      dependenciesToStream: ({ isWaiting, activityToken }) =>
+        isWaiting
           ? Stream.fromEffect(
               Effect.as(
                 Effect.sleep(CHROME_IDLE),

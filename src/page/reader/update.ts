@@ -86,12 +86,21 @@ const showPage = (model: Model, page: number): UpdateReturn =>
     },
   })
 
+/**
+ * Moving to another page starts fresh. The pan offset was measured against the
+ * page being left, so carrying it over lands on an arbitrary part of the next
+ * one — which is why the viewer this replaced reset on every turn and jump.
+ * Re-showing the same page after a settings change keeps the zoom.
+ */
+const goToPage = (model: Model, page: number): UpdateReturn =>
+  showPage(evo(model, { zoom: () => ZOOM_MIN, pan: () => ORIGIN }), page)
+
 const step = (model: Model, by: number): UpdateReturn =>
   OpenState.match(model.openState, {
     Opening: () => ({ model }),
     Failed: () => ({ model }),
     Ready: ({ pageCount }) =>
-      showPage(model, pageAfterStep(spreadsFor(pageCount, model.settings), model.page, by)),
+      goToPage(model, pageAfterStep(spreadsFor(pageCount, model.settings), model.page, by)),
   })
 
 /** A setting the reader owns changed: relayout, and tell the application. */
@@ -260,7 +269,7 @@ const foldSliderOutMessage = Slider.OutMessage.match<
   ChangedValue:
     ({ value }) =>
     (model) =>
-      showPage(model, value),
+      goToPage(model, value),
 })
 
 const foldSlider = Update.foldChild({
@@ -330,13 +339,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 
     ClickedPrevious: () => step(model, -1),
     ClickedNext: () => step(model, 1),
-    ClickedFirst: () => showPage(model, 0),
+    ClickedFirst: () => goToPage(model, 0),
 
     ClickedLast: () =>
       OpenState.match(model.openState, {
         Opening: () => ({ model }),
         Failed: () => ({ model }),
-        Ready: ({ pageCount }) => showPage(model, Math.max(0, pageCount - 1)),
+        Ready: ({ pageCount }) => goToPage(model, Math.max(0, pageCount - 1)),
       }),
 
     ClickedExit: () => ({ model, outMessage: OutMessage.RequestedExit() }),
@@ -424,7 +433,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     }),
 
     SelectedThumb: ({ page }) => {
-      const jumped = showPage(evo(model, { isThumbsOpen: () => false }), page)
+      const jumped = goToPage(evo(model, { isThumbsOpen: () => false }), page)
       return {
         ...jumped,
         model: evo(jumped.model, { thumbPanels: () => [] }),
@@ -473,6 +482,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 
     ScrolledToZoom: ({ delta, at }) => ({
       model: zoomedTo(withActivity(model), model.zoom * Math.exp(-delta / 300), at),
+    }),
+
+    // Panning by wheel or trackpad, which the page can only need while zoomed.
+    ScrolledToPan: ({ delta }) => ({
+      model: evo(withPress(model), {
+        pan: (pan) => ({ x: pan.x - delta.x, y: pan.y - delta.y }),
+      }),
     }),
 
     ClickedZoomIn: () => ({
