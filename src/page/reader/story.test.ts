@@ -485,6 +485,51 @@ describe('chrome', () => {
   })
 })
 
+describe('using a control keeps the chrome up', () => {
+  // Every one of these is something a person did to the toolbar or the footer.
+  // Missing one is how the chrome timed out from under a reader who was using
+  // it, so they are checked together rather than one test per control.
+  //
+  // `update` is called directly: the property is about the Model alone, and
+  // each control produces a different set of Commands that a story would then
+  // have to discharge for reasons that have nothing to do with what is being
+  // asserted.
+  const busyReading: Model = {
+    ...openingModel(),
+    openState: OpenState.Ready({ title: 'Volume 1', pageCount: PAGE_COUNT }),
+    isChromeVisible: false,
+    activityToken: 5,
+  }
+
+  const controls: ReadonlyArray<readonly [string, Message]> = [
+    ['previous', Message.ClickedPrevious()],
+    ['next', Message.ClickedNext()],
+    ['first', Message.ClickedFirst()],
+    ['last', Message.ClickedLast()],
+    ['direction', Message.ClickedToggleDirection()],
+    ['one or two pages', Message.ClickedToggleView()],
+    ['fit', Message.ClickedCycleFit()],
+    ['bookmark', Message.ClickedToggleBookmark()],
+    ['every page', Message.ClickedToggleThumbs()],
+    ['fullscreen', Message.ClickedToggleFullscreen()],
+    ['zoom in', Message.ClickedZoomIn()],
+    ['zoom out', Message.ClickedZoomOut()],
+  ]
+
+  for (const [name, control] of controls) {
+    test(`the ${name} control restarts the wait`, () => {
+      const next = update(busyReading, control).model
+
+      expect(next.isChromeVisible).toBe(true)
+      expect(next.activityToken).toBeGreaterThan(busyReading.activityToken)
+    })
+  }
+
+  test('but leaving the book does not', () => {
+    expect(update(busyReading, Message.ClickedExit()).model.isChromeVisible).toBe(false)
+  })
+})
+
 describe('zoom across pages', () => {
   test('turning the page starts from an unzoomed, unpanned view', () => {
     // The pan offset was measured against the page being left, so carrying it

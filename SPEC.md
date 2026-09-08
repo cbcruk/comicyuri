@@ -283,10 +283,13 @@ subscription "waits before it says the reader has gone idle",
 "it does not run out from under an open grid"
 ❓ 페이드 동작
 
-**R-252 · 키보드 조작과 줌은 툴바를 다시 부르고, 어떤 조작이든 대기를 다시 센다**
-화면을 누르는 것은 대기만 다시 센다. 툴바를 부르는 것은 의도가 분명한 조작 —
-키보드와 줌 — 이다.
-✅ reader/story "a key brings the chrome back",
+**R-252 · 컨트롤을 쓰면 툴바가 다시 나오고 대기가 처음부터 다시 간다**
+툴바·푸터의 버튼, 슬라이더, 썸네일 선택, 키보드가 모두 해당한다. 툴바를 쓰는
+동안 툴바가 사라지지 않는다. 화면을 누르는 것은 대기만 다시 센다 — 누르기가
+툴바를 부르면 가운데 탭이 언제나 숨김으로 끝나기 때문이다.
+✅ reader/story "the next control restarts the wait" 외 컨트롤 11종,
+"a key brings the chrome back",
+reader/scene "using the slider brings the chrome back",
 "a wait from before the last activity does not hide the chrome",
 "a press restarts the wait but leaves the chrome as it found it"
 

@@ -7,6 +7,7 @@ import {
   keydown,
   role,
   scene,
+  selector,
   text,
 } from 'foldkit/scene'
 import { describe, test } from 'vite-plus/test'
@@ -174,6 +175,25 @@ describe('page slider', () => {
       ),
       ...settleTurn(1),
       expect(role('slider', { name: 'Page' })).toHaveAttr('aria-valuenow', '1'),
+    )
+  })
+
+  test('using the slider brings the chrome back', () => {
+    scene(
+      program,
+      given({ ...readingModel(), isChromeVisible: false }),
+      keydown(role('slider', { name: 'Page' }), 'ArrowRight'),
+      expectOutMessage(
+        OutMessage.UpdatedProgress({
+          bookId: 'volume-1::42',
+          page: 1,
+          bookmarks: [],
+        }),
+      ),
+      ...settleTurn(1),
+      // The toolbar is back rather than merely present: it is faded out and
+      // hidden from assistive tech while the chrome is down.
+      expect(selector('header')).toHaveAttr('aria-hidden', 'false'),
     )
   })
 })

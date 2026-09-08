@@ -303,7 +303,31 @@ const foldThumbs = Update.foldChild({
   toParentMessage: (message) => Message.GotThumbsMessage({ message }),
 })
 
+/**
+ * Whether this Message is someone using a control, which keeps the chrome up
+ * and restarts the wait that hides it.
+ *
+ * Keyed on how the Message is named rather than a list of handlers to visit.
+ * A list is what let the toolbar time out from under a reader who was using
+ * it: every control added since had to remember to say so, and they did not.
+ * `Clicked*` and `Selected*` already mean a person acted on a control, so a
+ * new one is covered by being named the way the conventions require.
+ *
+ * Pointer Messages are deliberately absent. A press must not reveal the
+ * chrome, or the tap that toggles it would resolve to hidden every time.
+ */
+const isControlUse = (message: Message): boolean =>
+  message._tag !== 'ClickedExit' &&
+  (message._tag.startsWith('Clicked') ||
+    message._tag.startsWith('Selected') ||
+    message._tag === 'PressedKey' ||
+    message._tag === 'ScrolledToZoom' ||
+    message._tag === 'GotSliderMessage')
+
 export const update = (model: Model, message: Message): UpdateReturn =>
+  applyMessage(isControlUse(message) ? withActivity(model) : model, message)
+
+const applyMessage = (model: Model, message: Message): UpdateReturn =>
   Message.match<UpdateReturn>(message, {
     CompletedOpenBook: ({ title, pageCount }) =>
       showPage(
@@ -481,7 +505,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     }),
 
     ScrolledToZoom: ({ delta, at }) => ({
-      model: zoomedTo(withActivity(model), model.zoom * Math.exp(-delta / 300), at),
+      model: zoomedTo(model, model.zoom * Math.exp(-delta / 300), at),
     }),
 
     // Panning by wheel or trackpad, which the page can only need while zoomed.
@@ -492,11 +516,11 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     }),
 
     ClickedZoomIn: () => ({
-      model: zoomedTo(withActivity(model), model.zoom * 1.25, ORIGIN),
+      model: zoomedTo(model, model.zoom * 1.25, ORIGIN),
     }),
 
     ClickedZoomOut: () => ({
-      model: zoomedTo(withActivity(model), model.zoom / 1.25, ORIGIN),
+      model: zoomedTo(model, model.zoom / 1.25, ORIGIN),
     }),
 
     // Only the wait started for the current activity may hide the chrome.
@@ -505,11 +529,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         ? { model: evo(model, { isChromeVisible: () => false }) }
         : { model },
 
-    // A key is a deliberate act, so it brings the chrome back the way the
-    // toolbar's own controls do.
     PressedKey: ({ key }) =>
       Option.match(messageForKey(model, key), {
         onNone: () => ({ model }),
-        onSome: (message) => update(withActivity(model), message),
+        onSome: (message) => update(model, message),
       }),
   })
