@@ -20,16 +20,27 @@ const DB_NAME = 'comicyuri'
 const STORE = 'books'
 const VERSION = 1
 
+/**
+ * `indexedDB` is absent in some embeddings and `open` itself throws in
+ * private-browsing modes, so the call is guarded: without this the failure is
+ * a defect that takes the whole program down instead of a `DbError` the shelf
+ * can report.
+ */
 const openDb = Effect.callback<IDBDatabase, DbError>((resume) => {
-  const req = indexedDB.open(DB_NAME, VERSION)
-  req.onupgradeneeded = () => {
-    const db = req.result
-    if (!db.objectStoreNames.contains(STORE)) {
-      db.createObjectStore(STORE, { keyPath: 'id' })
+  try {
+    const req = indexedDB.open(DB_NAME, VERSION)
+    req.onupgradeneeded = () => {
+      const db = req.result
+      if (!db.objectStoreNames.contains(STORE)) {
+        db.createObjectStore(STORE, { keyPath: 'id' })
+      }
     }
+    req.onsuccess = () => resume(Effect.succeed(req.result))
+    req.onerror = () => resume(Effect.fail(new DbError({ op: 'open', cause: req.error })))
+    req.onblocked = () => resume(Effect.fail(new DbError({ op: 'open', cause: 'blocked' })))
+  } catch (cause) {
+    resume(Effect.fail(new DbError({ op: 'open', cause })))
   }
-  req.onsuccess = () => resume(Effect.succeed(req.result))
-  req.onerror = () => resume(Effect.fail(new DbError({ op: 'open', cause: req.error })))
 })
 
 /** A connection tied to a scope, so it is closed however the effect ends. */

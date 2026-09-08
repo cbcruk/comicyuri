@@ -4,6 +4,7 @@ import { Subscription } from 'foldkit'
 import { Slider, VirtualList } from '@foldkit/ui'
 
 import { STAGE_ID } from './constant.ts'
+import { isReaderKey } from './keys.ts'
 import type { Point } from './gesture.ts'
 import { Message } from './message.ts'
 import { Model } from './model.ts'
@@ -48,18 +49,34 @@ const thumbsSubscriptions = Subscription.lift({
 })
 
 const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
+  // The decision to take a key and the `preventDefault` that enforces it have
+  // to happen in the same synchronous turn as the browser's dispatch, which is
+  // what `fromEventFilterMap` is for. Deciding downstream would let the page
+  // scroll on Space before the reader ever saw it, and taking every key would
+  // swallow Ctrl+R along the way.
   keyboard: entry(
     {},
     {
       modelToDependencies: () => ({}),
       dependenciesToStream: () =>
-        Stream.fromEventListener<KeyboardEvent>(document, 'keydown').pipe(
-          Stream.mapEffect((event) =>
-            Effect.sync(() => event.preventDefault()).pipe(
-              Effect.as(Message.PressedKey({ key: event.key })),
-            ),
-          ),
-        ),
+        Subscription.fromEventFilterMap<KeyboardEvent, Message>({
+          target: document,
+          type: 'keydown',
+          toMessage: (event) => {
+            if (
+              !isReaderKey(event.key, {
+                ctrl: event.ctrlKey,
+                meta: event.metaKey,
+                alt: event.altKey,
+              })
+            ) {
+              return Option.none()
+            }
+
+            event.preventDefault()
+            return Option.some(Message.PressedKey({ key: event.key }))
+          },
+        }),
     },
   ),
 
@@ -195,11 +212,15 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
         activityToken: model.activityToken,
       }),
       // Every activity changes the token, which restarts this wait.
+      // `Stream.tick` emits at once and then on the interval, which would hide
+      // the chrome the instant it appeared. Sleeping first is the wait.
       dependenciesToStream: ({ isChromeVisible, activityToken }) =>
         isChromeVisible
-          ? Stream.tick(CHROME_IDLE).pipe(
-              Stream.take(1),
-              Stream.map(() => Message.ElapsedChromeIdle({ token: activityToken })),
+          ? Stream.fromEffect(
+              Effect.as(
+                Effect.sleep(CHROME_IDLE),
+                Message.ElapsedChromeIdle({ token: activityToken }),
+              ),
             )
           : Stream.empty,
     },

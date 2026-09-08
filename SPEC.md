@@ -24,6 +24,11 @@ Message 목록은 각 `message.ts`, 아키텍처는 `README.md`에 있습니다.
 이 코드는 아직 브라우저에서 실행된 적이 없습니다. ❓ 표시가 지금 수동으로
 확인하셔야 할 목록입니다.
 
+**Runtime 전체를 부팅하는 테스트는 쓸 수 없습니다.** vitest + happy-dom에서
+`Runtime.run`은 아무것도 렌더링하지 않으며, 최소 Foldkit 앱으로도 같습니다. 이
+저장소의 자동 검증은 `update`(story)와 view(scene)까지이고, init·구독·
+ManagedResource·라우팅이 실제로 맞물리는지는 브라우저에서만 확인됩니다.
+
 기준 커밋: `19c45e24` · 테스트 82개 통과
 
 ---
@@ -250,7 +255,8 @@ reader/story "dragging leftwards asks for the right-hand page"
 
 **R-251 · 3초 동안 아무 일도 없으면 툴바가 사라진다**
 사라진 툴바는 탭 순서에서도 빠진다.
-✅ reader/story "the wait for the current activity hides it"
+✅ reader/story "the wait for the current activity hides it",
+subscription "waits before it says the reader has gone idle"
 ❓ 페이드 동작
 
 **R-252 · 어떤 조작이든 툴바를 다시 부르고 대기를 처음부터 센다**
@@ -342,8 +348,12 @@ Model을 움직이는 것은 요청이 아니라 `fullscreenchange` 이벤트다
 "escape then leaves fullscreen before it leaves the book",
 "escape with nothing left open goes back to the shelf"
 
-**R-2A4 · 매핑되지 않은 키는 아무 일도 하지 않는다**
-✅ reader/story "an unbound key changes nothing"
+**R-2A4 · 매핑되지 않은 키는 브라우저로 넘어간다**
+리더가 쓰는 키만 가져가고 나머지는 건드리지 않는다. 수정키가 눌린 조합
+(Ctrl+R, Cmd+F 등)은 언제나 브라우저 것이다.
+✅ reader/story "an unbound key changes nothing",
+subscription "a key held with a modifier belongs to the browser",
+"everything else falls through to the browser"
 
 ⚠️ `Shift`+`Space`(이전)는 구현되지 않았다. 구독이 수정키를 전달하지 않는다.
 
@@ -416,7 +426,12 @@ Model을 움직이는 것은 요청이 아니라 `fullscreenchange` 이벤트다
 **F-505 · 다시 읽기가 실패해도 이미 있던 책은 남는다**
 ✅ story "a reload that fails keeps the books it already had"
 
-**F-506 · 실패 문구**
+**F-506 · IndexedDB를 아예 열 수 없어도 실패로 보고된다**
+`indexedDB`가 없거나 시크릿 모드처럼 `open`이 던지는 환경에서도 defect가 아니라
+`DbError`가 된다.
+📖 ❓
+
+**F-507 · 실패 문구**
 
 | 상황                 | 문구                                         |
 | -------------------- | -------------------------------------------- |
@@ -427,7 +442,7 @@ Model을 움직이는 것은 요청이 아니라 `fullscreenchange` 이벤트다
 | 지원하지 않는 압축   | `Unsupported compression method <n>`         |
 | 📖                   |
 
-**F-507 · 실패는 색만으로 구분되지 않는다**
+**F-508 · 실패는 색만으로 구분되지 않는다**
 전용 색(`--color-danger`)에 더해 "Couldn't do that —" 접두사가 붙는다.
 📖 ❓
 
