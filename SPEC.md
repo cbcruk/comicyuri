@@ -328,16 +328,32 @@ reader/scene "using the slider brings the chrome back",
 ### 2.7 페이지 슬라이더
 
 **R-261 · 슬라이더가 현재 위치를 보여주고 옮긴다**
-`aria-valuenow`가 페이지 번호, 이름은 "Page".
-✅ reader/scene "the slider carries the reading position and moves it"
+`aria-valuenow`가 트랙 위의 자리, `aria-valuetext`가 페이지 번호, 이름은 "Page".
+✅ reader/scene "reading left to right, it runs the usual way"
 
 **R-262 · 범위는 책을 연 순간 쪽수에 맞춰진다**
 ✅ reader/story "opening a book gives the slider the book’s range"
 
 **R-263 · 키보드로도 움직인다**
 화살표, PageUp/Down, Home/End.
-✅ reader/scene "the slider carries the reading position and moves it"
+✅ reader/scene "reading left to right, it runs the usual way"
 ❓ 드래그로 스크럽하는 감각
+
+**R-264 · 오른쪽에서 왼쪽으로 읽으면 슬라이더도 뒤집힌다**
+첫 페이지가 오른쪽 끝이고, 읽을수록 왼쪽으로 줄어든다. 푸터의 트랙과 카운터
+순서도 함께 뒤집힌다. 페이지 번호는 뒤집히지 않으므로 `aria-valuetext`는 그대로
+1부터 센다.
+✅ reader/scene "reading right to left, the slider starts full and empties
+leftward", "the row of controls turns around with the reading direction",
+"and reading left to right it stays as written"
+❓ **실제로 만화를 넘겨봤을 때 슬라이더가 채워지는 쪽이 맞는지**
+
+**R-265 · 슬라이더에 포커스가 있는 동안에는 리더가 키를 양보한다**
+슬라이더는 화살표·Home/End·PageUp/Down을 스스로 처리하고, 리더의 키 구독은
+문서에 걸려 있다. 양보하지 않으면 한 번 누른 키가 두 번 세어진다 — 같은 방향
+두 페이지(LTR)이거나 서로 밀어내기(RTL).
+✅ subscription "the page slider keeps the keys it handles", "and so does
+anything inside it", "everything else leaves the key to the reader"
 
 ### 2.8 모든 페이지 (썸네일)
 
@@ -396,9 +412,10 @@ Model을 움직이는 것은 요청이 아니라 `fullscreenchange` 이벤트다
 
 **R-2A1 · 페이지 넘기기**
 `←`/`→` (읽는 방향을 따름), `↑`/`↓`, `PageUp`/`PageDown`, `Space`(다음),
-`Home`/`End`.
+`Home`/`End`. `Home`/`End`은 방향과 무관하게 책의 첫 장·마지막 장이다.
 ✅ reader/story "in right-to-left reading the left key advances",
 "in left-to-right reading the same key goes back"
+📌 슬라이더에 포커스가 있을 때는 R-265에 따라 리더가 물러난다.
 
 **R-2A2 · 토글**
 `d` 방향 · `v` 한/두 장 · `t` 썸네일 · `b` 북마크 · `f` 전체화면 · `+`/`-` 줌.

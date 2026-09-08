@@ -23,6 +23,15 @@ const COMMAND_KEYS: Readonly<Record<string, () => Message>> = {
   '-': Message.ClickedZoomOut,
 }
 
+/**
+ * Whether the element under the keystroke answers these keys on its own. The
+ * page slider takes the arrows, Home, End and the page keys, and the reader's
+ * own listener sits on the document, so without this both act on one press —
+ * two pages in the same direction, or one each way when reading right to left.
+ */
+export const handlesKeysItself = (target: EventTarget | null): boolean =>
+  target instanceof Element && target.closest('[role="slider"]') !== null
+
 export type Modifiers = Readonly<{
   ctrl: boolean
   meta: boolean

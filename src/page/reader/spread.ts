@@ -58,3 +58,17 @@ export const pageAfterStep = (
     onSome: (pages) => Option.getOrElse(Array.head(pages), () => page),
   })
 }
+
+/**
+ * The page slider's value for a page, and a page for its value: reading right
+ * to left runs the slider the other way, so the value is the page counted from
+ * the end. Mirroring the value rather than the pixels keeps the component's own
+ * pointer maths and arrow keys pointing where the reader expects.
+ *
+ * Its own inverse, so one function serves both directions of the mapping.
+ */
+export const mirrorForDirection = (
+  page: number,
+  pageCount: number,
+  direction: Settings['direction'],
+): number => (direction === 'rtl' ? Math.max(0, pageCount - 1) - page : page)

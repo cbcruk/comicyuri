@@ -182,12 +182,17 @@ describe('failure', () => {
 })
 
 describe('page slider', () => {
-  test('the slider carries the reading position and moves it', () => {
+  const slider = role('slider', { name: 'Page' })
+
+  test('reading right to left, the slider starts full and empties leftward', () => {
+    // Six pages, so page one sits at the right-hand end. The label still names
+    // the page, because a page number does not mirror.
     scene(
       program,
       given(readingModel()),
-      expect(role('slider', { name: 'Page' })).toHaveAttr('aria-valuenow', '0'),
-      keydown(role('slider', { name: 'Page' }), 'ArrowRight'),
+      expect(slider).toHaveAttr('aria-valuenow', '5'),
+      expect(slider).toHaveAttr('aria-valuetext', 'Page 1'),
+      keydown(slider, 'ArrowLeft'),
       expectOutMessage(
         OutMessage.UpdatedProgress({
           bookId: 'volume-1::42',
@@ -196,7 +201,44 @@ describe('page slider', () => {
         }),
       ),
       ...settleTurn(1),
-      expect(role('slider', { name: 'Page' })).toHaveAttr('aria-valuenow', '1'),
+      expect(slider).toHaveAttr('aria-valuenow', '4'),
+      expect(slider).toHaveAttr('aria-valuetext', 'Page 2'),
+    )
+  })
+
+  test('reading left to right, it runs the usual way', () => {
+    scene(
+      program,
+      given(readingModel(0, { ...defaultSettings, direction: 'ltr' })),
+      expect(slider).toHaveAttr('aria-valuenow', '0'),
+      keydown(slider, 'ArrowRight'),
+      expectOutMessage(
+        OutMessage.UpdatedProgress({
+          bookId: 'volume-1::42',
+          page: 1,
+          bookmarks: [],
+        }),
+      ),
+      ...settleTurn(1),
+      expect(slider).toHaveAttr('aria-valuenow', '1'),
+    )
+  })
+
+  test('the row of controls turns around with the reading direction', () => {
+    // Next has to sit on the side the next page comes from, which is the side
+    // the slider fills from.
+    scene(
+      program,
+      given(readingModel()),
+      expect(selector('footer')).toHaveClass('flex-row-reverse'),
+    )
+  })
+
+  test('and reading left to right it stays as written', () => {
+    scene(
+      program,
+      given(readingModel(0, { ...defaultSettings, direction: 'ltr' })),
+      expect(selector('footer')).not.toHaveClass('flex-row-reverse'),
     )
   })
 
@@ -215,7 +257,7 @@ describe('page slider', () => {
     scene(
       program,
       given({ ...readingModel(), isChromeVisible: false }),
-      keydown(role('slider', { name: 'Page' }), 'ArrowRight'),
+      keydown(role('slider', { name: 'Page' }), 'ArrowLeft'),
       expectOutMessage(
         OutMessage.UpdatedProgress({
           bookId: 'volume-1::42',
