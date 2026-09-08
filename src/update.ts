@@ -52,6 +52,17 @@ const startImport = (model: Model, files: ReadonlyArray<File>): UpdateReturn => 
   commands: [ImportFiles({ files })],
 })
 
+/**
+ * Ends the operation the status line was reporting. A failure that arrived in
+ * the meantime owns the line now and is left to its own wait.
+ */
+const withOperationEnded = (model: Model): Model =>
+  Notice.match(model.notice, {
+    Idle: () => model,
+    Failed: () => model,
+    Busy: () => evo(model, { notice: () => Notice.Idle() }),
+  })
+
 /** Reloads the shelf, keeping the books on screen while it runs. */
 const reloadShelf = (model: Model): UpdateReturn => ({
   model: evo(model, {
@@ -204,7 +215,7 @@ export const update = (model: Model, message: Message) =>
         onNonEmpty: (files) => startImport(model, files),
       }),
 
-    SucceededImportFiles: () => reloadShelf(model),
+    SucceededImportFiles: () => reloadShelf(withOperationEnded(model)),
 
     FailedImportFiles: ({ text }) => failed(model, text),
 

@@ -134,6 +134,7 @@ describe('interaction', () => {
       ),
       Command.resolve(RevokeCoverUrls, Message.CompletedRevokeCoverUrls()),
       expect(text('Volume 1')).toExist(),
+      expect(text('Importing…')).not.toExist(),
     )
   })
 
