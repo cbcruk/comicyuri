@@ -22,6 +22,7 @@ import {
 import type { Point } from './gesture.ts'
 import { Slider, VirtualList } from '@foldkit/ui'
 
+import { messageForKey } from './keys.ts'
 import { Message, OutMessage } from './message.ts'
 import { Gesture, Model, OpenState, SpreadState } from './model.ts'
 import type { OpenBookService } from './resource.ts'
@@ -101,47 +102,6 @@ const withSettings = (model: Model, settings: Model['settings']): UpdateReturn =
     ...next,
     outMessage: OutMessage.ChangedSettings({ settings }),
   }
-}
-
-/**
- * Keyboard shortcuts resolve to the Message the equivalent control would send,
- * so a key and a button cannot drift apart.
- *
- * The turn keys follow the visual direction: in right-to-left reading the left
- * key advances, which is what makes manga feel right.
- */
-const messageForKey = (model: Model, key: string): Option.Option<Message> => {
-  const rtl = model.settings.direction === 'rtl'
-  const forward = rtl ? 'ArrowLeft' : 'ArrowRight'
-  const back = rtl ? 'ArrowRight' : 'ArrowLeft'
-
-  if (key === forward || key === 'ArrowDown' || key === 'PageDown' || key === ' ') {
-    return Option.some(Message.ClickedNext())
-  }
-  if (key === back || key === 'ArrowUp' || key === 'PageUp') {
-    return Option.some(Message.ClickedPrevious())
-  }
-
-  // Escape peels one layer at a time rather than always leaving the book.
-  if (key === 'Escape') {
-    if (model.isThumbsOpen) return Option.some(Message.ClickedToggleThumbs())
-    if (model.isFullscreen) return Option.some(Message.ClickedToggleFullscreen())
-    return Option.some(Message.ClickedExit())
-  }
-
-  return Option.fromNullishOr(
-    {
-      Home: Message.ClickedFirst(),
-      End: Message.ClickedLast(),
-      d: Message.ClickedToggleDirection(),
-      v: Message.ClickedToggleView(),
-      f: Message.ClickedToggleFullscreen(),
-      t: Message.ClickedToggleThumbs(),
-      b: Message.ClickedToggleBookmark(),
-      '+': Message.ClickedZoomIn(),
-      '-': Message.ClickedZoomOut(),
-    }[key],
-  )
 }
 
 /** Any pointer activity brings the chrome back and restarts the wait to hide it. */
