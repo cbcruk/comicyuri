@@ -340,13 +340,17 @@ reader/scene "using the slider brings the chrome back",
 ❓ 드래그로 스크럽하는 감각
 
 **R-264 · 오른쪽에서 왼쪽으로 읽으면 슬라이더도 뒤집힌다**
-첫 페이지가 오른쪽 끝이고, 읽을수록 왼쪽으로 줄어든다. 푸터의 트랙과 카운터
+첫 페이지가 오른쪽 끝이고, 읽을수록 thumb이 왼쪽으로 간다. 채워진 구간은 읽은
+만큼이므로 오른쪽 끝에서 thumb까지다 — 컴포넌트는 늘 자기 최솟값(왼쪽)부터
+채우기 때문에, 이 방향에서는 트랙과 채움의 색이 자리를 바꾼다. 푸터의 버튼
 순서도 함께 뒤집힌다. 페이지 번호는 뒤집히지 않으므로 `aria-valuetext`는 그대로
 1부터 센다.
 ✅ reader/scene "reading right to left, the slider starts full and empties
-leftward", "the row of controls turns around with the reading direction",
-"and reading left to right it stays as written"
-❓ **실제로 만화를 넘겨봤을 때 슬라이더가 채워지는 쪽이 맞는지**
+leftward", "reading right to left, the filled part of the track sits on the
+right", "reading left to right, the fill is the fill", "the row of controls
+turns around with the reading direction", "and reading left to right it stays
+as written"
+❓ **실제로 만화를 넘겨봤을 때 채워지는 쪽과 줄어드는 쪽이 맞는지**
 
 **R-265 · 슬라이더에 포커스가 있는 동안에는 리더가 키를 양보한다**
 슬라이더는 화살표·Home/End·PageUp/Down을 스스로 처리하고, 리더의 키 구독은

@@ -9,6 +9,7 @@ import {
   role,
   scene,
   selector,
+  within,
   text,
 } from 'foldkit/scene'
 import { describe, test } from 'vite-plus/test'
@@ -221,6 +222,32 @@ describe('page slider', () => {
       ),
       ...settleTurn(1),
       expect(slider).toHaveAttr('aria-valuenow', '1'),
+    )
+  })
+
+  const track = selector('[data-slider-track-id]')
+  // The fill is the track's only child, and the height tells the two apart.
+  const filled = within(track, selector('.h-full'))
+
+  test('reading right to left, the filled part of the track sits on the right', () => {
+    // The component fills from its own minimum, which is the left. Reading
+    // right to left, that end is the end of the book, so the colours trade
+    // places: the accent runs the whole track and the fill covers the pages
+    // still to come.
+    scene(
+      program,
+      given(readingModel()),
+      expect(track).toHaveClass('bg-accent'),
+      expect(filled).toHaveClass('bg-edge'),
+    )
+  })
+
+  test('reading left to right, the fill is the fill', () => {
+    scene(
+      program,
+      given(readingModel(0, { ...defaultSettings, direction: 'ltr' })),
+      expect(track).toHaveClass('bg-edge'),
+      expect(filled).toHaveClass('bg-accent'),
     )
   })
 

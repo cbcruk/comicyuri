@@ -258,8 +258,10 @@ const stageView = (
  * in flow here narrows the track without moving the thumb, so the component's
  * hidden input — which carries nothing without a form `name` — is left out.
  */
-const sliderView = (model: Model, h: HtmlBuilder<Message>): Html =>
-  h.submodel({
+const sliderView = (model: Model, h: HtmlBuilder<Message>): Html => {
+  const isRightToLeft = model.settings.direction === 'rtl'
+
+  return h.submodel({
     slotId: model.slider.id,
     model: model.slider,
     view: Slider.view,
@@ -277,9 +279,21 @@ const sliderView = (model: Model, h: HtmlBuilder<Message>): Html =>
             h.Class('relative flex h-6 flex-1 touch-none items-center select-none'),
           ],
           [
+            // The component always fills from its own minimum, which reading
+            // right to left is the end of the book. So the two colours trade
+            // places there: the track carries the read colour along its whole
+            // length and the component's fill covers what is left to read.
             h.div(
-              [...attributes.track, h.Class('h-1.5 w-full rounded-full bg-edge')],
-              [h.div([...attributes.filledTrack, h.Class('h-full rounded-full bg-accent')])],
+              [
+                ...attributes.track,
+                h.Class(clsx('h-1.5 w-full rounded-full', isRightToLeft ? 'bg-accent' : 'bg-edge')),
+              ],
+              [
+                h.div([
+                  ...attributes.filledTrack,
+                  h.Class(clsx('h-full rounded-full', isRightToLeft ? 'bg-edge' : 'bg-accent')),
+                ]),
+              ],
             ),
             h.div([
               ...attributes.thumb,
@@ -292,6 +306,7 @@ const sliderView = (model: Model, h: HtmlBuilder<Message>): Html =>
     },
     toParentMessage: (message) => Message.GotSliderMessage({ message }),
   })
+}
 
 const thumbView = (model: Model, page: number, h: HtmlBuilder<Message>): Html =>
   h.keyed('button')(
