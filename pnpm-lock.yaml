@@ -30,6 +30,12 @@ importers:
         specifier: ^0.158.0
         version: 0.158.0(effect@4.0.0-rc.112)
     devDependencies:
+      '@effect/platform-browser':
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112(effect@4.0.0-rc.112)
+      '@foldkit/devtools':
+        specifier: ^0.158.1
+        version: 0.158.1(@effect/platform-browser@4.0.0-rc.112(effect@4.0.0-rc.112))(@foldkit/ui@0.158.0(effect@4.0.0-rc.112)(foldkit@0.158.0(effect@4.0.0-rc.112)))(effect@4.0.0-rc.112)(foldkit@0.158.0(effect@4.0.0-rc.112))
       '@foldkit/oxlint-plugin':
         specifier: ^0.12.0
         version: 0.12.0(effect@4.0.0-rc.112)
@@ -72,6 +78,11 @@ packages:
   '@blazediff/core@1.9.1':
     resolution: {integrity: sha512-ehg3jIkYKulZh+8om/O25vkvSsXXwC+skXmyA87FFx6A/45eqOkZsBltMw/TVteb0mloiGT8oGRTcjRAz66zaA==}
 
+  '@effect/platform-browser@4.0.0-rc.112':
+    resolution: {integrity: sha512-GSlqNDnjILz2EqOFPhVdMEHxlPq6SGb8+KOpNnLfRvVJjXRTMawEO+v1PCuwt2CHAqESbJAa2Nk+qcQvTrv4MQ==}
+    peerDependencies:
+      effect: ^4.0.0-rc.112
+
   '@floating-ui/core@1.8.0':
     resolution: {integrity: sha512-0CIZ5itps/8x7BG8dEIhs53BvCUH2PCoogtakwRTut+Arm58sJooJ0AuZhLw2HJYIR5cMLNPBSS728sPho2khQ==}
 
@@ -80,6 +91,15 @@ packages:
 
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
+
+  '@foldkit/devtools@0.158.1':
+    resolution: {integrity: sha512-XPtnk4HU/deFfuuLSP/fD9gFkLhB3Q/vYLQkVba/bfqaXbYosGh/xc9RFSPc13M32xbQBm6DNR0iojQdOF2INw==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      '@effect/platform-browser': 4.0.0-rc.112
+      '@foldkit/ui': ^0
+      effect: 4.0.0-rc.112
+      foldkit: '>=0.153.0'
 
   '@foldkit/oxlint-plugin@0.12.0':
     resolution: {integrity: sha512-ho3vJzHcnAh2scthT2CbUecF8Ht0uq94J4CYM0QSqJthzUEPLbbxnx84ReMm3IOTVsFHKEkSOL8bz1z2w/N58Q==}
@@ -1341,6 +1361,10 @@ snapshots:
 
   '@blazediff/core@1.9.1': {}
 
+  '@effect/platform-browser@4.0.0-rc.112(effect@4.0.0-rc.112)':
+    dependencies:
+      effect: 4.0.0-rc.112
+
   '@floating-ui/core@1.8.0':
     dependencies:
       '@floating-ui/utils': 0.2.12
@@ -1351,6 +1375,14 @@ snapshots:
       '@floating-ui/utils': 0.2.12
 
   '@floating-ui/utils@0.2.12': {}
+
+  '@foldkit/devtools@0.158.1(@effect/platform-browser@4.0.0-rc.112(effect@4.0.0-rc.112))(@foldkit/ui@0.158.0(effect@4.0.0-rc.112)(foldkit@0.158.0(effect@4.0.0-rc.112)))(effect@4.0.0-rc.112)(foldkit@0.158.0(effect@4.0.0-rc.112))':
+    dependencies:
+      '@effect/platform-browser': 4.0.0-rc.112(effect@4.0.0-rc.112)
+      '@foldkit/ui': 0.158.0(effect@4.0.0-rc.112)(foldkit@0.158.0(effect@4.0.0-rc.112))
+      clsx: 2.1.1
+      effect: 4.0.0-rc.112
+      foldkit: 0.158.0(effect@4.0.0-rc.112)
 
   '@foldkit/oxlint-plugin@0.12.0(effect@4.0.0-rc.112)':
     dependencies:

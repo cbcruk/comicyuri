@@ -70,7 +70,7 @@ export default defineConfig({
     setupFiles: ['./src/vitest-setup.ts'],
     server: {
       deps: {
-        inline: ['foldkit', '@foldkit/ui'],
+        inline: ['foldkit', '@foldkit/ui', '@foldkit/devtools'],
       },
     },
   },

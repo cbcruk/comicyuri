@@ -16,6 +16,8 @@
     "foldkit": "^0.158.0"
   },
   "devDependencies": {
+    "@effect/platform-browser": "4.0.0-rc.112",
+    "@foldkit/devtools": "^0.158.1",
     "@foldkit/oxlint-plugin": "^0.12.0",
     "@foldkit/vite-plugin": "^0.20.1",
     "@tailwindcss/vite": "^4.3.3",
