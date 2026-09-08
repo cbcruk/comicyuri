@@ -1,3 +1,4 @@
+import { Option } from 'effect'
 import {
   Command,
   click,
@@ -51,6 +52,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   isChromeVisible: true,
   activityToken: 0,
   lastTapAt: 0,
+  maybeTapFlash: Option.none(),
   slider: Slider.init({ id: SLIDER_ID, min: 0, max: 5, step: 1 }),
   isFullscreen: false,
   isThumbsOpen: false,

@@ -20,7 +20,7 @@ import {
   zoomAround,
   zoneAt,
 } from './gesture.ts'
-import type { Point } from './gesture.ts'
+import type { Point, Side } from './gesture.ts'
 import { Slider, VirtualList } from '@foldkit/ui'
 
 import { messageForKey } from './keys.ts'
@@ -267,15 +267,41 @@ const released = (
   }
 
   const zone = zoneAt(at.x, viewportWidth)
-  return zone === 'Middle'
-    ? {
-        model: evo(settled, {
-          isChromeVisible: (visible) => !visible,
-          activityToken: (token) => token + 1,
+
+  if (zone === 'Middle') {
+    return {
+      model: evo(settled, {
+        isChromeVisible: (visible) => !visible,
+        activityToken: (token) => token + 1,
+      }),
+    }
+  }
+
+  return withTapFlash(step(settled, stepForSide(settled, zone)), settled.page, zone)
+}
+
+/**
+ * Marks which side a page came from, but only when one actually did. Two
+ * pages of the same comic can look alike enough that a turn reads as the same
+ * image having moved, and at the end of the book a flash would claim a turn
+ * that never happened.
+ */
+const withTapFlash = (turned: UpdateReturn, pageBefore: number, side: Side): UpdateReturn =>
+  turned.model.page === pageBefore
+    ? turned
+    : {
+        ...turned,
+        model: evo(turned.model, {
+          maybeTapFlash: (flash) =>
+            Option.some({
+              side,
+              token: Option.match(flash, {
+                onNone: () => 0,
+                onSome: ({ token }) => token + 1,
+              }),
+            }),
         }),
       }
-    : step(settled, stepForSide(settled, zone))
-}
 
 /** The slider reports pages, which is exactly what `showPage` takes. */
 const foldSliderOutMessage = Slider.OutMessage.match<

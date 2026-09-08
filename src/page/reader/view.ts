@@ -11,6 +11,7 @@ import { ZOOM_MIN } from './gesture.ts'
 import type { Point } from './gesture.ts'
 import { Message } from './message.ts'
 import { Model, OpenState, SpreadState } from './model.ts'
+import type { TapFlash } from './model.ts'
 import type { Panel } from './model.ts'
 import { indexOfPage, spreadsFor } from './spread.ts'
 import { rowsFor, urlFor } from './thumbs.ts'
@@ -170,17 +171,33 @@ const panelView = (panel: Panel, fit: FitMode, h: HtmlBuilder<Message>): Html =>
  * still for the centre-relative coordinates the gesture maths uses to keep
  * meaning what they say.
  */
+const tapFlashView = (flash: TapFlash, h: HtmlBuilder<Message>): Html =>
+  h.keyed('div')(`${flash.side}-${flash.token}`, [
+    h.Class(
+      clsx(
+        'tap-flash pointer-events-none absolute inset-y-0 w-1/3',
+        flash.side === 'Left'
+          ? 'left-0 bg-gradient-to-r from-accent to-transparent'
+          : 'right-0 bg-gradient-to-l from-accent to-transparent',
+      ),
+    ),
+    h.AriaHidden(true),
+  ])
+
 const stageView = (
   spread: SpreadState,
   settings: Settings,
   zoom: number,
   pan: Point,
+  maybeTapFlash: Option.Option<TapFlash>,
   h: HtmlBuilder<Message>,
 ): Html =>
   h.div(
     [
       h.Id(STAGE_ID),
-      h.Class('flex flex-1 touch-none items-center justify-center overflow-hidden bg-black/20 p-2'),
+      h.Class(
+        'relative flex flex-1 touch-none items-center justify-center overflow-hidden bg-black/20 p-2',
+      ),
     ],
     [
       h.div(
@@ -202,6 +219,10 @@ const stageView = (
           Shown: ({ panels }) => Array.map(panels, (panel) => panelView(panel, settings.fit, h)),
         }),
       ),
+      Option.match(maybeTapFlash, {
+        onNone: () => h.empty,
+        onSome: (flash) => tapFlashView(flash, h),
+      }),
     ],
   )
 
@@ -358,7 +379,7 @@ export const view = defineView<Model, Message>((model, h): Html =>
             model.isChromeVisible,
             h,
           ),
-          stageView(model.spread, model.settings, model.zoom, model.pan, h),
+          stageView(model.spread, model.settings, model.zoom, model.pan, model.maybeTapFlash, h),
           turnView(model, model.isChromeVisible, h),
           model.isThumbsOpen ? thumbsView(model, pageCount, h) : h.empty,
         ],

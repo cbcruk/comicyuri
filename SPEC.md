@@ -266,6 +266,17 @@ reader/scene "the fit control names the mode it is in"
 gesture "the outer thirds turn pages and the middle shows the chrome"
 ❓ **실기기 확인 필요**
 
+**R-245 · 탭으로 페이지가 넘어가면 그 쪽 가장자리가 잠깐 빛난다**
+같은 만화의 두 장은 서로 닮아서, 페이지가 넘어간 것이 "같은 그림이 움직였다"로
+읽힐 수 있다. 그래서 페이지가 **실제로 바뀐 경우에만** 넘어온 쪽을 표시한다 —
+책 끝에서 깜빡이면 일어나지 않은 일을 주장하는 셈이다. 가운데 탭은 표시하지
+않는다(툴바가 이미 답이다).
+✅ reader/story "a tap that turns the page marks the side it came from",
+"a tap at the end of the book marks nothing",
+"a tap in the middle marks nothing either",
+"tapping the same side again restarts the mark"
+❓ **브라우저 확인 필요** — 260ms 페이드가 실제로 읽히는지
+
 **R-242 · 가운데를 탭하면 툴바가 숨거나 나타난다**
 숨어 있으면 나타나고, 나타나 있으면 숨는다. 화면을 누르는 것 자체는 툴바를
 부르지 않는다 — 그랬다면 가운데 탭이 언제나 숨김으로 끝난다.
