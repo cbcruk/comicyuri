@@ -574,6 +574,19 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       model: zoomedTo(model, model.zoom / 1.25, ORIGIN),
     }),
 
+    EnteredChrome: () => ({
+      model: evo(model, { isPointerOverChrome: () => true }),
+    }),
+
+    // Leaving restarts the wait rather than letting the one from before the
+    // pointer arrived finish immediately.
+    LeftChrome: () => ({
+      model: evo(model, {
+        isPointerOverChrome: () => false,
+        activityToken: (token) => token + 1,
+      }),
+    }),
+
     // Only the wait started for the current activity may hide the chrome.
     ElapsedChromeIdle: ({ token }) =>
       token === model.activityToken

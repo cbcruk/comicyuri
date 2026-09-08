@@ -988,3 +988,23 @@ describe('escape', () => {
     )
   })
 })
+
+describe('a pointer on the chrome', () => {
+  test('entering holds it, and leaving starts the wait over', () => {
+    story(
+      update,
+      given({ ...openingModel(), activityToken: 4 }),
+      message(Message.EnteredChrome()),
+      model((model) => {
+        expect(model.isPointerOverChrome).toBe(true)
+      }),
+      message(Message.LeftChrome()),
+      model((model) => {
+        expect(model.isPointerOverChrome).toBe(false)
+        // A fresh token, so the reader gets the full wait after the pointer
+        // goes rather than whatever was left of an older one.
+        expect(model.activityToken).toBe(5)
+      }),
+    )
+  })
+})

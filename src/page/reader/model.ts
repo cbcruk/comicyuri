@@ -95,6 +95,8 @@ export const Model = Schema.Struct({
 
   /** Chrome hides itself while reading and comes back on any activity. */
   isChromeVisible: Schema.Boolean,
+  /** The chrome does not time out while the pointer is resting on it. */
+  isPointerOverChrome: Schema.Boolean,
   /** Changing this restarts the wait that hides the chrome. */
   activityToken: Schema.Number,
   /** When the last tap lifted, so the next one can tell it is a double. */
@@ -130,6 +132,7 @@ export const init = (config: InitConfig): Model => ({
   pan: ORIGIN,
   gesture: Gesture.Idle(),
   isChromeVisible: true,
+  isPointerOverChrome: false,
   activityToken: 0,
   lastTapAt: 0,
   maybeTapFlash: Option.none(),

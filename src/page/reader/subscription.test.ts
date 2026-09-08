@@ -104,3 +104,30 @@ describe('what the chrome wait is gated on', () => {
     ).toBe(false)
   })
 })
+
+describe('a pointer resting on the chrome', () => {
+  const reading = init({
+    bookId: 'volume-1::42',
+    page: 0,
+    bookmarks: [],
+    settings: defaultSettings,
+  })
+
+  test('holds the wait for as long as it is there', () => {
+    expect(
+      subscriptions.chromeIdle.modelToDependencies({
+        ...reading,
+        isPointerOverChrome: true,
+      }).isWaiting,
+    ).toBe(false)
+  })
+
+  test('and the wait resumes once it leaves', () => {
+    expect(
+      subscriptions.chromeIdle.modelToDependencies({
+        ...reading,
+        isPointerOverChrome: false,
+      }).isWaiting,
+    ).toBe(true)
+  })
+})
