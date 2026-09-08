@@ -7,54 +7,54 @@ import { Settings } from '../../types.ts'
 import { SLIDER_ID, THUMBS_ID, THUMB_ROW_HEIGHT } from './constant.ts'
 import { ORIGIN, Point, Side, ZOOM_MIN } from './gesture.ts'
 
-/** How far along opening the archive is. */
+/** 아카이브를 여는 일이 어디까지 왔는지. */
 export const OpenState = defineTaggedUnion({
   Opening: {},
   Ready: { title: Schema.String, pageCount: Schema.Number },
   Failed: { text: Schema.String },
 })
 
-/** The decoded value of the {@linkcode OpenState} union. */
+/** {@linkcode OpenState} 유니온의 디코딩된 값. */
 export type OpenState = typeof OpenState.Type
 
-/** One image on screen. */
+/** 화면에 걸린 이미지 하나. */
 export const Panel = Schema.Struct({
   page: Schema.Number,
   url: Schema.String,
 })
 
-/** The decoded value of the {@linkcode Panel} schema. */
+/** {@linkcode Panel} 스키마의 디코딩된 값. */
 export type Panel = typeof Panel.Type
 
-/** What the stage is showing for the current spread. */
+/** 지금 스프레드에 대해 화면이 보여 주고 있는 것. */
 export const SpreadState = defineTaggedUnion({
   Loading: {},
   Shown: { panels: Schema.Array(Panel) },
   Failed: { text: Schema.String },
 })
 
-/** The decoded value of the {@linkcode SpreadState} union. */
+/** {@linkcode SpreadState} 유니온의 디코딩된 값. */
 export type SpreadState = typeof SpreadState.Type
 
 /**
- * The most recent tap that turned a page, so the stage can show which side it
- * came from. `token` changes with every turn, which is what restarts the
- * animation when the same side is tapped twice.
+ * 페이지를 넘긴 가장 최근의 탭. 화면이 어느 쪽에서 온 탭인지 보여 줄 수 있도록
+ * 남긴다. `token`은 넘길 때마다 바뀌고, 그것이 같은 쪽을 두 번 탭했을 때
+ * 애니메이션을 다시 시작시킨다.
  */
 export const TapFlash = Schema.Struct({
   side: Side,
   token: Schema.Number,
 })
 
-/** The decoded value of the {@linkcode TapFlash} schema. */
+/** {@linkcode TapFlash} 스키마의 디코딩된 값. */
 export type TapFlash = typeof TapFlash.Type
 
 /**
- * What the pointers are currently doing.
+ * 지금 포인터들이 하고 있는 일.
  *
- * `Tracking` is deliberately undecided: the same press becomes a tap, a swipe
- * or a pan depending on how far it travels and whether the page is zoomed in,
- * and none of that is known until it moves or lifts.
+ * `Tracking`은 일부러 정하지 않은 상태다. 같은 누름이 얼마나 움직였는지와
+ * 페이지가 확대되어 있는지에 따라 탭이 되기도, 스와이프가 되기도, 이동이
+ * 되기도 하는데, 그 어느 것도 움직이거나 떼기 전에는 알 수 없다.
  */
 export const Gesture = defineTaggedUnion({
   Idle: {},
@@ -74,17 +74,17 @@ export const Gesture = defineTaggedUnion({
   },
 })
 
-/** The decoded value of the {@linkcode Gesture} union. */
+/** {@linkcode Gesture} 유니온의 디코딩된 값. */
 export type Gesture = typeof Gesture.Type
 
 /**
- * `page` rather than a spread index is the position of record: it survives a
- * one-page/two-page toggle, and it is what gets persisted. The spread is
- * derived from it, the page count and the settings on every render.
+ * 위치의 기준은 스프레드 번호가 아니라 `page`다. 한 장/두 장을 바꿔도 살아남고,
+ * 저장되는 것도 이 값이다. 스프레드는 매번 그릴 때 이 값과 페이지 수, 설정에서
+ * 이끌어 낸다.
  *
- * Page image URLs are deliberately absent. They live in the `Page` objects the
- * open-book resource holds, which memoize and release them, so the Model only
- * carries the handful currently on screen.
+ * 페이지 이미지 URL은 일부러 여기에 두지 않았다. 그것들은 열린 책 리소스가 쥔
+ * `Page` 객체 안에 살면서 캐시되고 놓이므로, Model은 지금 화면에 걸린 몇 장만
+ * 지고 있으면 된다.
  */
 export const Model = Schema.Struct({
   bookId: Schema.String,
@@ -98,13 +98,13 @@ export const Model = Schema.Struct({
   pan: Point,
   gesture: Gesture,
 
-  /** Chrome hides itself while reading and comes back on any activity. */
+  /** 툴바는 읽는 동안 스스로 숨고, 무슨 일이든 있으면 돌아온다. */
   isChromeVisible: Schema.Boolean,
-  /** The chrome does not time out while the pointer is resting on it. */
+  /** 포인터가 툴바 위에 머무는 동안에는 시간이 흐르지 않는다. */
   isPointerOverChrome: Schema.Boolean,
-  /** Changing this restarts the wait that hides the chrome. */
+  /** 이 값을 바꾸면 툴바를 숨기는 대기가 처음부터 다시 간다. */
   activityToken: Schema.Number,
-  /** When the last tap lifted, so the next one can tell it is a double. */
+  /** 마지막 탭이 떨어진 시각. 다음 탭이 더블인지 알아보는 데 쓴다. */
   lastTapAt: Schema.Number,
   maybeTapFlash: Schema.Option(TapFlash),
 
@@ -113,34 +113,33 @@ export const Model = Schema.Struct({
   isFullscreen: Schema.Boolean,
   isThumbsOpen: Schema.Boolean,
   thumbs: VirtualList.Model,
-  /** Thumbnails resolved so far; the grid only asks for what it can show. */
+  /** 지금까지 뽑아 둔 썸네일. 격자는 보여 줄 수 있는 것만 요청한다. */
   thumbPanels: Schema.Array(Panel),
 })
 
-/** The decoded value of the {@linkcode Model} schema. */
+/** {@linkcode Model} 스키마의 디코딩된 값. */
 export type Model = typeof Model.Type
 
 /**
- * What {@linkcode init} needs to open a book: which book, and where its reader
- * left off.
+ * {@linkcode init}이 책을 열기 위해 필요한 것. 어느 책인지, 그리고 어디까지
+ * 읽었는지.
  */
 export type InitConfig = Readonly<{
-  /** Which book to open, and the key its progress is saved under. */
+  /** 어느 책을 열지. 진행 상태를 저장하는 키이기도 하다. */
   bookId: string
-  /** Where this book was left off. */
+  /** 이 책을 어디까지 읽었는지. */
   page: number
-  /** The pages already bookmarked. */
+  /** 이미 북마크된 페이지들. */
   bookmarks: ReadonlyArray<number>
-  /** The application settings, which the reader edits and reports back up. */
+  /** 애플리케이션 설정. 리더가 고치고 위로 알린다. */
   settings: Settings
 }>
 
 /**
- * Builds a reader that is already at the saved page, with the book still
- * opening behind it.
+ * 저장된 페이지에 이미 가 있는 리더를 만든다. 책은 그 뒤에서 아직 열리는 중이다.
  *
- * The slider has no range yet — the page count only arrives with the book — so
- * nothing here can be scrubbed until it does.
+ * 슬라이더에는 아직 범위가 없다 — 페이지 수는 책과 함께 도착한다 — 그래서 그때가
+ * 오기 전까지는 아무것도 끌 수 없다.
  */
 export const init = (config: InitConfig): Model => ({
   bookId: config.bookId,
@@ -157,7 +156,7 @@ export const init = (config: InitConfig): Model => ({
   activityToken: 0,
   lastTapAt: 0,
   maybeTapFlash: Option.none(),
-  // The range is empty until the book says how many pages it has.
+  // 책이 페이지 수를 말해 주기 전까지 범위는 비어 있다.
   slider: Slider.init({ id: SLIDER_ID, min: 0, max: 0, step: 1 }),
   isFullscreen: false,
   isThumbsOpen: false,

@@ -14,7 +14,7 @@ import { loadProgress, saveProgress, saveSettings } from './storage.ts'
 import { makeCover } from './thumbnail.ts'
 import { Settings, Theme } from './types.ts'
 
-/** How long a failure stays on the status line before it clears itself. */
+/** 실패가 상태 줄에 머무르다 스스로 사라지기까지의 시간. */
 const NOTICE_LINGER = Duration.seconds(4)
 
 const summarise = (stored: StoredBook): Book.BookSummary =>
@@ -24,11 +24,10 @@ const summarise = (stored: StoredBook): Book.BookSummary =>
   )
 
 /**
- * Reads the whole shelf and summarises it for the grid, minting an object URL
- * for every cover it finds.
+ * 책장을 통째로 읽어 격자용으로 요약하면서, 찾은 표지마다 object URL을 만든다.
  *
- * Those URLs are the reason a shelf load is always paired with a
- * {@linkcode RevokeCoverUrls} of the ones it replaces.
+ * 책장을 읽을 때마다 그것이 밀어내는 표지들에 대한 {@linkcode RevokeCoverUrls}가
+ * 늘 따라붙는 이유가 이 URL들이다.
  */
 export const LoadShelf = Command.define('LoadShelf', {
   messages: [Message.SucceededLoadShelf, Message.FailedLoadShelf],
@@ -39,10 +38,10 @@ export const LoadShelf = Command.define('LoadShelf', {
 })
 
 /**
- * Opens the file picker for archives and loose images.
+ * 아카이브와 낱장 이미지를 고르는 파일 선택기를 연다.
  *
- * A cancelled picker answers with no files rather than failing, so nothing
- * distinguishes it from picking nothing.
+ * 취소해도 실패가 아니라 빈 목록으로 답하므로, 아무것도 고르지 않은 것과
+ * 구별되지 않는다.
  */
 export const SelectFiles = Command.define('SelectFiles', {
   messages: [Message.CompletedSelectFiles],
@@ -52,9 +51,9 @@ export const SelectFiles = Command.define('SelectFiles', {
 })
 
 /**
- * NOTE: hand-rolled rather than `File.selectMultiple`, which cannot ask for a
- * directory. This mirrors that function's shape — an off-screen input, removed
- * on both `change` and `cancel` — with `webkitdirectory` added.
+ * NOTE: `File.selectMultiple`은 디렉터리를 요구하지 못해서 직접 만들었다. 화면
+ * 밖의 input을 만들고 `change`와 `cancel` 양쪽에서 치우는 그 함수의 모양을
+ * 그대로 따르되, `webkitdirectory`를 더했다.
  */
 export const SelectFolder = Command.define('SelectFolder', {
   messages: [Message.CompletedSelectFiles],
@@ -82,7 +81,7 @@ export const SelectFolder = Command.define('SelectFolder', {
   }).pipe(Effect.map((files) => Message.CompletedSelectFiles({ files }))),
 })
 
-/** Opens the book once to validate it, count pages and snapshot a cover. */
+/** 책을 한 번 열어 유효한지 보고, 페이지를 세고, 표지를 떠 둔다. */
 const importOne = (record: StoredBook): Effect.Effect<void, AppError> =>
   Effect.gen(function* () {
     const book = yield* bookFromStored(record)
@@ -109,10 +108,10 @@ const importOne = (record: StoredBook): Effect.Effect<void, AppError> =>
   })
 
 /**
- * Turns picked files into shelf records and stores them.
+ * 고른 파일을 책장 레코드로 바꿔 저장한다.
  *
- * Each archive becomes its own book and loose images are grouped into one, and
- * each is opened once on the way in to count its pages and take a cover.
+ * 아카이브는 각각 한 권이 되고 낱장 이미지들은 한 권으로 묶이며, 들어오는 길에
+ * 한 번씩 열어 페이지를 세고 표지를 뜬다.
  */
 export const ImportFiles = Command.define('ImportFiles', {
   args: { files: Schema.Array(File.File) },
@@ -125,7 +124,7 @@ export const ImportFiles = Command.define('ImportFiles', {
     ),
 })
 
-/** Removes one book from the shelf for good. */
+/** 책 한 권을 책장에서 영영 지운다. */
 export const DeleteBook = Command.define('DeleteBook', {
   args: { id: Schema.String },
   messages: [Message.SucceededDeleteBook, Message.FailedDeleteBook],
@@ -136,7 +135,7 @@ export const DeleteBook = Command.define('DeleteBook', {
     ),
 })
 
-/** Persists the settings so the next visit opens the same way. */
+/** 다음에 열었을 때도 같은 모습이도록 설정을 저장한다. */
 export const SaveSettings = Command.define('SaveSettings', {
   args: { settings: Settings },
   messages: [Message.CompletedSaveSettings],
@@ -145,9 +144,9 @@ export const SaveSettings = Command.define('SaveSettings', {
 })
 
 /**
- * The theme is a `data-theme` attribute on the document element rather than a
- * Model-driven class, because Tailwind's variant and `color-scheme` both key
- * off the root element, which no view owns.
+ * 테마는 Model이 이끄는 클래스가 아니라 문서 요소의 `data-theme` 속성이다.
+ * Tailwind의 variant와 `color-scheme`이 둘 다 루트 요소를 보는데, 그 요소는
+ * 어떤 뷰의 것도 아니기 때문이다.
  */
 export const ApplyTheme = Command.define('ApplyTheme', {
   args: { theme: Theme },
@@ -159,10 +158,10 @@ export const ApplyTheme = Command.define('ApplyTheme', {
 })
 
 /**
- * Releases cover object URLs the shelf no longer draws.
+ * 책장이 더 이상 그리지 않는 표지 object URL을 놓아 준다.
  *
- * Without this every reload of the shelf leaks the covers of the load before
- * it, which for a shelf of large covers is real memory.
+ * 이것이 없으면 책장을 새로 읽을 때마다 직전에 읽은 표지들이 샌다. 표지가 큰
+ * 책장이라면 무시할 수 없는 메모리다.
  */
 export const RevokeCoverUrls = Command.define('RevokeCoverUrls', {
   args: { urls: Schema.Array(Schema.String) },
@@ -173,7 +172,7 @@ export const RevokeCoverUrls = Command.define('RevokeCoverUrls', {
     ),
 })
 
-/** The token comes back untouched so update can tell whose wait just landed. */
+/** 토큰이 그대로 돌아오므로 update가 방금 끝난 대기가 누구 것인지 알 수 있다. */
 export const WaitBeforeClearingNotice = Command.define('WaitBeforeClearingNotice', {
   args: { token: Schema.Number },
   messages: [Message.CompletedWaitBeforeClearingNotice],
@@ -183,7 +182,7 @@ export const WaitBeforeClearingNotice = Command.define('WaitBeforeClearingNotice
     ),
 })
 
-/** Reading position and bookmarks, read before the reader is built. */
+/** 읽던 위치와 북마크. 리더를 만들기 전에 읽는다. */
 export const LoadProgress = Command.define('LoadProgress', {
   args: { bookId: Schema.String },
   messages: [Message.CompletedLoadProgress],
@@ -197,7 +196,7 @@ export const LoadProgress = Command.define('LoadProgress', {
     ),
 })
 
-/** Persists where a book has been left off, stamped with the time it was saved. */
+/** 책을 어디까지 읽었는지 저장한 시각과 함께 남긴다. */
 export const SaveProgress = Command.define('SaveProgress', {
   args: {
     bookId: Schema.String,
@@ -211,14 +210,14 @@ export const SaveProgress = Command.define('SaveProgress', {
     ),
 })
 
-/** Moves to another route, pushing a history entry so Back works. */
+/** 다른 라우트로 옮긴다. 히스토리를 쌓으므로 뒤로 가기가 동작한다. */
 export const NavigateInternal = Command.define('NavigateInternal', {
   args: { url: Schema.String },
   messages: [Message.CompletedNavigateInternal],
   execute: ({ url }) => pushUrl(url).pipe(Effect.as(Message.CompletedNavigateInternal())),
 })
 
-/** Hands the browser a URL outside the application, leaving the page. */
+/** 애플리케이션 바깥의 URL을 브라우저에 넘기고 페이지를 떠난다. */
 export const LoadExternal = Command.define('LoadExternal', {
   args: { href: Schema.String },
   messages: [Message.CompletedLoadExternal],

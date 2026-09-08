@@ -4,10 +4,9 @@ import { Message } from './message.ts'
 import type { Model } from './model.ts'
 
 /**
- * Keys the reader consumes, in one place, because two things need the same
- * answer: `update` needs the Message a key means, and the subscription needs
- * to know whether to take the key away from the browser. Splitting those apart
- * is how a reader ends up swallowing Ctrl+R.
+ * 리더가 가져가는 키를 한곳에 모은 것. 두 곳이 같은 답을 필요로 하기 때문이다.
+ * `update`는 키가 뜻하는 Message를, 구독은 그 키를 브라우저에서 빼앗을지를
+ * 알아야 한다. 이 둘을 따로 두면 리더가 Ctrl+R까지 삼키게 된다.
  */
 const TURN_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', ' ']
 
@@ -24,28 +23,27 @@ const COMMAND_KEYS: Readonly<Record<string, () => Message>> = {
 }
 
 /**
- * Whether the element under the keystroke answers these keys on its own. The
- * page slider takes the arrows, Home, End and the page keys, and the reader's
- * own listener sits on the document, so without this both act on one press —
- * two pages in the same direction, or one each way when reading right to left.
+ * 키가 눌린 자리의 요소가 그 키를 스스로 처리하는지. 페이지 슬라이더는 화살표와
+ * Home·End, 페이지 키를 가져가고 리더의 리스너는 document에 걸려 있어서, 이것이
+ * 없으면 한 번 누른 키에 둘 다 반응한다 — 같은 방향으로 두 페이지가 넘어가거나,
+ * 오른쪽에서 왼쪽으로 읽는 중이라면 서로 밀어낸다.
  */
 export const handlesKeysItself = (target: EventTarget | null): boolean =>
   target instanceof Element && target.closest('[role="slider"]') !== null
 
-/** The modifier keys held during a keystroke. */
+/** 키를 누를 때 함께 눌려 있던 수정키. */
 export type Modifiers = Readonly<{
-  /** Whether Control was held. */
+  /** Control이 눌려 있었는지. */
   ctrl: boolean
-  /** Whether Command or the Windows key was held. */
+  /** Command 또는 Windows 키가 눌려 있었는지. */
   meta: boolean
-  /** Whether Alt or Option was held. */
+  /** Alt 또는 Option이 눌려 있었는지. */
   alt: boolean
 }>
 
 /**
- * Whether this keystroke belongs to the reader at all. A key held with a
- * modifier belongs to the browser — Ctrl+R reloads, Cmd+F searches — and the
- * reader never takes those.
+ * 이 키가 애초에 리더의 것인지. 수정키와 함께 눌린 키는 브라우저의 것이다 —
+ * Ctrl+R은 새로고침, Cmd+F는 찾기 — 리더는 그런 것을 결코 가져가지 않는다.
  */
 export const isReaderKey = (key: string, modifiers: Modifiers): boolean => {
   if (modifiers.ctrl || modifiers.meta || modifiers.alt) return false
@@ -53,15 +51,14 @@ export const isReaderKey = (key: string, modifiers: Modifiers): boolean => {
 }
 
 /**
- * The Message a key means, resolved against the Model. Shortcuts resolve to
- * the Message the equivalent control sends, so a key and a button cannot
- * drift apart.
+ * 키가 뜻하는 Message를 Model에 비추어 정한다. 단축키는 같은 일을 하는 버튼이
+ * 보내는 Message로 풀리므로, 키와 버튼이 서로 어긋날 수 없다.
  *
- * The turn keys follow the visual direction: in right-to-left reading the left
- * key advances, which is what makes manga feel right.
+ * 넘김 키는 눈에 보이는 방향을 따른다. 오른쪽에서 왼쪽으로 읽을 때는 왼쪽 키가
+ * 앞으로 가고, 그래야 만화를 넘기는 감각이 맞는다.
  */
 export const messageForKey = (model: Model, key: string): Option.Option<Message> => {
-  // Escape peels one layer at a time rather than always leaving the book.
+  // Escape는 늘 책을 떠나는 대신 한 겹씩 벗긴다.
   if (key === 'Escape') {
     if (model.isThumbsOpen) return Option.some(Message.ClickedToggleThumbs())
     if (model.isFullscreen) return Option.some(Message.ClickedToggleFullscreen())

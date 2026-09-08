@@ -8,11 +8,11 @@ import { Point } from './gesture.ts'
 import { Panel } from './model.ts'
 
 /**
- * Everything that can happen inside the reader.
+ * 리더 안에서 일어날 수 있는 모든 일.
  *
- * Pointer messages carry the `pointerId` they came from, because a gesture is
- * only the pointer that started it: a second finger arriving mid-drag must not
- * be mistaken for the first one jumping.
+ * 포인터 메시지는 자기가 나온 `pointerId`를 지고 다닌다. 제스처는 그것을 시작한
+ * 포인터의 것일 뿐이기 때문이다. 드래그 중에 도착한 두 번째 손가락을 첫 손가락이
+ * 튄 것으로 착각해서는 안 된다.
  */
 export const Message = defineMessageUnion({
   CompletedOpenBook: { title: Schema.String, pageCount: Schema.Number },
@@ -66,10 +66,10 @@ export const Message = defineMessageUnion({
   CompletedLoadThumbs: { panels: Schema.Array(Panel) },
 })
 
-/** The decoded value of the {@linkcode Message} union. */
+/** {@linkcode Message} 유니온의 디코딩된 값. */
 export type Message = typeof Message.Type
 
-/** What the reader reports up to the application. */
+/** 리더가 애플리케이션에 올려 보내는 것. */
 export const OutMessage = defineMessageUnion({
   RequestedExit: {},
   ChangedSettings: { settings: Settings },
@@ -80,5 +80,5 @@ export const OutMessage = defineMessageUnion({
   },
 })
 
-/** The decoded value of the {@linkcode OutMessage} union. */
+/** {@linkcode OutMessage} 유니온의 디코딩된 값. */
 export type OutMessage = typeof OutMessage.Type

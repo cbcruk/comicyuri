@@ -24,7 +24,7 @@ const FIT_LABEL: Record<FitMode, string> = {
   original: '1:1',
 }
 
-/** How a page is sized on the stage, per fit mode. */
+/** 맞춤 모드에 따라 페이지를 화면에 어떻게 앉힐지. */
 const FIT_CLASS: Record<FitMode, string> = {
   contain: 'max-h-full max-w-full object-contain',
   width: 'w-full object-contain',
@@ -54,13 +54,13 @@ const controlView = (config: ControlConfig, h: HtmlBuilder<Message>): Html =>
     h,
   )
 
-/** Chrome fades out while reading, and takes its tab stops with it. */
+/** 툴바는 읽는 동안 사라지고, 탭 순서에서도 함께 빠진다. */
 const chromeClassName = (isVisible: boolean): string =>
   clsx('transition-opacity', { 'pointer-events-none opacity-0': !isVisible })
 
 /**
- * A pointer resting on the chrome is someone still using it, so the wait that
- * hides it is held for as long as the pointer is there.
+ * 툴바 위에 머무는 포인터는 아직 쓰고 있다는 뜻이므로, 포인터가 있는 동안에는
+ * 툴바를 숨기는 대기를 붙잡아 둔다.
  */
 const chromeHoverAttributes = (h: HtmlBuilder<Message>): ReadonlyArray<Attribute<Message>> => [
   h.OnMouseEnter(Message.EnteredChrome()),
@@ -176,20 +176,18 @@ const panelView = (panel: Panel, fit: FitMode, h: HtmlBuilder<Message>): Html =>
   ])
 
 /**
- * The stage is the gesture surface, so it carries the id the pointer
- * subscriptions look for and takes touch handling away from the browser. Zoom
- * and pan are one transform on an inner element: the outer one has to stay
- * still for the centre-relative coordinates the gesture maths uses to keep
- * meaning what they say.
+ * 화면이 곧 제스처를 받는 면이다. 그래서 포인터 구독이 찾는 id를 달고, 터치
+ * 처리를 브라우저에서 가져온다. 줌과 이동은 안쪽 요소에 걸린 하나의 transform이다.
+ * 제스처 계산이 쓰는 중심 기준 좌표가 계속 그 뜻을 지키려면 바깥쪽은 가만히
+ * 있어야 한다.
  */
 /**
- * Whether the page-turn mark is drawn. `import.meta.hot` is how Foldkit's own
- * runtime tells development from a production build, and it is replaced with a
- * constant at build time, so a production bundle drops both the mark and the
- * branch that draws it.
+ * 페이지 넘김 표시를 그릴지. `import.meta.hot`은 Foldkit 런타임 자신이 개발과
+ * 프로덕션 빌드를 가르는 방법이고 빌드 때 상수로 바뀌므로, 프로덕션 번들에서는
+ * 표시도 그것을 그리는 분기도 사라진다.
  *
- * The Model records the turn either way. Keeping that unconditional is what
- * lets the behaviour be tested without asking which build is running.
+ * Model은 어느 쪽이든 넘김을 기록한다. 그것을 조건 없이 두었기에 어떤 빌드가
+ * 도는지 묻지 않고도 동작을 테스트할 수 있다.
  */
 const SHOWS_TAP_FLASH = !!import.meta.hot
 
@@ -227,7 +225,8 @@ const stageView = (
           h.Class(
             clsx('flex items-center justify-center gap-1', {
               'flex-row-reverse': settings.direction === 'rtl',
-              // Snapping back to unzoomed is worth animating; a live drag is not.
+              // 확대를 풀고 제자리로 돌아가는 것은 애니메이션할 값이 있지만,
+              // 끌고 있는 중은 아니다.
               'transition-transform': zoom === ZOOM_MIN,
             }),
           ),
@@ -251,12 +250,11 @@ const stageView = (
   )
 
 /**
- * Scrubbing the whole book, with the keyboard support the component brings.
+ * 책 전체를 훑는 자리. 키보드 지원은 컴포넌트가 가져다준다.
  *
- * The thumb is placed at a percentage of its nearest positioned ancestor,
- * which is this root, while the track fills the root's width. Anything else
- * in flow here narrows the track without moving the thumb, so the component's
- * hidden input — which carries nothing without a form `name` — is left out.
+ * thumb은 가장 가까운 positioned 조상인 이 루트의 비율로 놓이고, 트랙은 그 루트의
+ * 너비를 채운다. 여기 흐름에 다른 것이 끼면 thumb은 그대로인 채 트랙만 좁아지므로,
+ * 폼 `name` 없이는 아무것도 나르지 않는 컴포넌트의 숨은 input은 빼 두었다.
  */
 const sliderView = (model: Model, h: HtmlBuilder<Message>): Html => {
   const isRightToLeft = model.settings.direction === 'rtl'
@@ -266,9 +264,9 @@ const sliderView = (model: Model, h: HtmlBuilder<Message>): Html => {
     model: model.slider,
     view: Slider.view,
     viewInputs: {
-      // The slider's value runs the other way when reading right to left, so
-      // its own arrow keys and drag point where the reader expects. The label
-      // maps back, because the page number does not mirror.
+      // 오른쪽에서 왼쪽으로 읽을 때는 슬라이더 값이 반대로 간다. 그래야 슬라이더
+      // 자신의 화살표 키와 드래그가 기대한 쪽을 가리킨다. 라벨은 다시 되돌리는데,
+      // 페이지 번호는 뒤집히지 않기 때문이다.
       value: sliderPage(model, model.page),
       ariaLabel: 'Page',
       formatValue: (value) => `Page ${sliderPage(model, value) + 1}`,
@@ -279,10 +277,10 @@ const sliderView = (model: Model, h: HtmlBuilder<Message>): Html => {
             h.Class('relative flex h-6 flex-1 touch-none items-center select-none'),
           ],
           [
-            // The component always fills from its own minimum, which reading
-            // right to left is the end of the book. So the two colours trade
-            // places there: the track carries the read colour along its whole
-            // length and the component's fill covers what is left to read.
+            // 컴포넌트는 늘 자기 최솟값부터 채우는데, 오른쪽에서 왼쪽으로 읽으면
+            // 그 끝이 책의 끝이다. 그래서 이 방향에서는 두 색이 자리를 바꾼다.
+            // 트랙이 길이 전체에 읽은 색을 깔고, 컴포넌트의 채움이 아직 읽지 않은
+            // 만큼을 덮는다.
             h.div(
               [
                 ...attributes.track,
@@ -335,8 +333,8 @@ const thumbView = (model: Model, page: number, h: HtmlBuilder<Message>): Html =>
   )
 
 /**
- * Every page at once, windowed by the list so a five-hundred-page book does
- * not extract five hundred images just to draw a grid.
+ * 모든 페이지를 한눈에. 리스트가 창을 내주므로 500페이지짜리 책이 격자 하나
+ * 그리자고 이미지 500장을 뽑는 일은 없다.
  */
 const thumbsView = (model: Model, pageCount: number, h: HtmlBuilder<Message>): Html =>
   h.div(
@@ -378,8 +376,8 @@ const turnView = (model: Model, isVisible: boolean, h: HtmlBuilder<Message>): Ht
       h.Class(
         clsx(
           'flex items-center justify-between gap-2 border-t border-edge px-4 py-2',
-          // Next sits where the next page comes from, on the same side the
-          // slider now fills from.
+          // Next는 다음 페이지가 오는 쪽, 그러니까 이제 슬라이더가 채워지기
+          // 시작하는 쪽에 선다.
           { 'flex-row-reverse': model.settings.direction === 'rtl' },
           chromeClassName(isVisible),
         ),
@@ -406,8 +404,8 @@ const openingView = (text: string, h: HtmlBuilder<Message>): Html =>
   )
 
 /**
- * Draws the reader: the stage, the toolbar and turn controls over it, and the
- * page grid when it is open.
+ * 리더를 그린다. 화면, 그 위에 얹히는 툴바와 넘김 버튼들, 그리고 열려 있다면
+ * 페이지 격자.
  */
 export const view = defineView<Model, Message>((model, h): Html =>
   OpenState.match(model.openState, {

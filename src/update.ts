@@ -31,8 +31,8 @@ import type { Theme } from './types.ts'
 type UpdateReturn = Update.Return<Model, Message, Reader.OpenBookService>
 
 /**
- * Shows a failure and starts the wait that clears it, cancelling any wait a
- * previous failure left running so this message gets its full time on screen.
+ * 실패를 띄우고 그것을 지울 대기를 시작한다. 앞선 실패가 남겨 둔 대기는
+ * 무효로 만들어, 이 메시지가 화면에 제 시간을 온전히 쓰도록 한다.
  */
 const failed = (model: Model, text: string): UpdateReturn => {
   const token = Notice.match(model.notice, {
@@ -53,8 +53,8 @@ const startImport = (model: Model, files: ReadonlyArray<File>): UpdateReturn => 
 })
 
 /**
- * Ends the operation the status line was reporting. A failure that arrived in
- * the meantime owns the line now and is left to its own wait.
+ * 상태 줄이 알리고 있던 작업을 끝낸다. 그사이 도착한 실패는 이제 그 줄의
+ * 주인이므로 자기 대기에 맡겨 둔다.
  */
 const withOperationEnded = (model: Model): Model =>
   Notice.match(model.notice, {
@@ -63,7 +63,7 @@ const withOperationEnded = (model: Model): Model =>
     Busy: () => evo(model, { notice: () => Notice.Idle() }),
   })
 
-/** Reloads the shelf, keeping the books on screen while it runs. */
+/** 책장을 다시 읽는다. 읽는 동안 화면의 책들은 그대로 둔다. */
 const reloadShelf = (model: Model): UpdateReturn => ({
   model: evo(model, {
     shelf: (shelf) => Option.getOrElse(AsyncData.revalidate(shelf), () => Shelf.Loading()),
@@ -119,8 +119,8 @@ const foldReader = Update.foldChild({
 })
 
 /**
- * Folds one Message into the Model, answering with the next Model and whatever
- * should happen next.
+ * Message 하나를 Model에 접어 넣고, 다음 Model과 이어서 일어날 일을 함께
+ * 돌려준다.
  */
 export const update = (model: Model, message: Message) =>
   Message.match<UpdateReturn>(message, {
@@ -142,8 +142,8 @@ export const update = (model: Model, message: Message) =>
 
       return AppRoute.match(route, {
         Reader: ({ id }) =>
-          // The reader is built once its saved position is known, so it never
-          // renders page one and then jumps.
+          // 저장된 위치를 안 뒤에 리더를 만든다. 그래야 1페이지를 그렸다가
+          // 건너뛰는 일이 없다.
           Option.exists(model.maybeReader, (reader) => reader.bookId === id)
             ? { model: routed }
             : {
@@ -160,7 +160,7 @@ export const update = (model: Model, message: Message) =>
     },
 
     CompletedLoadProgress: ({ bookId, page, bookmarks }) =>
-      // A late answer for a book the reader has already left is discarded.
+      // 이미 떠난 책에 대한 늦은 답은 버린다.
       AppRoute.match(model.route, {
         Reader: ({ id }) =>
           id === bookId
@@ -188,8 +188,7 @@ export const update = (model: Model, message: Message) =>
 
     SucceededLoadShelf: ({ books }) => ({
       model: evo(model, { shelf: () => Shelf.Success({ data: books }) }),
-      // The covers from the previous load are unreachable now that the new
-      // ones are in the Model.
+      // 새 표지가 Model에 들어왔으니 앞서 읽은 표지들에는 이제 닿을 수 없다.
       commands: [
         RevokeCoverUrls({
           urls: Book.coverUrls(AsyncData.getData(model.shelf).pipe(Option.getOrElse(Array.empty))),
@@ -239,7 +238,7 @@ export const update = (model: Model, message: Message) =>
       }
     },
 
-    // Only the wait started for the message currently on screen may clear it.
+    // 지금 화면에 떠 있는 메시지를 위해 시작된 대기만 그것을 지울 수 있다.
     CompletedWaitBeforeClearingNotice: ({ token }) =>
       Notice.match(model.notice, {
         Idle: () => ({ model }),

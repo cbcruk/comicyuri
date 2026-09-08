@@ -16,14 +16,14 @@ import { Settings } from './types.ts'
 // FLAGS
 
 /**
- * Settings decide the theme. `index.html` ships the dark default, so a reader
- * who picked the light theme sees one dark frame before `ApplyTheme` lands.
+ * 테마는 설정이 정한다. `index.html`은 어두운 기본값을 담고 나가므로, 밝은
+ * 테마를 고른 사람은 `ApplyTheme`이 닿기 전 한 프레임 동안 어두운 화면을 본다.
  */
 export const Flags = Schema.Struct({ settings: Settings })
-/** The decoded value of the {@linkcode Flags} schema. */
+/** {@linkcode Flags} 스키마의 디코딩된 값. */
 export type Flags = typeof Flags.Type
 
-/** Reads what the first Model needs from storage before anything renders. */
+/** 무엇을 그리기 전에, 첫 Model이 필요로 하는 것을 저장소에서 읽는다. */
 export const flags: Effect.Effect<Flags> = Effect.map(loadSettings, (settings) =>
   Flags.make({ settings }),
 )
@@ -31,11 +31,11 @@ export const flags: Effect.Effect<Flags> = Effect.map(loadSettings, (settings) =
 // INIT
 
 /**
- * Builds the first Model from the flags and the URL that was opened.
+ * 플래그와 열린 URL로 첫 Model을 만든다.
  *
- * The shelf starts loading and the theme is applied straight away; a deep link
- * into a book asks for its saved position and leaves the reader absent until
- * the answer arrives, so no book ever opens on page one and then jumps.
+ * 책장은 곧바로 읽기 시작하고 테마도 바로 적용한다. 책으로 바로 들어온
+ * 링크라면 저장된 위치를 먼저 묻고 답이 올 때까지 리더를 비워 두므로, 어떤
+ * 책도 1페이지를 보였다가 건너뛰지 않는다.
  */
 export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (
   flags: Flags,
@@ -50,7 +50,7 @@ export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (
       shelf: Shelf.Loading(),
       notice: Notice.Idle(),
       fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
-      // A deep link into a book still needs its saved position first.
+      // 책으로 바로 들어온 링크도 저장된 위치가 먼저다.
       maybeReader: Option.none(),
     },
     commands: [

@@ -1,9 +1,9 @@
-/** Render an image URL into a small cover thumbnail blob for the shelf. */
+/** 이미지 URL을 책장에 쓸 작은 표지 썸네일 blob으로 만든다. */
 
 import { Duration, Effect } from 'effect'
 import { CoverError } from './errors.ts'
 
-/** A page that never decodes must not stall an import forever. */
+/** 끝내 디코딩되지 않는 페이지가 임포트를 영원히 붙잡고 있어서는 안 된다. */
 const DECODE_TIMEOUT = Duration.seconds(15)
 
 const loadImage = (url: string): Effect.Effect<HTMLImageElement, CoverError> =>
@@ -13,7 +13,7 @@ const loadImage = (url: string): Effect.Effect<HTMLImageElement, CoverError> =>
     img.onerror = () =>
       resume(Effect.fail(new CoverError({ reason: 'Could not decode the cover image' })))
     img.src = url
-    // Interruption (timeout, or the import being abandoned) cancels the fetch.
+    // 중단되면(타임아웃이든 임포트를 그만두든) 받아오던 것도 취소한다.
     return Effect.sync(() => {
       img.src = ''
     })
@@ -25,12 +25,12 @@ const loadImage = (url: string): Effect.Effect<HTMLImageElement, CoverError> =>
   )
 
 /**
- * Draws an image down to a shelf-sized WebP cover.
+ * 이미지를 책장 크기의 WebP 표지로 줄여 그린다.
  *
- * The aspect ratio is kept and the image is never scaled up.
+ * 비율은 지키고, 원본보다 키우지는 않는다.
  *
- * @param url An object URL for the page being used as the cover.
- * @param maxSize The longest edge of the result, in pixels.
+ * @param url 표지로 쓸 페이지의 object URL.
+ * @param maxSize 결과물의 긴 변, 픽셀 단위.
  */
 export function makeCover(url: string, maxSize = 400): Effect.Effect<Blob, CoverError> {
   return Effect.gen(function* () {

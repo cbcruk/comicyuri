@@ -3,9 +3,9 @@ import { Array, Option, Schema } from 'effect'
 import { BookSource } from '../types.ts'
 
 /**
- * What the shelf needs to draw a book. The archive bytes stay in IndexedDB;
- * the cover arrives as an object URL the shelf can hand to an `img` and revoke
- * when the shelf is redrawn.
+ * 책장이 책 한 권을 그리는 데 필요한 것. 아카이브 바이트는 IndexedDB에 남고,
+ * 표지는 `img`에 그대로 넘길 수 있고 책장을 다시 그릴 때 놓아 줄 수 있는
+ * object URL로 온다.
  */
 export const BookSummary = Schema.Struct({
   id: Schema.String,
@@ -15,26 +15,26 @@ export const BookSummary = Schema.Struct({
   maybeCoverUrl: Schema.Option(Schema.String),
 })
 
-/** The decoded value of the {@linkcode BookSummary} schema. */
+/** {@linkcode BookSummary} 스키마의 디코딩된 값. */
 export type BookSummary = typeof BookSummary.Type
 
-/** The shape of a persisted record this module can summarise. */
+/** 이 모듈이 요약할 수 있는 저장 레코드의 모양. */
 export type Record = Readonly<{
-  /** The book's stable identity. */
+  /** 책의 고정된 정체. */
   id: string
-  /** What to call it on a card. */
+  /** 카드에 적을 이름. */
   title: string
-  /** Where its pages came from. */
+  /** 페이지가 어디서 왔는지. */
   source: BookSource
-  /** Absent until the archive has been opened once. */
+  /** 아카이브를 한 번 열기 전까지는 없다. */
   pageCount?: number | undefined
 }>
 
 /**
- * Summarises a persisted record for the shelf.
+ * 저장 레코드를 책장용으로 요약한다.
  *
- * The cover is passed in rather than read here: object URLs are created and
- * revoked by the command that owns them, and this stays pure.
+ * 표지는 여기서 읽지 않고 받아 온다. object URL은 그것을 가진 Command가 만들고
+ * 놓아 주며, 이 함수는 순수하게 남는다.
  */
 export const fromRecord = (record: Record, maybeCoverUrl: Option.Option<string>): BookSummary => ({
   id: record.id,
@@ -45,17 +45,17 @@ export const fromRecord = (record: Record, maybeCoverUrl: Option.Option<string>)
 })
 
 /**
- * Every cover URL currently held, for revoking them in one go.
+ * 지금 쥐고 있는 표지 URL 전부. 한 번에 놓아 주려고 모은다.
  *
- * Books without a cover simply drop out, so the result is what there is to
- * release rather than a list with holes in it.
+ * 표지가 없는 책은 그냥 빠지므로, 결과는 구멍 뚫린 목록이 아니라 놓아 줄 것
+ * 그 자체다.
  */
 export const coverUrls = (books: ReadonlyArray<BookSummary>): ReadonlyArray<string> =>
   Array.getSomes(Array.map(books, ({ maybeCoverUrl }) => maybeCoverUrl))
 
 /**
- * How a card states its length — singular, plural, or unknown for a book whose
- * archive has not been opened yet.
+ * 카드가 분량을 말하는 방식. 한 장이면 단수로, 여럿이면 복수로, 아직 아카이브를
+ * 열어 보지 않은 책이면 모른다고 적는다.
  */
 export const pageCountLabel = (book: BookSummary): string =>
   Option.match(book.maybePageCount, {

@@ -10,11 +10,12 @@ import { BookSummary } from './domain/book.ts'
 import { Reader } from './page/index.ts'
 
 /**
- * Everything that can happen to the application.
+ * 애플리케이션에 일어날 수 있는 모든 일.
  *
- * Names say what happened, never what to do about it: `Clicked*` for something
- * the reader did, `Got*` for a child's message, `Succeeded*`/`Failed*` for how
- * an operation ended, and `Completed*` for one that cannot fail.
+ * 이름은 무엇이 일어났는지만 말하고 그래서 무엇을 할지는 말하지 않는다.
+ * `Clicked*`는 읽는 사람이 한 일, `Got*`은 자식의 메시지,
+ * `Succeeded*`/`Failed*`는 작업이 끝난 방식, `Completed*`는 실패할 수 없는
+ * 작업이다.
  */
 export const Message = defineMessageUnion({
   ClickedLink: { request: UrlRequest },
@@ -52,5 +53,5 @@ export const Message = defineMessageUnion({
   CompletedSaveProgress: {},
 })
 
-/** The decoded value of the {@linkcode Message} union. */
+/** {@linkcode Message} 유니온의 디코딩된 값. */
 export type Message = typeof Message.Type

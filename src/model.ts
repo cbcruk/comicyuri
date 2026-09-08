@@ -10,44 +10,43 @@ import { AppRoute } from './route.ts'
 import { Settings } from './types.ts'
 
 /**
- * The shelf is remote data, so it carries its own loading and failure states.
- * `Refreshing` is the point: a reload after an import or a delete keeps the
- * books that are already on screen instead of blanking the grid.
+ * 책장은 원격 데이터라서 읽는 중과 실패 상태를 스스로 지고 다닌다. 핵심은
+ * `Refreshing`이다. 임포트나 삭제 뒤에 다시 읽을 때 격자를 비우지 않고 이미
+ * 화면에 있는 책들을 남겨 둔다.
  */
 export const Shelf = AsyncData.Schema(Schema.Array(BookSummary), Schema.String)
 
-/** The decoded value of the {@linkcode Shelf} schema. */
+/** {@linkcode Shelf} 스키마의 디코딩된 값. */
 export type Shelf = typeof Shelf.schema.Type
 
 /**
- * What the status line is saying about an operation the reader started —
- * an import running, or one that failed. Distinct from the shelf's own load
- * state, which lives in `shelf`.
+ * 사람이 시작한 작업에 대해 상태 줄이 하는 말. 임포트가 돌고 있거나, 실패했거나.
+ * 책장 자체의 읽기 상태와는 다르며 그쪽은 `shelf`에 있다.
  */
 export const Notice = defineTaggedUnion({
   Idle: {},
   Busy: { text: Schema.String },
   /**
-   * `token` names the wait started for this message. A wait started by an
-   * earlier failure carries an older token and is ignored when it lands, so it
-   * cannot cut a newer message short.
+   * `token`은 이 메시지를 위해 시작된 대기를 가리킨다. 앞선 실패가 시작한 대기는
+   * 더 오래된 토큰을 들고 있어서 도착해도 무시되므로, 더 새로운 메시지를 잘라
+   * 먹지 못한다.
    */
   Failed: { text: Schema.String, token: Schema.Number },
 })
 
-/** The decoded value of the {@linkcode Notice} union. */
+/** {@linkcode Notice} 유니온의 디코딩된 값. */
 export type Notice = typeof Notice.Type
 
-/** Everything the application knows, and the only thing the view reads. */
+/** 애플리케이션이 아는 전부이자, 뷰가 읽는 유일한 것. */
 export const Model = Schema.Struct({
   route: AppRoute,
   settings: Settings,
   shelf: Shelf.schema,
   notice: Notice,
   fileDrop: FileDrop.Model,
-  /** Present exactly while the reader route is open. */
+  /** 리더 라우트가 열려 있는 동안에만 있다. */
   maybeReader: Schema.Option(Reader.Model),
 })
 
-/** The decoded value of the {@linkcode Model} schema. */
+/** {@linkcode Model} 스키마의 디코딩된 값. */
 export type Model = typeof Model.Type

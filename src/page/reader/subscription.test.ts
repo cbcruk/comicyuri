@@ -10,8 +10,8 @@ const NO_MODIFIERS = { ctrl: false, meta: false, alt: false }
 
 describe('the chrome wait', () => {
   test('waits before it says the reader has gone idle', async () => {
-    // `Stream.tick` emits at once, so a wait built on it would hide the chrome
-    // the instant it appeared. Nothing may arrive in the first fraction of it.
+    // `Stream.tick`은 곧바로 한 번 흘리므로, 그 위에 세운 대기는 툴바가 나타나는
+    // 순간 숨겨 버린다. 대기의 첫 조각 동안에는 아무것도 오지 않아야 한다.
     const dependencies = { isWaiting: true, activityToken: 3 }
     const idle = subscriptions.chromeIdle.dependenciesToStream(dependencies, () => dependencies)
 
@@ -23,8 +23,8 @@ describe('the chrome wait', () => {
   })
 
   test('says nothing while there is nothing to hide', async () => {
-    // Either the chrome is already down, or the thumbnail grid is up and it
-    // must stay put until the grid closes.
+    // 툴바가 이미 내려가 있거나, 썸네일 격자가 열려 있어서 격자가 닫힐 때까지
+    // 그대로 있어야 하는 경우다.
     const dependencies = { isWaiting: false, activityToken: 3 }
     const idle = subscriptions.chromeIdle.dependenciesToStream(dependencies, () => dependencies)
 
@@ -58,7 +58,7 @@ describe('which keys belong to the reader', () => {
   })
 
   test('a key held with a modifier belongs to the browser', () => {
-    // Ctrl+R reloads, Cmd+F searches. Taking the bare key must not take these.
+    // Ctrl+R은 새로고침, Cmd+F는 찾기다. 맨 키를 가져간다고 이것까지 가져가서는 안 된다.
     expect(isReaderKey('f', { ...NO_MODIFIERS, ctrl: true })).toBe(false)
     expect(isReaderKey('f', { ...NO_MODIFIERS, meta: true })).toBe(false)
     expect(isReaderKey('ArrowLeft', { ...NO_MODIFIERS, alt: true })).toBe(false)
@@ -81,8 +81,8 @@ describe('who answers a key first', () => {
   }
 
   test('the page slider keeps the keys it handles', () => {
-    // The slider moves itself on the arrows, so the reader's document listener
-    // must stand down or one press counts twice.
+    // 화살표에 슬라이더가 스스로 움직이므로, 리더의 document 리스너는 물러나야
+    // 한다. 그러지 않으면 한 번 누른 키가 두 번 세어진다.
     expect(handlesKeysItself(element('<div role="slider"></div>'))).toBe(true)
   })
 

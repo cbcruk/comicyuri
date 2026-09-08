@@ -1,30 +1,29 @@
 /**
- * Minimal ZIP reader for CBZ archives.
+ * CBZ 아카이브를 읽는 최소한의 ZIP 리더.
  *
- * Parses the central directory and extracts entries on demand. Deflated
- * entries are inflated with the platform's `DecompressionStream`, so there is
- * no third-party ZIP dependency. Stored (uncompressed) entries are sliced
- * directly. Every step that can meet a truncated or unsupported file fails
- * with an `ArchiveError` rather than throwing.
+ * 중앙 디렉터리를 파싱하고 엔트리는 필요할 때 뽑는다. deflate 된 엔트리는 플랫폼의
+ * `DecompressionStream`으로 풀기 때문에 외부 ZIP 의존성이 없다. 압축되지 않은
+ * 엔트리는 그대로 잘라 쓴다. 잘렸거나 지원하지 않는 파일을 만날 수 있는 모든
+ * 단계는 던지지 않고 `ArchiveError`로 실패한다.
  */
 
 import { Effect } from 'effect'
 import { ArchiveError } from './errors.ts'
 
-/** One file listed in the archive's central directory, located but not yet read. */
+/** 중앙 디렉터리에 적힌 파일 하나. 자리는 찾았지만 아직 읽지는 않았다. */
 export interface ZipEntry {
-  /** The path inside the archive, directory separators and all. */
+  /** 아카이브 안에서의 경로. 디렉터리 구분자까지 그대로다. */
   name: string
   /**
-   * The compression method: `0` stored, `8` deflate. Anything else is refused
-   * by {@linkcode ZipArchive.extract}.
+   * 압축 방식. `0`은 그대로 저장, `8`은 deflate. 그 밖의 것은
+   * {@linkcode ZipArchive.extract}가 거절한다.
    */
   method: number
-  /** Bytes occupied in the archive. */
+  /** 아카이브 안에서 차지하는 바이트. */
   compressedSize: number
-  /** Bytes the entry expands to. */
+  /** 풀었을 때의 바이트. */
   uncompressedSize: number
-  /** Where the local file header starts, counted from the front of the archive. */
+  /** 로컬 파일 헤더가 시작하는 자리. 아카이브 맨 앞에서부터 센다. */
   offset: number
 }
 
@@ -43,7 +42,7 @@ const inflateRaw = (
   })
 
 function findEocd(view: DataView): number {
-  // The EOCD lives at the end, after an optional comment of up to 65535 bytes.
+  // EOCD는 맨 뒤, 최대 65535바이트짜리 주석이 붙을 수 있는 그 뒤에 있다.
   const max = Math.min(view.byteLength, 0xffff + 22)
   for (let i = 22; i <= max; i++) {
     const pos = view.byteLength - i
@@ -75,14 +74,14 @@ function readCentralDirectory(buffer: ArrayBuffer, view: DataView, eocd: number)
 }
 
 /**
- * An archive held in memory, with its directory parsed and its entries left
- * where they are until asked for.
+ * 메모리에 쥐고 있는 아카이브. 디렉터리는 파싱해 두었고, 엔트리는 요청받기 전까지
+ * 있던 자리에 그대로 둔다.
  *
- * Open one with {@linkcode ZipArchive.open}; the constructor is private so an
- * archive cannot exist without a directory that parsed.
+ * {@linkcode ZipArchive.open}으로 연다. 생성자가 private이라서 파싱된 디렉터리
+ * 없이는 아카이브가 존재할 수 없다.
  */
 export class ZipArchive {
-  /** Every entry the central directory listed, in the order it listed them. */
+  /** 중앙 디렉터리가 적어 둔 모든 엔트리를, 적힌 순서 그대로. */
   readonly entries: ZipEntry[]
   private readonly buffer: ArrayBuffer
 
@@ -92,10 +91,9 @@ export class ZipArchive {
   }
 
   /**
-   * Reads an archive and parses its central directory.
+   * 아카이브를 읽고 중앙 디렉터리를 파싱한다.
    *
-   * Fails when the blob is not a ZIP at all, or when its directory is truncated
-   * or corrupt.
+   * blob이 애초에 ZIP이 아니거나, 디렉터리가 잘렸거나 깨졌으면 실패한다.
    */
   static open(blob: Blob): Effect.Effect<ZipArchive, ArchiveError> {
     return Effect.gen(function* () {
@@ -118,17 +116,17 @@ export class ZipArchive {
   }
 
   /**
-   * Reads one entry, inflating it when it was deflated.
+   * 엔트리 하나를 읽는다. deflate 된 것이면 풀어서 준다.
    *
-   * The entry must be one of this archive's own {@linkcode ZipArchive.entries};
-   * nothing checks that, and an offset from elsewhere reads the wrong bytes.
+   * 엔트리는 이 아카이브 자신의 {@linkcode ZipArchive.entries} 중 하나여야 한다.
+   * 확인하는 곳은 없고, 다른 데서 온 오프셋은 엉뚱한 바이트를 읽는다.
    */
   extract(entry: ZipEntry): Effect.Effect<Uint8Array<ArrayBuffer>, ArchiveError> {
     return Effect.try({
       try: () => {
         const view = new DataView(this.buffer)
-        // The central directory omits the local header's field lengths, so read
-        // them from the local file header to locate the actual data start.
+        // 중앙 디렉터리에는 로컬 헤더의 필드 길이가 없으므로, 실제 데이터가
+        // 시작하는 자리를 찾으려면 로컬 파일 헤더에서 읽어야 한다.
         const nameLen = view.getUint16(entry.offset + 26, true)
         const extraLen = view.getUint16(entry.offset + 28, true)
         const start = entry.offset + 30 + nameLen + extraLen

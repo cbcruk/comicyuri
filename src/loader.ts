@@ -11,16 +11,16 @@ const ZIP_RE = /\.(cbz|zip)$/i
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
 
-/** Whether a file name is one of the image formats a page can be. */
+/** 파일 이름이 페이지가 될 수 있는 이미지 형식인지. */
 export function isImageName(name: string): boolean {
   return IMAGE_RE.test(name)
 }
-/** Whether a file name is a comic archive (`.cbz` or `.zip`). */
+/** 파일 이름이 만화 아카이브(`.cbz` 또는 `.zip`)인지. */
 export function isArchiveName(name: string): boolean {
   return ZIP_RE.test(name)
 }
 
-/** Natural ("1, 2, 10" not "1, 10, 2") ordering on the visible file name. */
+/** 눈에 보이는 파일 이름 기준의 자연 정렬("1, 10, 2"가 아니라 "1, 2, 10"). */
 function byName<T>(get: (item: T) => string) {
   return (a: T, b: T) => collator.compare(get(a), get(b))
 }
@@ -34,7 +34,7 @@ function baseName(path: string): string {
   return parts[parts.length - 1] ?? path
 }
 
-/** Stable id so reading progress survives re-opening the same file. */
+/** 같은 파일을 다시 열어도 읽던 위치가 살아남도록 하는 고정 id. */
 function bookId(title: string, size: number): string {
   return `${title}::${size}`
 }
@@ -69,7 +69,7 @@ class ZipPage implements Page {
     this.entry = entry
   }
   load(): Effect.Effect<string, ArchiveError> {
-    // Suspended so the cache is consulted at run time, not at construction.
+    // 만들 때가 아니라 실행할 때 캐시를 보도록 suspend 한다.
     return Effect.suspend(() =>
       this.url !== null
         ? Effect.succeed(this.url)
@@ -87,8 +87,8 @@ class ZipPage implements Page {
 }
 
 /**
- * Turn a flat list of picked files into shelf records. Each archive becomes its
- * own book; loose images are grouped into one book.
+ * 고른 파일 목록을 책장 레코드로 바꾼다. 아카이브는 각각 한 권이 되고, 낱장
+ * 이미지들은 한 권으로 묶인다.
  */
 export function storedBooksFromFiles(
   files: ReadonlyArray<File>,
@@ -131,7 +131,7 @@ export function storedBooksFromFiles(
   })
 }
 
-/** Reconstruct a live book (with lazy pages) from a shelf record. */
+/** 책장 레코드에서 책을 되살린다. 페이지는 필요할 때 읽는다. */
 export function bookFromStored(
   stored: StoredBook,
 ): Effect.Effect<LoadedBook, ArchiveError | EmptyBookError> {

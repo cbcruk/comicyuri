@@ -22,8 +22,8 @@ describe('zoom', () => {
     const anchor = { x: 100, y: 40 }
     const pan = zoomAround(ORIGIN, 1, 2, anchor)
 
-    // The anchor's position in page coordinates is unchanged by the zoom:
-    // before, (anchor - 0) / 1; after, (anchor - pan) / 2.
+    // 기준점의 페이지 좌표는 확대해도 그대로다. 전에는 (anchor - 0) / 1,
+    // 후에는 (anchor - pan) / 2.
     expect((anchor.x - pan.x) / 2).toBeCloseTo(anchor.x - ORIGIN.x)
     expect((anchor.y - pan.y) / 2).toBeCloseTo(anchor.y - ORIGIN.y)
   })
@@ -35,7 +35,7 @@ describe('zoom', () => {
 })
 
 describe('tap zones', () => {
-  // Coordinates are measured from the centre, so the thirds sit at ±width/6.
+  // 좌표는 한가운데에서 재므로 1/3 경계는 ±width/6에 있다.
   test('the outer thirds turn pages and the middle shows the chrome', () => {
     expect(zoneAt(-200, 600)).toBe('Left')
     expect(zoneAt(200, 600)).toBe('Right')

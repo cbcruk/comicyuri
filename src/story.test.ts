@@ -110,8 +110,8 @@ describe('import', () => {
       update,
       given(shelfModel(Shelf.Success({ data: [book('kept::1', 'Kept')] }))),
       message(Message.ClickedOpenFiles()),
-      // The picker is a Command, so cancelling and picking are the same
-      // Message with different payloads.
+      // 선택기는 Command라서, 취소와 선택은 같은 Message에 다른 값이 실린
+      // 것이다.
       Command.resolve(SelectFiles, Message.CompletedSelectFiles({ files: [cbz] })),
       model((model) => {
         expect(model.notice).toStrictEqual(Notice.Busy({ text: 'Importing…' }))
@@ -119,9 +119,9 @@ describe('import', () => {
       Command.expectExact(ImportFiles({ files: [cbz] })),
       Command.resolve(ImportFiles, Message.SucceededImportFiles()),
       model((model) => {
-        // The import is over, so the status line stops saying it is running.
+        // 임포트가 끝났으므로 상태 줄도 돌고 있다는 말을 멈춘다.
         expect(model.notice._tag).toBe('Idle')
-        // The books already on screen stay there while the reload runs.
+        // 다시 읽는 동안에도 이미 화면에 있는 책들은 그대로 있는다.
         expect(model.shelf._tag).toBe('Refreshing')
         expect(titlesOf(model.shelf)).toStrictEqual(['Kept'])
       }),
@@ -306,8 +306,8 @@ describe('routing', () => {
       Command.expectExact(NavigateInternal({ url: 'https://comicyuri.test/book/volume-1::42' })),
       Command.resolve(NavigateInternal, Message.CompletedNavigateInternal()),
       model((model) => {
-        // The runtime reports the new URL through ChangedUrl; the click
-        // handler must not pre-write the route.
+        // 새 URL은 런타임이 ChangedUrl로 알린다. 클릭 핸들러가 라우트를 미리
+        // 써 두어서는 안 된다.
         expect(model.route._tag).toBe('Shelf')
       }),
     )
@@ -320,7 +320,7 @@ describe('routing', () => {
       message(Message.ChangedUrl({ url: readerUrl })),
       model((model) => {
         expect(model.route).toStrictEqual(AppRoute.Reader({ id: 'volume-1::42' }))
-        // The reader is not built until its saved position is known.
+        // 저장된 위치를 알기 전까지 리더를 만들지 않는다.
         expect(model.maybeReader).toStrictEqual(Option.none())
       }),
       Command.expectExact(LoadProgress({ bookId: 'volume-1::42' })),

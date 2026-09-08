@@ -24,7 +24,7 @@ const openingModel = (settings = defaultSettings): Model =>
 
 const acknowledgePreload = Command.resolve(PreloadNeighbours, Message.CompletedPreloadNeighbours())
 
-/** Answers the load a turn asked for, whatever page it landed on. */
+/** 넘김이 요청한 로드에, 어느 페이지에 닿았든 답해 준다. */
 const settle = (page: number) => [
   Command.resolve(
     LoadSpread,
@@ -36,7 +36,7 @@ const settle = (page: number) => [
   acknowledgePreload,
 ]
 
-/** Opens the book and settles the first spread, the state every test starts from. */
+/** 책을 열고 첫 스프레드까지 안정시킨다. 모든 테스트가 여기서 시작한다. */
 const opened = (page: number) => [
   message(Message.CompletedOpenBook({ title: 'Volume 1', pageCount: PAGE_COUNT })),
   Command.expectHas(LoadSpread({ page, pages: [page] })),
@@ -154,7 +154,7 @@ describe('turning pages', () => {
       given(openingModel()),
       ...opened(0),
       message(Message.ClickedNext()),
-      // The answer for page 0 lands late.
+      // 0페이지에 대한 답이 늦게 도착한다.
       Command.resolve(
         LoadSpread,
         Message.CompletedLoadSpread({
@@ -259,7 +259,7 @@ describe('layout', () => {
       model((model) => {
         expect(model.settings.view).toBe('spread')
       }),
-      // The cover stays on its own, so page 0 is still a single-page spread.
+      // 표지는 혼자 있으므로 0페이지는 여전히 한 장짜리 스프레드다.
       Command.expectHas(LoadSpread({ page: 0, pages: [0] })),
       Command.resolve(
         LoadSpread,
@@ -307,7 +307,7 @@ describe('gestures', () => {
       update,
       given(openingModel()),
       ...opened(0),
-      // Right-to-left reading, so the left third advances.
+      // 오른쪽에서 왼쪽으로 읽으므로 왼쪽 1/3이 앞으로 넘긴다.
       press(1, -250),
       release(1, -250),
       model((model) => {
@@ -340,8 +340,8 @@ describe('gestures', () => {
       move(1, -80),
       release(1, -80),
       model((model) => {
-        // In right-to-left reading the right-hand page is the previous one,
-        // and page 0 has none, so the position holds.
+        // 오른쪽에서 왼쪽으로 읽으면 오른쪽 페이지가 이전 페이지인데, 0페이지에는
+        // 그런 것이 없으므로 자리를 지킨다.
         expect(model.page).toBe(0)
       }),
       ...settle(0),
@@ -355,7 +355,7 @@ describe('gestures', () => {
       ...opened(0),
       press(1, -50),
       press(2, 50),
-      // The span between the fingers doubles, so the zoom does too.
+      // 손가락 사이 간격이 두 배가 되므로 배율도 두 배가 된다.
       move(2, 150),
       model((model) => {
         expect(model.zoom).toBeCloseTo(2)
@@ -439,8 +439,8 @@ describe('chrome', () => {
   })
 
   test('a press restarts the wait but leaves the chrome as it found it', () => {
-    // Revealing on the way down would make every middle tap resolve to hidden,
-    // because the release toggles from whatever the press left behind.
+    // 누르는 길에 보여 버리면 가운데 탭이 하나같이 '숨김'으로 끝난다. 놓는 쪽이
+    // 누름이 남긴 상태에서 토글하기 때문이다.
     story(
       update,
       given({ ...openingModel(), isChromeVisible: false, activityToken: 3 }),
@@ -487,14 +487,13 @@ describe('chrome', () => {
 })
 
 describe('using a control keeps the chrome up', () => {
-  // Every one of these is something a person did to the toolbar or the footer.
-  // Missing one is how the chrome timed out from under a reader who was using
-  // it, so they are checked together rather than one test per control.
+  // 여기 있는 것은 모두 사람이 툴바나 푸터에 한 일이다. 하나를 빠뜨렸기에 쓰고
+  // 있는 사람 밑에서 툴바가 사라졌으므로, 컨트롤마다 테스트를 두지 않고 한자리에서
+  // 함께 확인한다.
   //
-  // `update` is called directly: the property is about the Model alone, and
-  // each control produces a different set of Commands that a story would then
-  // have to discharge for reasons that have nothing to do with what is being
-  // asserted.
+  // `update`를 직접 부른다. 이 성질은 Model만의 이야기인데, 컨트롤마다 만들어 내는
+  // Command가 달라서 story로 쓰면 주장하려는 것과 아무 상관 없는 이유로 그것들을
+  // 처리해 주어야 한다.
   const busyReading: Model = {
     ...openingModel(),
     openState: OpenState.Ready({ title: 'Volume 1', pageCount: PAGE_COUNT }),
@@ -538,10 +537,10 @@ describe('a gesture the browser never closed', () => {
     message(Message.MovedPointer({ pointerId, at: { x, y: 0 } }))
 
   test('the same pointer pressing again restarts, it does not pinch', () => {
-    // A window that loses focus mid-press may never deliver the release. The
-    // press that follows is the same pointer starting over, and reading it as
-    // a second finger spans a stale point to a fresh one — which is how a
-    // click after coming back to the tab sent the zoom to its limit.
+    // 누르는 도중에 창이 포커스를 잃으면 놓음이 끝내 오지 않을 수 있다. 뒤이은
+    // 누름은 같은 포인터가 다시 시작하는 것인데, 그것을 두 번째 손가락으로 읽으면
+    // 낡은 점과 새 점 사이를 재게 된다 — 탭으로 돌아와 클릭했을 때 배율이 끝까지
+    // 튄 것이 이 때문이다.
     story(
       update,
       given(openingModel()),
@@ -560,10 +559,9 @@ describe('a gesture the browser never closed', () => {
   })
 
   test('a different pointer landing on a stale one is not a pinch either', () => {
-    // Touch pointers get a new id each time, so a stale sequence and a fresh
-    // press are two different ids sitting on almost the same spot. Scaling by
-    // how much that span grows is unbounded from there, which is how a click
-    // after coming back to the tab pushed the zoom to its limit.
+    // 터치 포인터는 매번 새 id를 받으므로, 낡은 흐름과 새 누름은 거의 같은 자리에
+    // 앉은 서로 다른 두 id가 된다. 그 간격이 늘어난 비율로 확대하면 거기서부터는
+    // 끝이 없고, 탭으로 돌아와 클릭했을 때 배율이 한계까지 밀린 것이 이 때문이다.
     story(
       update,
       given(openingModel()),
@@ -607,7 +605,7 @@ describe('a gesture the browser never closed', () => {
       model((model) => {
         expect(model.gesture._tag).toBe('Idle')
       }),
-      // Coming back and pressing starts cleanly, with no zoom of its own.
+      // 돌아와서 누르면 자기 배율 없이 깨끗하게 시작한다.
       press(2, 20),
       model((model) => {
         expect(model.gesture._tag).toBe('Tracking')
@@ -631,8 +629,8 @@ describe('reading fast is not asking to zoom', () => {
     )
 
   test('two quick taps on a turning zone turn two pages', () => {
-    // A trackpad makes this easy to do by accident, and treating the pair as a
-    // double tap turned a fast reader's page into an enlargement.
+    // 트랙패드에서는 이것이 실수로도 쉽게 일어나고, 그 짝을 더블 탭으로 다루었기에
+    // 빨리 읽던 사람의 페이지가 확대가 되었다.
     story(
       update,
       given(openingModel()),
@@ -662,7 +660,7 @@ describe('reading fast is not asking to zoom', () => {
       release(1, 0, 5080),
       model((model) => {
         expect(model.zoom).toBe(ZOOM_MIN)
-        // The middle tap did its own job.
+        // 가운데 탭은 제 할 일을 했다.
         expect(model.isChromeVisible).toBe(false)
       }),
     )
@@ -703,7 +701,7 @@ describe('which side a page came from', () => {
       update,
       given(openingModel()),
       ...opened(0),
-      // Right-to-left reading, so the left third advances.
+      // 오른쪽에서 왼쪽으로 읽으므로 왼쪽 1/3이 앞으로 넘긴다.
       press(1, -250),
       release(1, -250),
       model((model) => {
@@ -726,7 +724,7 @@ describe('which side a page came from', () => {
       press(1, -250),
       release(1, -250, 9000),
       model((model) => {
-        // A changed token is what lets the view play the animation twice.
+        // 토큰이 바뀌어야 뷰가 애니메이션을 두 번 재생할 수 있다.
         expect(Option.map(model.maybeTapFlash, ({ token }) => token)).toStrictEqual(Option.some(1))
       }),
       ...settle(2),
@@ -738,7 +736,7 @@ describe('which side a page came from', () => {
       update,
       given(openingModel()),
       ...opened(0),
-      // The right third goes back, and page one has nowhere to go.
+      // 오른쪽 1/3은 뒤로 가는데, 1페이지에는 갈 곳이 없다.
       press(1, 250),
       release(1, 250),
       model((model) => {
@@ -764,8 +762,8 @@ describe('which side a page came from', () => {
 
 describe('zoom across pages', () => {
   test('turning the page starts from an unzoomed, unpanned view', () => {
-    // The pan offset was measured against the page being left, so carrying it
-    // over would land on an arbitrary part of the next one.
+    // pan 오프셋은 떠나는 페이지를 기준으로 잰 값이라, 그대로 가져가면 다음
+    // 페이지의 엉뚱한 곳에 앉는다.
     story(
       update,
       given({ ...openingModel(), zoom: 3, pan: { x: -120, y: 40 } }),
@@ -800,7 +798,7 @@ describe('zoom across pages', () => {
       ...opened(0),
       message(Message.ScrolledToPan({ delta: { x: 20, y: 50 } })),
       model((model) => {
-        // Scrolling down moves the page up, the way a scroll always does.
+        // 아래로 스크롤하면 페이지는 위로 간다. 스크롤이 늘 그렇듯이.
         expect(model.pan).toStrictEqual({ x: -20, y: -50 })
       }),
     )
@@ -868,7 +866,7 @@ describe('fullscreen', () => {
       Command.expectExact(ToggleFullscreen({ wantFullscreen: true })),
       Command.resolve(ToggleFullscreen, Message.CompletedToggleFullscreen()),
       model((model) => {
-        // Asking is not entering; the document has not said so yet.
+        // 요청은 들어감이 아니다. document가 아직 그렇다고 말하지 않았다.
         expect(model.isFullscreen).toBe(false)
       }),
       message(Message.ChangedFullscreen({ isFullscreen: true })),
@@ -922,7 +920,7 @@ describe('thumbnails', () => {
       model((model) => {
         expect(model.page).toBe(3)
         expect(model.isThumbsOpen).toBe(false)
-        // The grid is gone, so its thumbnails are free to be released.
+        // 격자가 사라졌으므로 그 썸네일들은 놓아 주어도 된다.
         expect(model.thumbPanels).toStrictEqual([])
       }),
       ...settle(3),
@@ -942,7 +940,7 @@ describe('thumbnails', () => {
       Command.expectHas(
         PreloadNeighbours({
           warm: [0, 1, 2],
-          // Page 5 is not near the reader, but the grid is showing it.
+          // 5페이지는 읽는 자리 근처가 아니지만 격자가 그것을 보여 주고 있다.
           keep: [0, 1, 2, 3, 4, 5],
         }),
       ),
@@ -1001,8 +999,8 @@ describe('a pointer on the chrome', () => {
       message(Message.LeftChrome()),
       model((model) => {
         expect(model.isPointerOverChrome).toBe(false)
-        // A fresh token, so the reader gets the full wait after the pointer
-        // goes rather than whatever was left of an older one.
+        // 새 토큰이라서, 포인터가 떠난 뒤에는 앞선 대기의 남은 조각이 아니라
+        // 온전한 대기를 받는다.
         expect(model.activityToken).toBe(5)
       }),
     )
