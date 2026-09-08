@@ -205,7 +205,14 @@ const stageView = (
     ],
   )
 
-/** Scrubbing the whole book, with the keyboard support the component brings. */
+/**
+ * Scrubbing the whole book, with the keyboard support the component brings.
+ *
+ * The thumb is placed at a percentage of its nearest positioned ancestor,
+ * which is this root, while the track fills the root's width. Anything else
+ * in flow here narrows the track without moving the thumb, so the component's
+ * hidden input — which carries nothing without a form `name` — is left out.
+ */
 const sliderView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.submodel({
     slotId: model.slider.id,
@@ -232,7 +239,6 @@ const sliderView = (model: Model, h: HtmlBuilder<Message>): Html =>
                 'h-4 w-4 cursor-grab rounded-full border-2 border-accent bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent data-dragging:cursor-grabbing',
               ),
             ]),
-            h.input(attributes.hiddenInput),
           ],
         ),
     },

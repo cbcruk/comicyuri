@@ -178,6 +178,17 @@ describe('page slider', () => {
     )
   })
 
+  test('the track fills the row, so the thumb sits where it says it does', () => {
+    // The thumb is placed at a percentage of the row, and the track fills the
+    // row. Anything else in flow narrows the track and the two drift apart.
+    scene(
+      program,
+      given(readingModel()),
+      expect(selector('input')).not.toExist(),
+      expect(role('slider', { name: 'Page' })).toExist(),
+    )
+  })
+
   test('using the slider brings the chrome back', () => {
     scene(
       program,
