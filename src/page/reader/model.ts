@@ -1,11 +1,11 @@
-import { Schema } from 'effect'
+import { Option, Schema } from 'effect'
 import { defineTaggedUnion } from 'foldkit/schema'
 
 import { Slider, VirtualList } from '@foldkit/ui'
 
 import { Settings } from '../../types.ts'
 import { SLIDER_ID, THUMBS_ID, THUMB_ROW_HEIGHT } from './constant.ts'
-import { ORIGIN, Point, ZOOM_MIN } from './gesture.ts'
+import { ORIGIN, Point, Side, ZOOM_MIN } from './gesture.ts'
 
 /** How far along opening the archive is. */
 export const OpenState = defineTaggedUnion({
@@ -32,6 +32,18 @@ export const SpreadState = defineTaggedUnion({
 })
 
 export type SpreadState = typeof SpreadState.Type
+
+/**
+ * The most recent tap that turned a page, so the stage can show which side it
+ * came from. `token` changes with every turn, which is what restarts the
+ * animation when the same side is tapped twice.
+ */
+export const TapFlash = Schema.Struct({
+  side: Side,
+  token: Schema.Number,
+})
+
+export type TapFlash = typeof TapFlash.Type
 
 /**
  * What the pointers are currently doing.
@@ -87,6 +99,7 @@ export const Model = Schema.Struct({
   activityToken: Schema.Number,
   /** When the last tap lifted, so the next one can tell it is a double. */
   lastTapAt: Schema.Number,
+  maybeTapFlash: Schema.Option(TapFlash),
 
   slider: Slider.Model,
 
@@ -119,6 +132,7 @@ export const init = (config: InitConfig): Model => ({
   isChromeVisible: true,
   activityToken: 0,
   lastTapAt: 0,
+  maybeTapFlash: Option.none(),
   // The range is empty until the book says how many pages it has.
   slider: Slider.init({ id: SLIDER_ID, min: 0, max: 0, step: 1 }),
   isFullscreen: false,

@@ -1,3 +1,4 @@
+import { Option } from 'effect'
 import {
   Command,
   expectNoOutMessage,
@@ -611,6 +612,83 @@ describe('a gesture the browser never closed', () => {
       model((model) => {
         expect(model.gesture._tag).toBe('Tracking')
         expect(model.zoom).toBe(ZOOM_MIN)
+      }),
+    )
+  })
+})
+
+describe('which side a page came from', () => {
+  const press = (pointerId: number, x: number) =>
+    message(Message.PressedPointer({ pointerId, at: { x, y: 0 } }))
+  const release = (pointerId: number, x: number, timeStamp = 5000) =>
+    message(
+      Message.ReleasedPointer({
+        pointerId,
+        at: { x, y: 0 },
+        timeStamp,
+        viewportWidth: 600,
+      }),
+    )
+
+  test('a tap that turns the page marks the side it came from', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      // Right-to-left reading, so the left third advances.
+      press(1, -250),
+      release(1, -250),
+      model((model) => {
+        expect(Option.map(model.maybeTapFlash, ({ side }) => side)).toStrictEqual(
+          Option.some('Left'),
+        )
+      }),
+      ...settle(1),
+    )
+  })
+
+  test('tapping the same side again restarts the mark', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      press(1, -250),
+      release(1, -250, 5000),
+      ...settle(1),
+      press(1, -250),
+      release(1, -250, 9000),
+      model((model) => {
+        // A changed token is what lets the view play the animation twice.
+        expect(Option.map(model.maybeTapFlash, ({ token }) => token)).toStrictEqual(Option.some(1))
+      }),
+      ...settle(2),
+    )
+  })
+
+  test('a tap at the end of the book marks nothing', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      // The right third goes back, and page one has nowhere to go.
+      press(1, 250),
+      release(1, 250),
+      model((model) => {
+        expect(model.maybeTapFlash).toStrictEqual(Option.none())
+      }),
+      ...settle(0),
+    )
+  })
+
+  test('a tap in the middle marks nothing either', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      press(1, 0),
+      release(1, 0),
+      model((model) => {
+        expect(model.maybeTapFlash).toStrictEqual(Option.none())
       }),
     )
   })

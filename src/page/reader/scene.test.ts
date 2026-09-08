@@ -1,3 +1,4 @@
+import { Option } from 'effect'
 import {
   Command,
   click,
@@ -51,6 +52,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   isChromeVisible: true,
   activityToken: 0,
   lastTapAt: 0,
+  maybeTapFlash: Option.none(),
   slider: Slider.init({ id: SLIDER_ID, min: 0, max: 5, step: 1 }),
   isFullscreen: false,
   isThumbsOpen: false,
@@ -107,6 +109,25 @@ describe('reading', () => {
       click(role('button', { name: '← Shelf' })),
       expectOutMessage(OutMessage.RequestedExit()),
     )
+  })
+})
+
+describe('which side a page came from', () => {
+  // The mark is drawn only where `import.meta.hot` is set, which a test run is.
+  // A production build drops it, so this covers the development behaviour.
+  test('a recorded turn draws the edge it came from', () => {
+    scene(
+      program,
+      given({
+        ...readingModel(),
+        maybeTapFlash: Option.some({ side: 'Left' as const, token: 0 }),
+      }),
+      expect(selector('.tap-flash')).toExist(),
+    )
+  })
+
+  test('nothing is drawn until a turn records one', () => {
+    scene(program, given(readingModel()), expect(selector('.tap-flash')).not.toExist())
   })
 })
 
