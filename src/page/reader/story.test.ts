@@ -437,15 +437,50 @@ describe('chrome', () => {
     )
   })
 
-  test('a press brings the chrome back and restarts the wait', () => {
+  test('a press restarts the wait but leaves the chrome as it found it', () => {
+    // Revealing on the way down would make every middle tap resolve to hidden,
+    // because the release toggles from whatever the press left behind.
     story(
       update,
       given({ ...openingModel(), isChromeVisible: false, activityToken: 3 }),
       message(Message.PressedPointer({ pointerId: 1, at: { x: 0, y: 0 } })),
       model((model) => {
-        expect(model.isChromeVisible).toBe(true)
+        expect(model.isChromeVisible).toBe(false)
         expect(model.activityToken).toBe(4)
       }),
+    )
+  })
+
+  test('a middle tap brings hidden chrome back', () => {
+    story(
+      update,
+      given({ ...openingModel(), isChromeVisible: false }),
+      ...opened(0),
+      message(Message.PressedPointer({ pointerId: 1, at: { x: 0, y: 0 } })),
+      message(
+        Message.ReleasedPointer({
+          pointerId: 1,
+          at: { x: 0, y: 0 },
+          timeStamp: 5000,
+          viewportWidth: 600,
+        }),
+      ),
+      model((model) => {
+        expect(model.isChromeVisible).toBe(true)
+      }),
+    )
+  })
+
+  test('a key brings the chrome back', () => {
+    story(
+      update,
+      given({ ...openingModel(), isChromeVisible: false }),
+      ...opened(0),
+      message(Message.PressedKey({ key: 'ArrowLeft' })),
+      model((model) => {
+        expect(model.isChromeVisible).toBe(true)
+      }),
+      ...settle(1),
     )
   })
 })

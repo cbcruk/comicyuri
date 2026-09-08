@@ -104,12 +104,19 @@ const withSettings = (model: Model, settings: Model['settings']): UpdateReturn =
   }
 }
 
-/** Any pointer activity brings the chrome back and restarts the wait to hide it. */
+/** Brings the chrome back and restarts the wait that hides it. */
 const withActivity = (model: Model): Model =>
   evo(model, {
     isChromeVisible: () => true,
     activityToken: (token) => token + 1,
   })
+
+/**
+ * A press restarts the wait but does not itself reveal the chrome. A tap in
+ * the middle of the page is a request to toggle it, and revealing on the way
+ * down would mean every one of those taps resolved to hidden.
+ */
+const withPress = (model: Model): Model => evo(model, { activityToken: (token) => token + 1 })
 
 const zoomedTo = (model: Model, nextZoom: number, anchor: Point): Model => {
   const zoom = clampZoom(nextZoom)
@@ -425,7 +432,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     },
 
     PressedPointer: ({ pointerId, at }) => ({
-      model: pressed(withActivity(model), pointerId, at),
+      model: pressed(withPress(model), pointerId, at),
     }),
 
     MovedPointer: ({ pointerId, at }) => ({
@@ -482,9 +489,11 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         ? { model: evo(model, { isChromeVisible: () => false }) }
         : { model },
 
+    // A key is a deliberate act, so it brings the chrome back the way the
+    // toolbar's own controls do.
     PressedKey: ({ key }) =>
       Option.match(messageForKey(model, key), {
         onNone: () => ({ model }),
-        onSome: (message) => update(model, message),
+        onSome: (message) => update(withActivity(model), message),
       }),
   })
