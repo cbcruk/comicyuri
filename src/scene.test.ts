@@ -149,9 +149,10 @@ describe('interaction', () => {
   })
 
   test('the shelf carries no stray file input', () => {
-    // The drop zone's own hidden input is not rendered: its `sr-only` class
-    // comes from @foldkit/ui's bundle, which Tailwind does not scan, so it
-    // would show up as a bare "choose file" control sitting on the shelf.
+    // The drop zone's own hidden input is not rendered. The header pickers
+    // already open the file dialog, and `sr-only` hides an element without
+    // taking it out of the tab order, so leaving it in puts an invisible tab
+    // stop in the middle of the shelf.
     scene(
       program,
       given(shelfModel()),
