@@ -14,6 +14,7 @@ import { Model, OpenState, SpreadState } from './model.ts'
 import type { TapFlash } from './model.ts'
 import type { Panel } from './model.ts'
 import { indexOfPage, spreadsFor } from './spread.ts'
+import { sliderPage } from './update.ts'
 import { rowsFor, urlFor } from './thumbs.ts'
 
 const FIT_LABEL: Record<FitMode, string> = {
@@ -257,15 +258,20 @@ const stageView = (
  * in flow here narrows the track without moving the thumb, so the component's
  * hidden input — which carries nothing without a form `name` — is left out.
  */
-const sliderView = (model: Model, h: HtmlBuilder<Message>): Html =>
-  h.submodel({
+const sliderView = (model: Model, h: HtmlBuilder<Message>): Html => {
+  const isRightToLeft = model.settings.direction === 'rtl'
+
+  return h.submodel({
     slotId: model.slider.id,
     model: model.slider,
     view: Slider.view,
     viewInputs: {
-      value: model.page,
+      // The slider's value runs the other way when reading right to left, so
+      // its own arrow keys and drag point where the reader expects. The label
+      // maps back, because the page number does not mirror.
+      value: sliderPage(model, model.page),
       ariaLabel: 'Page',
-      formatValue: (page) => `Page ${page + 1}`,
+      formatValue: (value) => `Page ${sliderPage(model, value) + 1}`,
       toView: (attributes) =>
         h.div(
           [
@@ -273,9 +279,21 @@ const sliderView = (model: Model, h: HtmlBuilder<Message>): Html =>
             h.Class('relative flex h-6 flex-1 touch-none items-center select-none'),
           ],
           [
+            // The component always fills from its own minimum, which reading
+            // right to left is the end of the book. So the two colours trade
+            // places there: the track carries the read colour along its whole
+            // length and the component's fill covers what is left to read.
             h.div(
-              [...attributes.track, h.Class('h-1.5 w-full rounded-full bg-edge')],
-              [h.div([...attributes.filledTrack, h.Class('h-full rounded-full bg-accent')])],
+              [
+                ...attributes.track,
+                h.Class(clsx('h-1.5 w-full rounded-full', isRightToLeft ? 'bg-accent' : 'bg-edge')),
+              ],
+              [
+                h.div([
+                  ...attributes.filledTrack,
+                  h.Class(clsx('h-full rounded-full', isRightToLeft ? 'bg-edge' : 'bg-accent')),
+                ]),
+              ],
             ),
             h.div([
               ...attributes.thumb,
@@ -288,6 +306,7 @@ const sliderView = (model: Model, h: HtmlBuilder<Message>): Html =>
     },
     toParentMessage: (message) => Message.GotSliderMessage({ message }),
   })
+}
 
 const thumbView = (model: Model, page: number, h: HtmlBuilder<Message>): Html =>
   h.keyed('button')(
@@ -359,6 +378,9 @@ const turnView = (model: Model, isVisible: boolean, h: HtmlBuilder<Message>): Ht
       h.Class(
         clsx(
           'flex items-center justify-between gap-2 border-t border-edge px-4 py-2',
+          // Next sits where the next page comes from, on the same side the
+          // slider now fills from.
+          { 'flex-row-reverse': model.settings.direction === 'rtl' },
           chromeClassName(isVisible),
         ),
       ),

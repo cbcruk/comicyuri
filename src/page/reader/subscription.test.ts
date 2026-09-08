@@ -2,7 +2,7 @@ import { Effect, Option, Stream } from 'effect'
 import { describe, expect, test } from 'vite-plus/test'
 
 import { defaultSettings } from '../../types.ts'
-import { isReaderKey } from './keys.ts'
+import { handlesKeysItself, isReaderKey } from './keys.ts'
 import { init } from './model.ts'
 import { subscriptions } from './subscription.ts'
 
@@ -68,6 +68,34 @@ describe('which keys belong to the reader', () => {
     for (const key of ['r', 'F5', 'Tab', 'a', 'Enter', '/']) {
       expect(isReaderKey(key, NO_MODIFIERS)).toBe(false)
     }
+  })
+})
+
+describe('who answers a key first', () => {
+  const element = (html: string): Element => {
+    const host = document.createElement('div')
+    host.innerHTML = html
+    const found = host.firstElementChild
+    if (found === null) throw new Error('nothing to test')
+    return found
+  }
+
+  test('the page slider keeps the keys it handles', () => {
+    // The slider moves itself on the arrows, so the reader's document listener
+    // must stand down or one press counts twice.
+    expect(handlesKeysItself(element('<div role="slider"></div>'))).toBe(true)
+  })
+
+  test('and so does anything inside it', () => {
+    expect(
+      handlesKeysItself(element('<div role="slider"><span>thumb</span></div>').firstElementChild),
+    ).toBe(true)
+  })
+
+  test('everything else leaves the key to the reader', () => {
+    expect(handlesKeysItself(element('<button>Next</button>'))).toBe(false)
+    expect(handlesKeysItself(null)).toBe(false)
+    expect(handlesKeysItself(document)).toBe(false)
   })
 })
 

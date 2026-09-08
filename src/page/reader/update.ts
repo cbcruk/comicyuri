@@ -30,6 +30,7 @@ import type { OpenBookService } from './resource.ts'
 import { loadedPages, missingFrom, pagesInView } from './thumbs.ts'
 import {
   indexOfPage,
+  mirrorForDirection,
   neighbourPages,
   pageAfterStep,
   pagesAt,
@@ -307,6 +308,22 @@ const withTapFlash = (turned: UpdateReturn, pageBefore: number, side: Side): Upd
         }),
       }
 
+/**
+ * The slider works in its own value, which runs the other way when reading
+ * right to left. The mapping is its own inverse, so the same call turns a page
+ * into a value in the view and a value back into a page here.
+ */
+export const sliderPage = (model: Model, value: number): number =>
+  mirrorForDirection(
+    value,
+    OpenState.match(model.openState, {
+      Opening: () => 0,
+      Failed: () => 0,
+      Ready: ({ pageCount }) => pageCount,
+    }),
+    model.settings.direction,
+  )
+
 /** The slider reports pages, which is exactly what `showPage` takes. */
 const foldSliderOutMessage = Slider.OutMessage.match<
   Update.StepWithOutMessage<Model, Message, OutMessage, OpenBookService>
@@ -314,7 +331,7 @@ const foldSliderOutMessage = Slider.OutMessage.match<
   ChangedValue:
     ({ value }) =>
     (model) =>
-      goToPage(model, value),
+      goToPage(model, sliderPage(model, value)),
 })
 
 const foldSlider = Update.foldChild({

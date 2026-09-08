@@ -5,7 +5,7 @@ import { Slider, VirtualList } from '@foldkit/ui'
 
 import { STAGE_ID } from './constant.ts'
 import { ZOOM_MIN } from './gesture.ts'
-import { isReaderKey } from './keys.ts'
+import { handlesKeysItself, isReaderKey } from './keys.ts'
 import type { Point } from './gesture.ts'
 import { Message } from './message.ts'
 import { Model } from './model.ts'
@@ -64,6 +64,8 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
           target: document,
           type: 'keydown',
           toMessage: (event) => {
+            if (handlesKeysItself(event.target)) return Option.none()
+
             if (
               !isReaderKey(event.key, {
                 ctrl: event.ctrlKey,

@@ -9,6 +9,7 @@ import {
   role,
   scene,
   selector,
+  within,
   text,
 } from 'foldkit/scene'
 import { describe, test } from 'vite-plus/test'
@@ -182,12 +183,17 @@ describe('failure', () => {
 })
 
 describe('page slider', () => {
-  test('the slider carries the reading position and moves it', () => {
+  const slider = role('slider', { name: 'Page' })
+
+  test('reading right to left, the slider starts full and empties leftward', () => {
+    // Six pages, so page one sits at the right-hand end. The label still names
+    // the page, because a page number does not mirror.
     scene(
       program,
       given(readingModel()),
-      expect(role('slider', { name: 'Page' })).toHaveAttr('aria-valuenow', '0'),
-      keydown(role('slider', { name: 'Page' }), 'ArrowRight'),
+      expect(slider).toHaveAttr('aria-valuenow', '5'),
+      expect(slider).toHaveAttr('aria-valuetext', 'Page 1'),
+      keydown(slider, 'ArrowLeft'),
       expectOutMessage(
         OutMessage.UpdatedProgress({
           bookId: 'volume-1::42',
@@ -196,7 +202,70 @@ describe('page slider', () => {
         }),
       ),
       ...settleTurn(1),
-      expect(role('slider', { name: 'Page' })).toHaveAttr('aria-valuenow', '1'),
+      expect(slider).toHaveAttr('aria-valuenow', '4'),
+      expect(slider).toHaveAttr('aria-valuetext', 'Page 2'),
+    )
+  })
+
+  test('reading left to right, it runs the usual way', () => {
+    scene(
+      program,
+      given(readingModel(0, { ...defaultSettings, direction: 'ltr' })),
+      expect(slider).toHaveAttr('aria-valuenow', '0'),
+      keydown(slider, 'ArrowRight'),
+      expectOutMessage(
+        OutMessage.UpdatedProgress({
+          bookId: 'volume-1::42',
+          page: 1,
+          bookmarks: [],
+        }),
+      ),
+      ...settleTurn(1),
+      expect(slider).toHaveAttr('aria-valuenow', '1'),
+    )
+  })
+
+  const track = selector('[data-slider-track-id]')
+  // The fill is the track's only child, and the height tells the two apart.
+  const filled = within(track, selector('.h-full'))
+
+  test('reading right to left, the filled part of the track sits on the right', () => {
+    // The component fills from its own minimum, which is the left. Reading
+    // right to left, that end is the end of the book, so the colours trade
+    // places: the accent runs the whole track and the fill covers the pages
+    // still to come.
+    scene(
+      program,
+      given(readingModel()),
+      expect(track).toHaveClass('bg-accent'),
+      expect(filled).toHaveClass('bg-edge'),
+    )
+  })
+
+  test('reading left to right, the fill is the fill', () => {
+    scene(
+      program,
+      given(readingModel(0, { ...defaultSettings, direction: 'ltr' })),
+      expect(track).toHaveClass('bg-edge'),
+      expect(filled).toHaveClass('bg-accent'),
+    )
+  })
+
+  test('the row of controls turns around with the reading direction', () => {
+    // Next has to sit on the side the next page comes from, which is the side
+    // the slider fills from.
+    scene(
+      program,
+      given(readingModel()),
+      expect(selector('footer')).toHaveClass('flex-row-reverse'),
+    )
+  })
+
+  test('and reading left to right it stays as written', () => {
+    scene(
+      program,
+      given(readingModel(0, { ...defaultSettings, direction: 'ltr' })),
+      expect(selector('footer')).not.toHaveClass('flex-row-reverse'),
     )
   })
 
@@ -215,7 +284,7 @@ describe('page slider', () => {
     scene(
       program,
       given({ ...readingModel(), isChromeVisible: false }),
-      keydown(role('slider', { name: 'Page' }), 'ArrowRight'),
+      keydown(role('slider', { name: 'Page' }), 'ArrowLeft'),
       expectOutMessage(
         OutMessage.UpdatedProgress({
           bookId: 'volume-1::42',
