@@ -239,14 +239,31 @@ const released = (
   timeStamp: number,
   viewportWidth: number,
 ): UpdateReturn => {
-  const isDoubleTap = !tracking.hasLeftSlop && timeStamp - model.lastTapAt < DOUBLE_TAP_MILLIS
+  const settled = evo(model, { gesture: () => Gesture.Idle() })
 
-  const settled = evo(model, {
-    gesture: () => Gesture.Idle(),
-    lastTapAt: () => (tracking.hasLeftSlop ? 0 : timeStamp),
-  })
+  // A drag is never a tap, and it closes any pair a previous tap opened.
+  if (tracking.hasLeftSlop) {
+    const dragged = evo(settled, { lastTapAt: () => 0 })
 
-  if (isDoubleTap) {
+    // Zoomed in, a press that moved was a pan, and it is already applied.
+    if (model.zoom > ZOOM_MIN) return { model: dragged }
+
+    const swipe = swipeFrom(tracking.origin, at)
+    return swipe === 'Middle' ? { model: dragged } : step(dragged, stepForSide(dragged, swipe))
+  }
+
+  const zone = zoneAt(at.x, viewportWidth)
+
+  // The outer thirds turn pages and do nothing else. Tapping one twice quickly
+  // is someone reading fast, and reading it as a request to zoom is how a
+  // trackpad turned two pages into an enlargement.
+  if (zone !== 'Middle') {
+    const turning = evo(settled, { lastTapAt: () => 0 })
+    return withTapFlash(step(turning, stepForSide(turning, zone)), turning.page, zone)
+  }
+
+  // The middle is where the modes live: once for the chrome, twice for zoom.
+  if (timeStamp - model.lastTapAt < DOUBLE_TAP_MILLIS) {
     // Consumed, so a third tap opens a fresh pair rather than undoing this one.
     const consumed = evo(settled, { lastTapAt: () => 0 })
 
@@ -258,26 +275,13 @@ const released = (
     }
   }
 
-  if (tracking.hasLeftSlop) {
-    // Zoomed in, a press that moved was a pan, and it is already applied.
-    if (model.zoom > ZOOM_MIN) return { model: settled }
-
-    const swipe = swipeFrom(tracking.origin, at)
-    return swipe === 'Middle' ? { model: settled } : step(settled, stepForSide(settled, swipe))
+  return {
+    model: evo(settled, {
+      lastTapAt: () => timeStamp,
+      isChromeVisible: (visible) => !visible,
+      activityToken: (token) => token + 1,
+    }),
   }
-
-  const zone = zoneAt(at.x, viewportWidth)
-
-  if (zone === 'Middle') {
-    return {
-      model: evo(settled, {
-        isChromeVisible: (visible) => !visible,
-        activityToken: (token) => token + 1,
-      }),
-    }
-  }
-
-  return withTapFlash(step(settled, stepForSide(settled, zone)), settled.page, zone)
 }
 
 /**

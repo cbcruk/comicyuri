@@ -617,6 +617,74 @@ describe('a gesture the browser never closed', () => {
   })
 })
 
+describe('reading fast is not asking to zoom', () => {
+  const press = (pointerId: number, x: number) =>
+    message(Message.PressedPointer({ pointerId, at: { x, y: 0 } }))
+  const release = (pointerId: number, x: number, timeStamp: number) =>
+    message(
+      Message.ReleasedPointer({
+        pointerId,
+        at: { x, y: 0 },
+        timeStamp,
+        viewportWidth: 600,
+      }),
+    )
+
+  test('two quick taps on a turning zone turn two pages', () => {
+    // A trackpad makes this easy to do by accident, and treating the pair as a
+    // double tap turned a fast reader's page into an enlargement.
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      press(1, -250),
+      release(1, -250, 5000),
+      ...settle(1),
+      press(1, -250),
+      release(1, -250, 5080),
+      model((model) => {
+        expect(model.page).toBe(2)
+        expect(model.zoom).toBe(ZOOM_MIN)
+      }),
+      ...settle(2),
+    )
+  })
+
+  test('a turning tap does not pair with a middle tap that follows', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      press(1, -250),
+      release(1, -250, 5000),
+      ...settle(1),
+      press(1, 0),
+      release(1, 0, 5080),
+      model((model) => {
+        expect(model.zoom).toBe(ZOOM_MIN)
+        // The middle tap did its own job.
+        expect(model.isChromeVisible).toBe(false)
+      }),
+    )
+  })
+
+  test('two quick taps in the middle still zoom', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      press(1, 0),
+      release(1, 0, 5000),
+      press(1, 0),
+      release(1, 0, 5080),
+      model((model) => {
+        expect(model.zoom).toBeCloseTo(DOUBLE_TAP_ZOOM)
+        expect(model.page).toBe(0)
+      }),
+    )
+  })
+})
+
 describe('which side a page came from', () => {
   const press = (pointerId: number, x: number) =>
     message(Message.PressedPointer({ pointerId, at: { x, y: 0 } }))
