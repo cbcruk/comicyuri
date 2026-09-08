@@ -386,6 +386,13 @@ const isControlUse = (message: Message): boolean =>
     message._tag === 'ScrolledToZoom' ||
     message._tag === 'GotSliderMessage')
 
+/**
+ * Folds one Message into the reader.
+ *
+ * Anything the reader did on purpose also counts as activity, which brings the
+ * chrome back and restarts the wait that hides it — so that lives here rather
+ * than being repeated in every branch below.
+ */
 export const update = (model: Model, message: Message): UpdateReturn =>
   applyMessage(isControlUse(message) ? withActivity(model) : model, message)
 

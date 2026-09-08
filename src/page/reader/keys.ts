@@ -32,9 +32,13 @@ const COMMAND_KEYS: Readonly<Record<string, () => Message>> = {
 export const handlesKeysItself = (target: EventTarget | null): boolean =>
   target instanceof Element && target.closest('[role="slider"]') !== null
 
+/** The modifier keys held during a keystroke. */
 export type Modifiers = Readonly<{
+  /** Whether Control was held. */
   ctrl: boolean
+  /** Whether Command or the Windows key was held. */
   meta: boolean
+  /** Whether Alt or Option was held. */
   alt: boolean
 }>
 

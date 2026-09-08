@@ -118,6 +118,10 @@ const foldReader = Update.foldChild({
   foldOutMessage: foldReaderOutMessage,
 })
 
+/**
+ * Folds one Message into the Model, answering with the next Model and whatever
+ * should happen next.
+ */
 export const update = (model: Model, message: Message) =>
   Message.match<UpdateReturn>(message, {
     ClickedLink: ({ request }) =>

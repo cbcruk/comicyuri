@@ -33,6 +33,12 @@ export class CoverError extends Data.TaggedError('CoverError')<{
   readonly reason: string
 }> {}
 
+/**
+ * Every failure this application reports to the reader.
+ *
+ * {@linkcode describe} turns one into text, so a new member of this union is a
+ * type error there until it has something to say.
+ */
 export type AppError = DbError | ArchiveError | EmptyBookError | NoComicFilesError | CoverError
 
 const APP_ERROR_TAGS = [

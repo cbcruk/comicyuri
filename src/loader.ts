@@ -11,9 +11,11 @@ const ZIP_RE = /\.(cbz|zip)$/i
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
 
+/** Whether a file name is one of the image formats a page can be. */
 export function isImageName(name: string): boolean {
   return IMAGE_RE.test(name)
 }
+/** Whether a file name is a comic archive (`.cbz` or `.zip`). */
 export function isArchiveName(name: string): boolean {
   return ZIP_RE.test(name)
 }

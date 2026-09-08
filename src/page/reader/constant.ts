@@ -4,6 +4,7 @@ export const STAGE_ID = 'reader-stage'
 /** The page slider, addressed by the parent when it lifts the drag subscriptions. */
 export const SLIDER_ID = 'reader-page-slider'
 
+/** The page grid, addressed by the parent when it lifts the list subscriptions. */
 export const THUMBS_ID = 'reader-thumbs'
 
 /**
@@ -12,6 +13,10 @@ export const THUMBS_ID = 'reader-thumbs'
  * the price of windowing a grid through a list.
  */
 export const THUMBS_PER_ROW = 4
+/**
+ * Row height in pixels, which the virtual list needs before it has measured
+ * anything to know how many rows the panel can hold.
+ */
 export const THUMB_ROW_HEIGHT = 180
 
 /** Rows loaded beyond the ones on screen, so scrolling finds them ready. */

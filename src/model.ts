@@ -16,6 +16,7 @@ import { Settings } from './types.ts'
  */
 export const Shelf = AsyncData.Schema(Schema.Array(BookSummary), Schema.String)
 
+/** The decoded value of the {@linkcode Shelf} schema. */
 export type Shelf = typeof Shelf.schema.Type
 
 /**
@@ -34,8 +35,10 @@ export const Notice = defineTaggedUnion({
   Failed: { text: Schema.String, token: Schema.Number },
 })
 
+/** The decoded value of the {@linkcode Notice} union. */
 export type Notice = typeof Notice.Type
 
+/** Everything the application knows, and the only thing the view reads. */
 export const Model = Schema.Struct({
   route: AppRoute,
   settings: Settings,
@@ -46,4 +49,5 @@ export const Model = Schema.Struct({
   maybeReader: Schema.Option(Reader.Model),
 })
 
+/** The decoded value of the {@linkcode Model} schema. */
 export type Model = typeof Model.Type

@@ -198,6 +198,10 @@ const shelfContentView = (shelf: Shelf, h: HtmlBuilder<Message>): Html =>
     onStale: ({ data }) => gridView(data, h),
   })
 
+/**
+ * Draws the shelf: the header, the status line, and the grid of books inside
+ * the drop zone that takes an import.
+ */
 export const shelfView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     [h.Class('flex h-full flex-col')],

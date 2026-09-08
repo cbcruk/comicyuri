@@ -11,11 +11,20 @@
 import { Effect } from 'effect'
 import { ArchiveError } from './errors.ts'
 
+/** One file listed in the archive's central directory, located but not yet read. */
 export interface ZipEntry {
+  /** The path inside the archive, directory separators and all. */
   name: string
+  /**
+   * The compression method: `0` stored, `8` deflate. Anything else is refused
+   * by {@linkcode ZipArchive.extract}.
+   */
   method: number
+  /** Bytes occupied in the archive. */
   compressedSize: number
+  /** Bytes the entry expands to. */
   uncompressedSize: number
+  /** Where the local file header starts, counted from the front of the archive. */
   offset: number
 }
 
@@ -65,7 +74,15 @@ function readCentralDirectory(buffer: ArrayBuffer, view: DataView, eocd: number)
   return entries
 }
 
+/**
+ * An archive held in memory, with its directory parsed and its entries left
+ * where they are until asked for.
+ *
+ * Open one with {@linkcode ZipArchive.open}; the constructor is private so an
+ * archive cannot exist without a directory that parsed.
+ */
 export class ZipArchive {
+  /** Every entry the central directory listed, in the order it listed them. */
   readonly entries: ZipEntry[]
   private readonly buffer: ArrayBuffer
 
@@ -74,6 +91,12 @@ export class ZipArchive {
     this.entries = entries
   }
 
+  /**
+   * Reads an archive and parses its central directory.
+   *
+   * Fails when the blob is not a ZIP at all, or when its directory is truncated
+   * or corrupt.
+   */
   static open(blob: Blob): Effect.Effect<ZipArchive, ArchiveError> {
     return Effect.gen(function* () {
       const buffer = yield* Effect.tryPromise({
@@ -94,6 +117,12 @@ export class ZipArchive {
     })
   }
 
+  /**
+   * Reads one entry, inflating it when it was deflated.
+   *
+   * The entry must be one of this archive's own {@linkcode ZipArchive.entries};
+   * nothing checks that, and an offset from elsewhere reads the wrong bytes.
+   */
   extract(entry: ZipEntry): Effect.Effect<Uint8Array<ArrayBuffer>, ArchiveError> {
     return Effect.try({
       try: () => {

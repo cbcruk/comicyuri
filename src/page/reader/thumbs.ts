@@ -31,17 +31,23 @@ export const pagesInView = (list: VirtualList.Model, pageCount: number): Readonl
   )
 }
 
+/**
+ * The wanted pages that have not been extracted yet, so a scroll only asks for
+ * what the last one did not already fetch.
+ */
 export const missingFrom = (
   loaded: ReadonlyArray<Panel>,
   wanted: ReadonlyArray<number>,
 ): ReadonlyArray<number> =>
   Array.filter(wanted, (page) => !Array.some(loaded, (panel) => panel.page === page))
 
+/** The thumbnail for a page, absent until it has been extracted. */
 export const urlFor = (loaded: ReadonlyArray<Panel>, page: number): Option.Option<string> =>
   Option.map(
     Array.findFirst(loaded, (panel) => panel.page === page),
     (panel) => panel.url,
   )
 
+/** Every page already extracted, which is what the release side works from. */
 export const loadedPages = (loaded: ReadonlyArray<Panel>): ReadonlyArray<number> =>
   Array.map(loaded, (panel) => panel.page)

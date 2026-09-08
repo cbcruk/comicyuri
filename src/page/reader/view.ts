@@ -405,6 +405,10 @@ const openingView = (text: string, h: HtmlBuilder<Message>): Html =>
     ],
   )
 
+/**
+ * Draws the reader: the stage, the toolbar and turn controls over it, and the
+ * page grid when it is open.
+ */
 export const view = defineView<Model, Message>((model, h): Html =>
   OpenState.match(model.openState, {
     Opening: () => openingView('Opening…', h),
