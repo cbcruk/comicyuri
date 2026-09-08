@@ -20,14 +20,23 @@ import { Settings } from './types.ts'
  * who picked the light theme sees one dark frame before `ApplyTheme` lands.
  */
 export const Flags = Schema.Struct({ settings: Settings })
+/** The decoded value of the {@linkcode Flags} schema. */
 export type Flags = typeof Flags.Type
 
+/** Reads what the first Model needs from storage before anything renders. */
 export const flags: Effect.Effect<Flags> = Effect.map(loadSettings, (settings) =>
   Flags.make({ settings }),
 )
 
 // INIT
 
+/**
+ * Builds the first Model from the flags and the URL that was opened.
+ *
+ * The shelf starts loading and the theme is applied straight away; a deep link
+ * into a book asks for its saved position and leaves the reader absent until
+ * the answer arrives, so no book ever opens on page one and then jumps.
+ */
 export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (
   flags: Flags,
   url: Url,

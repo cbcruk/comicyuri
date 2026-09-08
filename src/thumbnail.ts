@@ -24,6 +24,14 @@ const loadImage = (url: string): Effect.Effect<HTMLImageElement, CoverError> =>
     }),
   )
 
+/**
+ * Draws an image down to a shelf-sized WebP cover.
+ *
+ * The aspect ratio is kept and the image is never scaled up.
+ *
+ * @param url An object URL for the page being used as the cover.
+ * @param maxSize The longest edge of the result, in pixels.
+ */
 export function makeCover(url: string, maxSize = 400): Effect.Effect<Blob, CoverError> {
   return Effect.gen(function* () {
     const img = yield* loadImage(url)

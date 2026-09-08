@@ -23,6 +23,13 @@ const summarise = (stored: StoredBook): Book.BookSummary =>
     Option.map(Option.fromNullishOr(stored.cover), (cover) => URL.createObjectURL(cover)),
   )
 
+/**
+ * Reads the whole shelf and summarises it for the grid, minting an object URL
+ * for every cover it finds.
+ *
+ * Those URLs are the reason a shelf load is always paired with a
+ * {@linkcode RevokeCoverUrls} of the ones it replaces.
+ */
 export const LoadShelf = Command.define('LoadShelf', {
   messages: [Message.SucceededLoadShelf, Message.FailedLoadShelf],
   execute: getAllBooks.pipe(
@@ -31,6 +38,12 @@ export const LoadShelf = Command.define('LoadShelf', {
   ),
 })
 
+/**
+ * Opens the file picker for archives and loose images.
+ *
+ * A cancelled picker answers with no files rather than failing, so nothing
+ * distinguishes it from picking nothing.
+ */
 export const SelectFiles = Command.define('SelectFiles', {
   messages: [Message.CompletedSelectFiles],
   execute: File.selectMultiple(ARCHIVE_ACCEPT).pipe(
@@ -95,6 +108,12 @@ const importOne = (record: StoredBook): Effect.Effect<void, AppError> =>
     })
   })
 
+/**
+ * Turns picked files into shelf records and stores them.
+ *
+ * Each archive becomes its own book and loose images are grouped into one, and
+ * each is opened once on the way in to count its pages and take a cover.
+ */
 export const ImportFiles = Command.define('ImportFiles', {
   args: { files: Schema.Array(File.File) },
   messages: [Message.SucceededImportFiles, Message.FailedImportFiles],
@@ -106,6 +125,7 @@ export const ImportFiles = Command.define('ImportFiles', {
     ),
 })
 
+/** Removes one book from the shelf for good. */
 export const DeleteBook = Command.define('DeleteBook', {
   args: { id: Schema.String },
   messages: [Message.SucceededDeleteBook, Message.FailedDeleteBook],
@@ -116,6 +136,7 @@ export const DeleteBook = Command.define('DeleteBook', {
     ),
 })
 
+/** Persists the settings so the next visit opens the same way. */
 export const SaveSettings = Command.define('SaveSettings', {
   args: { settings: Settings },
   messages: [Message.CompletedSaveSettings],
@@ -137,6 +158,12 @@ export const ApplyTheme = Command.define('ApplyTheme', {
     }).pipe(Effect.as(Message.CompletedApplyTheme())),
 })
 
+/**
+ * Releases cover object URLs the shelf no longer draws.
+ *
+ * Without this every reload of the shelf leaks the covers of the load before
+ * it, which for a shelf of large covers is real memory.
+ */
 export const RevokeCoverUrls = Command.define('RevokeCoverUrls', {
   args: { urls: Schema.Array(Schema.String) },
   messages: [Message.CompletedRevokeCoverUrls],
@@ -170,6 +197,7 @@ export const LoadProgress = Command.define('LoadProgress', {
     ),
 })
 
+/** Persists where a book has been left off, stamped with the time it was saved. */
 export const SaveProgress = Command.define('SaveProgress', {
   args: {
     bookId: Schema.String,
@@ -183,12 +211,14 @@ export const SaveProgress = Command.define('SaveProgress', {
     ),
 })
 
+/** Moves to another route, pushing a history entry so Back works. */
 export const NavigateInternal = Command.define('NavigateInternal', {
   args: { url: Schema.String },
   messages: [Message.CompletedNavigateInternal],
   execute: ({ url }) => pushUrl(url).pipe(Effect.as(Message.CompletedNavigateInternal())),
 })
 
+/** Hands the browser a URL outside the application, leaving the page. */
 export const LoadExternal = Command.define('LoadExternal', {
   args: { href: Schema.String },
   messages: [Message.CompletedLoadExternal],

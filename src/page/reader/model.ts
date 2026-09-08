@@ -14,6 +14,7 @@ export const OpenState = defineTaggedUnion({
   Failed: { text: Schema.String },
 })
 
+/** The decoded value of the {@linkcode OpenState} union. */
 export type OpenState = typeof OpenState.Type
 
 /** One image on screen. */
@@ -22,6 +23,7 @@ export const Panel = Schema.Struct({
   url: Schema.String,
 })
 
+/** The decoded value of the {@linkcode Panel} schema. */
 export type Panel = typeof Panel.Type
 
 /** What the stage is showing for the current spread. */
@@ -31,6 +33,7 @@ export const SpreadState = defineTaggedUnion({
   Failed: { text: Schema.String },
 })
 
+/** The decoded value of the {@linkcode SpreadState} union. */
 export type SpreadState = typeof SpreadState.Type
 
 /**
@@ -43,6 +46,7 @@ export const TapFlash = Schema.Struct({
   token: Schema.Number,
 })
 
+/** The decoded value of the {@linkcode TapFlash} schema. */
 export type TapFlash = typeof TapFlash.Type
 
 /**
@@ -70,6 +74,7 @@ export const Gesture = defineTaggedUnion({
   },
 })
 
+/** The decoded value of the {@linkcode Gesture} union. */
 export type Gesture = typeof Gesture.Type
 
 /**
@@ -112,15 +117,31 @@ export const Model = Schema.Struct({
   thumbPanels: Schema.Array(Panel),
 })
 
+/** The decoded value of the {@linkcode Model} schema. */
 export type Model = typeof Model.Type
 
+/**
+ * What {@linkcode init} needs to open a book: which book, and where its reader
+ * left off.
+ */
 export type InitConfig = Readonly<{
+  /** Which book to open, and the key its progress is saved under. */
   bookId: string
+  /** Where this book was left off. */
   page: number
+  /** The pages already bookmarked. */
   bookmarks: ReadonlyArray<number>
+  /** The application settings, which the reader edits and reports back up. */
   settings: Settings
 }>
 
+/**
+ * Builds a reader that is already at the saved page, with the book still
+ * opening behind it.
+ *
+ * The slider has no range yet — the page count only arrives with the book — so
+ * nothing here can be scrubbed until it does.
+ */
 export const init = (config: InitConfig): Model => ({
   bookId: config.bookId,
   openState: OpenState.Opening(),

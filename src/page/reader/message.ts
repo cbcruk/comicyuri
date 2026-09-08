@@ -7,6 +7,13 @@ import { Settings } from '../../types.ts'
 import { Point } from './gesture.ts'
 import { Panel } from './model.ts'
 
+/**
+ * Everything that can happen inside the reader.
+ *
+ * Pointer messages carry the `pointerId` they came from, because a gesture is
+ * only the pointer that started it: a second finger arriving mid-drag must not
+ * be mistaken for the first one jumping.
+ */
 export const Message = defineMessageUnion({
   CompletedOpenBook: { title: Schema.String, pageCount: Schema.Number },
   FailedOpenBook: { text: Schema.String },
@@ -59,6 +66,7 @@ export const Message = defineMessageUnion({
   CompletedLoadThumbs: { panels: Schema.Array(Panel) },
 })
 
+/** The decoded value of the {@linkcode Message} union. */
 export type Message = typeof Message.Type
 
 /** What the reader reports up to the application. */
@@ -72,4 +80,5 @@ export const OutMessage = defineMessageUnion({
   },
 })
 
+/** The decoded value of the {@linkcode OutMessage} union. */
 export type OutMessage = typeof OutMessage.Type

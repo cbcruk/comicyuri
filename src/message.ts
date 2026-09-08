@@ -9,6 +9,13 @@ import { FileDrop } from '@foldkit/ui'
 import { BookSummary } from './domain/book.ts'
 import { Reader } from './page/index.ts'
 
+/**
+ * Everything that can happen to the application.
+ *
+ * Names say what happened, never what to do about it: `Clicked*` for something
+ * the reader did, `Got*` for a child's message, `Succeeded*`/`Failed*` for how
+ * an operation ended, and `Completed*` for one that cannot fail.
+ */
 export const Message = defineMessageUnion({
   ClickedLink: { request: UrlRequest },
   ChangedUrl: { url: Url },
@@ -45,4 +52,5 @@ export const Message = defineMessageUnion({
   CompletedSaveProgress: {},
 })
 
+/** The decoded value of the {@linkcode Message} union. */
 export type Message = typeof Message.Type

@@ -25,6 +25,7 @@ const noticePageView = (heading: string, detail: string, h: HtmlBuilder<Message>
     ],
   )
 
+/** Draws the route, and titles the browser tab with it. */
 export const view = (model: Model, h: HtmlBuilder<Message>): Document =>
   AppRoute.match(model.route, {
     Shelf: () => ({ title: 'comicyuri', body: shelfView(model, h) }),

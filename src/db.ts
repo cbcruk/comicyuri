@@ -4,15 +4,26 @@ import { Effect } from 'effect'
 import { DbError } from './errors.ts'
 import type { BookSource } from './types.ts'
 
+/**
+ * One book as it sits in IndexedDB: the imported bytes plus what the shelf
+ * needs to draw a card without opening them.
+ */
 export interface StoredBook {
+  /** Stable across imports of the same file, so progress finds its book again. */
   id: string
+  /** The file or folder name with its extension taken off. */
   title: string
+  /** Which of the three import shapes produced this record. */
   source: BookSource
+  /** Entry names in reading order, index-aligned with {@linkcode StoredBook.blobs}. */
   names: string[]
+  /** The archive as a single blob, or one blob per loose image. */
   blobs: Blob[]
+  /** Import time in epoch milliseconds; the shelf lists newest first. */
   createdAt: number
   /** Small cover thumbnail generated at import time (optional). */
   cover?: Blob
+  /** Known only once the archive has been opened, so absent on a fresh import. */
   pageCount?: number
 }
 
@@ -66,14 +77,22 @@ const request = <A>(
     }),
   )
 
+/**
+ * Every stored book, newest import first.
+ *
+ * That order is the shelf's order, applied here rather than in the view so a
+ * reload cannot rearrange the grid.
+ */
 export const getAllBooks: Effect.Effect<StoredBook[], DbError> = request<StoredBook[]>(
   'getAll',
   'readonly',
   (s) => s.getAll(),
 ).pipe(Effect.map((books) => books.sort((a, b) => b.createdAt - a.createdAt)))
 
+/** Writes a book, replacing any record already under its id. */
 export const putBook = (book: StoredBook): Effect.Effect<void, DbError> =>
   request('put', 'readwrite', (s) => s.put(book)).pipe(Effect.asVoid)
 
+/** Removes a book. Deleting an id that is not there is not an error. */
 export const deleteBook = (id: string): Effect.Effect<void, DbError> =>
   request('delete', 'readwrite', (s) => s.delete(id)).pipe(Effect.asVoid)

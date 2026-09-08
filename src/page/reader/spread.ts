@@ -18,12 +18,17 @@ export const spreadsFor = (
 ): ReadonlyArray<ReadonlyArray<number>> =>
   buildSpreads(pageCount, settings.view, settings.coverAlone)
 
+/**
+ * Which spread a page is part of. Pages outside the book answer with the first
+ * spread rather than nothing.
+ */
 export const indexOfPage = (spreads: ReadonlyArray<ReadonlyArray<number>>, page: number): number =>
   spreadOfPage(
     spreads.map((spread) => [...spread]),
     page,
   )
 
+/** The pages of one spread, empty past either end of the book. */
 export const pagesAt = (
   spreads: ReadonlyArray<ReadonlyArray<number>>,
   index: number,
@@ -36,11 +41,16 @@ const pagesWithin = (
 ): ReadonlyArray<number> =>
   Array.flatMap(Array.range(index - reach, index + reach), (at) => pagesAt(spreads, at))
 
+/** The pages worth having ready: this spread and the one on each side. */
 export const neighbourPages = (
   spreads: ReadonlyArray<ReadonlyArray<number>>,
   index: number,
 ): ReadonlyArray<number> => pagesWithin(spreads, index, PRELOAD)
 
+/**
+ * The pages worth holding on to. Anything further out than this has its object
+ * URL released, which is what stops a long book from filling memory.
+ */
 export const pagesToKeep = (
   spreads: ReadonlyArray<ReadonlyArray<number>>,
   index: number,

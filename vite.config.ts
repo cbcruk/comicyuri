@@ -21,6 +21,13 @@ export default defineConfig({
     ignorePatterns: VENDORED,
   },
   lint: {
+    // Naming any plugin replaces the default set, so the three that are on
+    // out of the box are listed again alongside `jsdoc`. That one is here for
+    // its tag checks — a mistyped `@retruns` or an empty `@example` is silent
+    // otherwise. Its `require-param` / `require-returns` rules stay off, as
+    // they are by default: those tags are for facts the signature cannot
+    // state, such as a sentinel return value.
+    plugins: ['typescript', 'unicorn', 'oxc', 'jsdoc'],
     jsPlugins: [
       { name: 'vite-plus', specifier: 'vite-plus/oxlint-plugin' },
       { name: 'foldkit', specifier: '@foldkit/oxlint-plugin' },
@@ -60,6 +67,8 @@ export default defineConfig({
       'foldkit/require-rel-for-external-link': 'error',
       'foldkit/selection-submodel-factory-at-module-scope': 'error',
       'foldkit/wrap-child-output-in-got-message': 'error',
+      'jsdoc/check-tag-names': 'error',
+      'jsdoc/empty-tags': 'error',
     },
     options: { typeAware: true, typeCheck: true },
     ignorePatterns: VENDORED,

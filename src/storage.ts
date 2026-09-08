@@ -25,18 +25,31 @@ const ProgressJson = Schema.fromJsonString(BookProgress)
 const decodeProgress = Schema.decodeUnknownSync(ProgressJson)
 const encodeProgress = Schema.encodeSync(ProgressJson)
 
+/**
+ * Reads the saved settings, falling back to {@linkcode defaultSettings} when
+ * nothing is stored or what is stored no longer decodes.
+ */
 export const loadSettings: Effect.Effect<Settings> = Effect.try(() =>
   decodeSettings(localStorage.getItem(SETTINGS_KEY)),
 ).pipe(Effect.orElseSucceed(() => ({ ...defaultSettings })))
 
+/**
+ * Writes the settings. A storage failure is swallowed: it costs the reader
+ * nothing this session.
+ */
 export const saveSettings = (settings: Settings): Effect.Effect<void> =>
   Effect.try(() => localStorage.setItem(SETTINGS_KEY, encodeSettings(settings))).pipe(Effect.ignore)
 
+/**
+ * Reads where a book was left off, answering page zero with no bookmarks for a
+ * book that has never been opened.
+ */
 export const loadProgress = (bookId: string): Effect.Effect<BookProgress> =>
   Effect.try(() => decodeProgress(localStorage.getItem(PROGRESS_PREFIX + bookId))).pipe(
     Effect.orElseSucceed(() => emptyProgress),
   )
 
+/** Writes where a book has been left off, stamping it with the current time. */
 export const saveProgress = (bookId: string, progress: BookProgress): Effect.Effect<void> =>
   Effect.try(() =>
     localStorage.setItem(

@@ -280,6 +280,11 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
   ),
 }))
 
+/**
+ * Everything the reader listens to: the keyboard and pointer on the document,
+ * the fullscreen state, the wait that hides the chrome, and the drag streams
+ * the slider and the page grid need lifted into the reader.
+ */
 export const subscriptions = Subscription.aggregate<Model, Message>()(
   readerSubscriptions,
   sliderSubscriptions,
