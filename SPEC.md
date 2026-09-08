@@ -266,7 +266,7 @@ reader/scene "the fit control names the mode it is in"
 gesture "the outer thirds turn pages and the middle shows the chrome"
 ❓ **실기기 확인 필요**
 
-**R-245 · 탭으로 페이지가 넘어가면 그 쪽 가장자리가 잠깐 빛난다**
+**R-245 · 탭으로 페이지가 넘어가면 그 쪽 가장자리가 잠깐 빛난다 (개발 빌드만)**
 같은 만화의 두 장은 서로 닮아서, 페이지가 넘어간 것이 "같은 그림이 움직였다"로
 읽힐 수 있다. 그래서 페이지가 **실제로 바뀐 경우에만** 넘어온 쪽을 표시한다 —
 책 끝에서 깜빡이면 일어나지 않은 일을 주장하는 셈이다. 가운데 탭은 표시하지
@@ -276,6 +276,8 @@ gesture "the outer thirds turn pages and the middle shows the chrome"
 "a tap in the middle marks nothing either",
 "tapping the same side again restarts the mark"
 ❓ **브라우저 확인 필요** — 260ms 페이드가 실제로 읽히는지
+⚠️ 프로덕션 빌드에서는 그리지 않는다. 넘어간 사실은 Model에 기록되지만 화면에
+나타나지 않으므로, 배포된 앱에서는 여전히 "같은 그림이 움직였다"로 읽힐 수 있다.
 
 **R-242 · 가운데를 탭하면 툴바가 숨거나 나타난다**
 숨어 있으면 나타나고, 나타나 있으면 숨는다. 화면을 누르는 것 자체는 툴바를

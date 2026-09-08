@@ -112,6 +112,25 @@ describe('reading', () => {
   })
 })
 
+describe('which side a page came from', () => {
+  // The mark is drawn only where `import.meta.hot` is set, which a test run is.
+  // A production build drops it, so this covers the development behaviour.
+  test('a recorded turn draws the edge it came from', () => {
+    scene(
+      program,
+      given({
+        ...readingModel(),
+        maybeTapFlash: Option.some({ side: 'Left' as const, token: 0 }),
+      }),
+      expect(selector('.tap-flash')).toExist(),
+    )
+  })
+
+  test('nothing is drawn until a turn records one', () => {
+    scene(program, given(readingModel()), expect(selector('.tap-flash')).not.toExist())
+  })
+})
+
 describe('layout controls', () => {
   test('the direction control shows and flips the reading direction', () => {
     scene(

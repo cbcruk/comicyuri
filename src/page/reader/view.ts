@@ -171,6 +171,17 @@ const panelView = (panel: Panel, fit: FitMode, h: HtmlBuilder<Message>): Html =>
  * still for the centre-relative coordinates the gesture maths uses to keep
  * meaning what they say.
  */
+/**
+ * Whether the page-turn mark is drawn. `import.meta.hot` is how Foldkit's own
+ * runtime tells development from a production build, and it is replaced with a
+ * constant at build time, so a production bundle drops both the mark and the
+ * branch that draws it.
+ *
+ * The Model records the turn either way. Keeping that unconditional is what
+ * lets the behaviour be tested without asking which build is running.
+ */
+const SHOWS_TAP_FLASH = !!import.meta.hot
+
 const tapFlashView = (flash: TapFlash, h: HtmlBuilder<Message>): Html =>
   h.keyed('div')(`${flash.side}-${flash.token}`, [
     h.Class(
@@ -219,10 +230,12 @@ const stageView = (
           Shown: ({ panels }) => Array.map(panels, (panel) => panelView(panel, settings.fit, h)),
         }),
       ),
-      Option.match(maybeTapFlash, {
-        onNone: () => h.empty,
-        onSome: (flash) => tapFlashView(flash, h),
-      }),
+      SHOWS_TAP_FLASH
+        ? Option.match(maybeTapFlash, {
+            onNone: () => h.empty,
+            onSome: (flash) => tapFlashView(flash, h),
+          })
+        : h.empty,
     ],
   )
 
