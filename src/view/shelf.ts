@@ -5,7 +5,6 @@ import type { Attribute, Html, HtmlBuilder } from 'foldkit/html'
 import { Button, FileDrop } from '@foldkit/ui'
 import clsx from 'clsx'
 
-import { ARCHIVE_ACCEPT } from '../constant.ts'
 import { Book } from '../domain/index.ts'
 import { Message } from '../message.ts'
 import { Model, Notice, Shelf } from '../model.ts'
@@ -210,12 +209,13 @@ export const shelfView = (model: Model, h: HtmlBuilder<Message>): Html =>
         model: model.fileDrop,
         view: FileDrop.view,
         viewInputs: {
-          multiple: true,
-          accept: ARCHIVE_ACCEPT,
-          // NOTE: a `div` where the exemplars use a `label`. The zone is the
-          // whole shelf, so a label would make every click on a book card open
-          // the file picker. Browsing is on the header buttons instead, which
-          // reach the picker through `File.selectMultiple`.
+          // NOTE: the component's hidden file input is deliberately not
+          // rendered, and `accept`/`multiple` are omitted with it, because they
+          // only shape that input. Dropping is entirely on the root element;
+          // the input exists for the `label for` click-to-browse pattern, which
+          // this shelf does not use — the zone is the whole page, so a label
+          // would open the picker on every click of a book. Browsing is on the
+          // header buttons, which reach it through `File.selectMultiple`.
           toView: (attributes) =>
             h.main(
               [
@@ -225,7 +225,7 @@ export const shelfView = (model: Model, h: HtmlBuilder<Message>): Html =>
                   'm-4 flex flex-1 flex-col overflow-y-auto rounded-xl border-2 border-dashed border-transparent p-4 transition-colors data-drag-over:border-accent data-drag-over:bg-accent/5',
                 ),
               ],
-              [h.input(attributes.input), shelfContentView(model.shelf, h)],
+              [shelfContentView(model.shelf, h)],
             ),
         },
         toParentMessage: (message) => Message.GotFileDropMessage({ message }),
