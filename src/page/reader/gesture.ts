@@ -14,6 +14,14 @@ export const TAP_SLOP = 10
 /** Sideways travel before a drag becomes a page turn. */
 export const SWIPE_MIN = 45
 
+/**
+ * Two pointers closer together than this are not a pinch. A pinch scales by
+ * how much the span between them grew, so a span that starts near zero makes
+ * that ratio unbounded — and a stale pointer left behind by a lost release
+ * lands exactly there.
+ */
+export const MIN_PINCH_SPAN = 24
+
 /** Two taps closer together than this are a double tap. */
 export const DOUBLE_TAP_MILLIS = 300
 

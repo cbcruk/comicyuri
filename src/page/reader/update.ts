@@ -7,6 +7,7 @@ import { LoadSpread, LoadThumbs, PreloadNeighbours, ToggleFullscreen } from './c
 import {
   DOUBLE_TAP_MILLIS,
   DOUBLE_TAP_ZOOM,
+  MIN_PINCH_SPAN,
   ORIGIN,
   TAP_SLOP,
   ZOOM_MIN,
@@ -149,17 +150,31 @@ const pressed = (model: Model, pointerId: number, at: Point): Model =>
           }),
       }),
     Tracking: (tracking) =>
-      evo(model, {
-        gesture: () =>
-          Gesture.Pinching({
-            firstId: tracking.pointerId,
-            secondId: pointerId,
-            first: tracking.last,
-            second: at,
-            startSpan: distance(tracking.last, at),
-            startZoom: model.zoom,
+      // The same pointer pressing again is the previous sequence never having
+      // been released — a lost `pointerup` — not a second finger. Reading it
+      // as a pinch spans a stale point to a fresh one and sends the zoom
+      // wherever that ratio lands.
+      tracking.pointerId === pointerId || distance(tracking.last, at) < MIN_PINCH_SPAN
+        ? evo(model, {
+            gesture: () =>
+              Gesture.Tracking({
+                pointerId,
+                origin: at,
+                last: at,
+                hasLeftSlop: false,
+              }),
+          })
+        : evo(model, {
+            gesture: () =>
+              Gesture.Pinching({
+                firstId: tracking.pointerId,
+                secondId: pointerId,
+                first: tracking.last,
+                second: at,
+                startSpan: distance(tracking.last, at),
+                startZoom: model.zoom,
+              }),
           }),
-      }),
     // A third finger is not a gesture this reader knows.
     Pinching: () => model,
   })
@@ -501,6 +516,12 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       }),
 
     CancelledPointer: () => ({
+      model: evo(model, { gesture: () => Gesture.Idle() }),
+    }),
+
+    // The page stopped being touchable with a gesture still open, so whatever
+    // it was holding is no longer true.
+    AbandonedPointer: () => ({
       model: evo(model, { gesture: () => Gesture.Idle() }),
     }),
 

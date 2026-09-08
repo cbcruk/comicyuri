@@ -35,6 +35,7 @@ export const Message = defineMessageUnion({
     viewportWidth: Schema.Number,
   },
   CancelledPointer: { pointerId: Schema.Number },
+  AbandonedPointer: {},
   ScrolledToZoom: { delta: Schema.Number, at: Point },
   ScrolledToPan: { delta: Point },
 
