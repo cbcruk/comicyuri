@@ -247,7 +247,11 @@ gesture "the outer thirds turn pages and the middle shows the chrome"
 ❓ **실기기 확인 필요**
 
 **R-242 · 가운데를 탭하면 툴바가 숨거나 나타난다**
-✅ reader/story "a tap in the middle toggles the chrome and stays on the page"
+숨어 있으면 나타나고, 나타나 있으면 숨는다. 화면을 누르는 것 자체는 툴바를
+부르지 않는다 — 그랬다면 가운데 탭이 언제나 숨김으로 끝난다.
+✅ reader/story "a tap in the middle toggles the chrome and stays on the page",
+"a middle tap brings hidden chrome back",
+"a press restarts the wait but leaves the chrome as it found it"
 
 **R-243 · 옆으로 45px 넘게 끌면 페이지가 넘어간다**
 왼쪽으로 끌면 오른쪽 페이지를 부른다.
@@ -266,9 +270,12 @@ reader/story "dragging leftwards asks for the right-hand page"
 subscription "waits before it says the reader has gone idle"
 ❓ 페이드 동작
 
-**R-252 · 어떤 조작이든 툴바를 다시 부르고 대기를 처음부터 센다**
-✅ reader/story "a press brings the chrome back and restarts the wait",
-"a wait from before the last activity does not hide the chrome"
+**R-252 · 키보드 조작과 줌은 툴바를 다시 부르고, 어떤 조작이든 대기를 다시 센다**
+화면을 누르는 것은 대기만 다시 센다. 툴바를 부르는 것은 의도가 분명한 조작 —
+키보드와 줌 — 이다.
+✅ reader/story "a key brings the chrome back",
+"a wait from before the last activity does not hide the chrome",
+"a press restarts the wait but leaves the chrome as it found it"
 
 ### 2.7 페이지 슬라이더
 
