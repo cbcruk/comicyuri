@@ -485,6 +485,51 @@ describe('chrome', () => {
   })
 })
 
+describe('zoom across pages', () => {
+  test('turning the page starts from an unzoomed, unpanned view', () => {
+    // The pan offset was measured against the page being left, so carrying it
+    // over would land on an arbitrary part of the next one.
+    story(
+      update,
+      given({ ...openingModel(), zoom: 3, pan: { x: -120, y: 40 } }),
+      ...opened(0),
+      message(Message.ClickedNext()),
+      model((model) => {
+        expect(model.zoom).toBe(ZOOM_MIN)
+        expect(model.pan).toStrictEqual(ORIGIN)
+      }),
+      ...settle(1),
+    )
+  })
+
+  test('a settings change keeps the zoom, because the page did not move', () => {
+    story(
+      update,
+      given({ ...openingModel(), zoom: 3, pan: { x: -120, y: 40 } }),
+      ...opened(0),
+      message(Message.ClickedToggleView()),
+      model((model) => {
+        expect(model.zoom).toBe(3)
+        expect(model.pan).toStrictEqual({ x: -120, y: 40 })
+      }),
+      ...settle(0),
+    )
+  })
+
+  test('a wheel scroll moves a zoomed page', () => {
+    story(
+      update,
+      given({ ...openingModel(), zoom: 3, pan: ORIGIN }),
+      ...opened(0),
+      message(Message.ScrolledToPan({ delta: { x: 20, y: 50 } })),
+      model((model) => {
+        // Scrolling down moves the page up, the way a scroll always does.
+        expect(model.pan).toStrictEqual({ x: -20, y: -50 })
+      }),
+    )
+  })
+})
+
 describe('page slider', () => {
   test('opening a book gives the slider the book’s range', () => {
     story(

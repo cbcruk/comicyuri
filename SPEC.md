@@ -230,6 +230,17 @@ reader/scene "the fit control names the mode it is in"
 **R-236 · 배율이 1이 되면 위치가 원점으로 돌아온다**
 ✅ gesture "an unzoomed page has nothing to pan"
 
+**R-239 · 페이지를 넘기면 줌과 위치가 처음으로 돌아온다**
+팬 오프셋은 떠나는 페이지에 맞춰 잰 값이라 다음 장에서는 엉뚱한 곳을 가리킨다.
+설정만 바꿔 같은 페이지를 다시 그릴 때는 줌을 유지한다.
+✅ reader/story "turning the page starts from an unzoomed, unpanned view",
+"a settings change keeps the zoom, because the page did not move"
+
+**R-240 · 확대된 상태에서는 휠·트랙패드 스크롤이 페이지를 움직인다**
+확대되지 않았을 때는 스크롤을 가로채지 않는다.
+✅ reader/story "a wheel scroll moves a zoomed page"
+❓ **브라우저 확인 필요**
+
 **R-237 · 두 번 탭하면 2.5배, 다시 두 번 탭하면 원래대로**
 세 번째 탭은 방금 한 줌을 되돌리지 않고 새 쌍을 연다. 300ms 안의 두 탭이 한 쌍.
 ✅ reader/story "a double tap zooms in, and the next pair zooms back out"
@@ -265,9 +276,11 @@ reader/story "dragging leftwards asks for the right-hand page"
 ### 2.6 툴바 자동 숨김
 
 **R-251 · 3초 동안 아무 일도 없으면 툴바가 사라진다**
-사라진 툴바는 탭 순서에서도 빠진다.
+사라진 툴바는 탭 순서에서도 빠진다. 썸네일 그리드가 열려 있는 동안에는 숨지
+않는다 — 그리드를 닫았을 때 툴바가 사라져 있으면 곤란하다.
 ✅ reader/story "the wait for the current activity hides it",
-subscription "waits before it says the reader has gone idle"
+subscription "waits before it says the reader has gone idle",
+"it does not run out from under an open grid"
 ❓ 페이드 동작
 
 **R-252 · 키보드 조작과 줌은 툴바를 다시 부르고, 어떤 조작이든 대기를 다시 센다**

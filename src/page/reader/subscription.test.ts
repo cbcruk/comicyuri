@@ -1,7 +1,9 @@
 import { Effect, Option, Stream } from 'effect'
 import { describe, expect, test } from 'vite-plus/test'
 
+import { defaultSettings } from '../../types.ts'
 import { isReaderKey } from './keys.ts'
+import { init } from './model.ts'
 import { subscriptions } from './subscription.ts'
 
 const NO_MODIFIERS = { ctrl: false, meta: false, alt: false }
@@ -10,7 +12,7 @@ describe('the chrome wait', () => {
   test('waits before it says the reader has gone idle', async () => {
     // `Stream.tick` emits at once, so a wait built on it would hide the chrome
     // the instant it appeared. Nothing may arrive in the first fraction of it.
-    const dependencies = { isChromeVisible: true, activityToken: 3 }
+    const dependencies = { isWaiting: true, activityToken: 3 }
     const idle = subscriptions.chromeIdle.dependenciesToStream(dependencies, () => dependencies)
 
     const early = await Effect.runPromise(
@@ -20,8 +22,10 @@ describe('the chrome wait', () => {
     expect(Option.isNone(early)).toBe(true)
   })
 
-  test('says nothing at all while the chrome is already hidden', async () => {
-    const dependencies = { isChromeVisible: false, activityToken: 3 }
+  test('says nothing while there is nothing to hide', async () => {
+    // Either the chrome is already down, or the thumbnail grid is up and it
+    // must stay put until the grid closes.
+    const dependencies = { isWaiting: false, activityToken: 3 }
     const idle = subscriptions.chromeIdle.dependenciesToStream(dependencies, () => dependencies)
 
     expect(await Effect.runPromise(Stream.runHead(idle))).toStrictEqual(Option.none())
@@ -64,5 +68,39 @@ describe('which keys belong to the reader', () => {
     for (const key of ['r', 'F5', 'Tab', 'a', 'Enter', '/']) {
       expect(isReaderKey(key, NO_MODIFIERS)).toBe(false)
     }
+  })
+})
+
+describe('what the chrome wait is gated on', () => {
+  const reading = init({
+    bookId: 'volume-1::42',
+    page: 0,
+    bookmarks: [],
+    settings: defaultSettings,
+  })
+
+  test('it waits while the chrome is up and the grid is closed', () => {
+    expect(subscriptions.chromeIdle.modelToDependencies(reading)).toStrictEqual({
+      isWaiting: true,
+      activityToken: 0,
+    })
+  })
+
+  test('it does not run out from under an open grid', () => {
+    expect(
+      subscriptions.chromeIdle.modelToDependencies({
+        ...reading,
+        isThumbsOpen: true,
+      }).isWaiting,
+    ).toBe(false)
+  })
+
+  test('it has nothing to do once the chrome is down', () => {
+    expect(
+      subscriptions.chromeIdle.modelToDependencies({
+        ...reading,
+        isChromeVisible: false,
+      }).isWaiting,
+    ).toBe(false)
   })
 })
