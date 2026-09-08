@@ -1,5 +1,15 @@
 import { Option } from 'effect'
-import { Command, click, dropFiles, expect, given, role, scene, text } from 'foldkit/scene'
+import {
+  Command,
+  click,
+  dropFiles,
+  expect,
+  given,
+  role,
+  scene,
+  selector,
+  text,
+} from 'foldkit/scene'
 import { describe, test } from 'vite-plus/test'
 
 import { FileDrop } from '@foldkit/ui'
@@ -135,6 +145,18 @@ describe('interaction', () => {
       Command.resolve(RevokeCoverUrls, Message.CompletedRevokeCoverUrls()),
       expect(text('Volume 1')).toExist(),
       expect(text('Importing…')).not.toExist(),
+    )
+  })
+
+  test('the shelf carries no stray file input', () => {
+    // The drop zone's own hidden input is not rendered: its `sr-only` class
+    // comes from @foldkit/ui's bundle, which Tailwind does not scan, so it
+    // would show up as a bare "choose file" control sitting on the shelf.
+    scene(
+      program,
+      given(shelfModel()),
+      expect(selector('input')).not.toExist(),
+      expect(role('button', { name: 'Open files' })).toExist(),
     )
   })
 

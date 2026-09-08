@@ -60,7 +60,9 @@ ManagedResource·라우팅이 실제로 맞물리는지는 브라우저에서만
 
 **S-111 · 책장 어디에 놓아도 임포트된다**
 드롭 영역은 책장 전체(`main`, 이름 "Shelf")다. 드래그 중에는 테두리가 강조된다.
-✅ scene "dropping an archive on the shelf imports it"
+파일 선택은 상단 버튼이 맡으므로 드롭 영역 안에는 어떤 입력 요소도 없다.
+✅ scene "dropping an archive on the shelf imports it",
+"the shelf carries no stray file input"
 ❓ 드래그 중 테두리 강조
 
 **S-112 · "Open files"는 파일 선택창을 연다**
