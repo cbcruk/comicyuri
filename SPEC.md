@@ -304,11 +304,15 @@ reader/story "dragging leftwards asks for the right-hand page"
 ### 2.6 툴바 자동 숨김
 
 **R-251 · 3초 동안 아무 일도 없으면 툴바가 사라진다**
-사라진 툴바는 탭 순서에서도 빠진다. 썸네일 그리드가 열려 있는 동안에는 숨지
-않는다 — 그리드를 닫았을 때 툴바가 사라져 있으면 곤란하다.
+사라진 툴바는 탭 순서에서도 빠진다. 다음 두 경우에는 시간이 흐르지 않는다 —
+썸네일 그리드가 열려 있을 때(닫았더니 툴바가 없으면 곤란하다), 그리고 포인터가
+툴바 위에 있을 때(아직 쓰는 중이다). 포인터가 벗어나면 대기가 처음부터 다시
+간다.
 ✅ reader/story "the wait for the current activity hides it",
 subscription "waits before it says the reader has gone idle",
-"it does not run out from under an open grid"
+"it does not run out from under an open grid",
+"holds the wait for as long as it is there",
+reader/story "entering holds it, and leaving starts the wait over"
 ❓ 페이드 동작
 
 **R-252 · 컨트롤을 쓰면 툴바가 다시 나오고 대기가 처음부터 다시 간다**

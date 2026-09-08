@@ -57,6 +57,15 @@ const controlView = (config: ControlConfig, h: HtmlBuilder<Message>): Html =>
 const chromeClassName = (isVisible: boolean): string =>
   clsx('transition-opacity', { 'pointer-events-none opacity-0': !isVisible })
 
+/**
+ * A pointer resting on the chrome is someone still using it, so the wait that
+ * hides it is held for as long as the pointer is there.
+ */
+const chromeHoverAttributes = (h: HtmlBuilder<Message>): ReadonlyArray<Attribute<Message>> => [
+  h.OnMouseEnter(Message.EnteredChrome()),
+  h.OnMouseLeave(Message.LeftChrome()),
+]
+
 const counterLabel = (pages: ReadonlyArray<number>, pageCount: number): string => {
   const first = Option.getOrElse(Array.head(pages), () => 0)
   const last = Option.getOrElse(Array.last(pages), () => first)
@@ -79,6 +88,7 @@ const toolbarView = (
         ),
       ),
       h.AriaHidden(!isVisible),
+      ...chromeHoverAttributes(h),
     ],
     [
       controlView({ label: '← Shelf', message: Message.ClickedExit() }, h),
@@ -353,6 +363,7 @@ const turnView = (model: Model, isVisible: boolean, h: HtmlBuilder<Message>): Ht
         ),
       ),
       h.AriaHidden(!isVisible),
+      ...chromeHoverAttributes(h),
     ],
     [
       controlView({ label: 'First', message: Message.ClickedFirst() }, h),

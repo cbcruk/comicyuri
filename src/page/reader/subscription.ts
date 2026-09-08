@@ -256,11 +256,10 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
       activityToken: Schema.Number,
     },
     {
-      // The chrome does not time out from under an open thumbnail grid: it
-      // would be gone when the grid closes, which is not what the reader asked
-      // for by opening it.
+      // The chrome does not time out from under an open thumbnail grid, nor
+      // from under a pointer resting on it. Both are someone still using it.
       modelToDependencies: (model) => ({
-        isWaiting: model.isChromeVisible && !model.isThumbsOpen,
+        isWaiting: model.isChromeVisible && !model.isThumbsOpen && !model.isPointerOverChrome,
         activityToken: model.activityToken,
       }),
       // Every activity changes the token, which restarts this wait.

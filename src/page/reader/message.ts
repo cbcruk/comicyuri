@@ -42,6 +42,8 @@ export const Message = defineMessageUnion({
   ClickedZoomIn: {},
   ClickedZoomOut: {},
   ElapsedChromeIdle: { token: Schema.Number },
+  EnteredChrome: {},
+  LeftChrome: {},
 
   GotSliderMessage: { message: Slider.Message },
 
