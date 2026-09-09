@@ -114,6 +114,28 @@ describe('reading', () => {
   })
 })
 
+describe('the stage', () => {
+  test('the page cannot be dragged away from under the gesture', () => {
+    // 이미지를 끌기 시작하면 브라우저가 포인터 이벤트를 거두어 간다. 그러면 스와이프가
+    // 첫 움직임 뒤에 잘린다.
+    scene(
+      program,
+      given(readingModel()),
+      expect(role('img', { name: 'Page 1' })).toHaveAttr('draggable', 'false'),
+    )
+  })
+
+  test('the box the pages sit in fills the stage', () => {
+    // 맞춤 모드는 페이지에 퍼센트 크기를 건다. 이 상자가 내용만큼만 커지면 페이지가
+    // 자기 크기를 기준으로 자기를 재는 꼴이라 어떤 맞춤 모드도 듣지 않는다.
+    scene(
+      program,
+      given(readingModel()),
+      expect(within(selector('#reader-stage'), selector('.h-full'))).toHaveClass('w-full'),
+    )
+  })
+})
+
 describe('which side a page came from', () => {
   // 표시는 `import.meta.hot`이 있는 곳에서만 그려지고, 테스트 실행이 그런 곳이다.
   // 프로덕션 빌드에서는 사라지므로, 이 테스트가 덮는 것은 개발 환경의 동작이다.

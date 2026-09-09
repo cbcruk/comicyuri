@@ -109,6 +109,26 @@ vp dev       # start the dev server
 vp build     # production build
 vp check     # format, lint and type-check
 vp test      # story and scene tests
+vp run e2e   # browser tests, against a production build
+```
+
+`vp test` runs the update and view tests under happy-dom, which is as far as
+that environment goes: `Runtime.run` renders nothing there, so init, the
+subscriptions, the ManagedResource and routing are never exercised together.
+
+`vp run e2e` is where that gap is covered. Playwright builds the app, serves
+`dist` with `vp preview`, and drives the real thing in Chromium: layout and
+computed colour, pointer input including two-finger pinches over CDP, the
+Fullscreen API, the folder picker, and whether anything survives a reload.
+Books are built on the fly — `e2e/fixture/archive.ts` writes the PNGs and the
+ZIP itself, so no binary fixtures live in the repository. Add `--ui` (or
+`vp run e2e:ui`) to watch them run.
+
+The browsers Playwright drives are not in `node_modules`. A fresh checkout
+installs them once:
+
+```sh
+vp exec playwright install chromium
 ```
 
 Foldkit's own source, examples and docs are the reference this app was written

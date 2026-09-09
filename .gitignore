@@ -27,3 +27,7 @@ repos
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright
+playwright-report
+test-results
