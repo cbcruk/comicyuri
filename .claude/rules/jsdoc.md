@@ -97,10 +97,15 @@ supports it, type-check the example blocks (`deno test --doc`) and lint public
 symbols for missing comments and return types (`deno doc --lint`) before
 publishing.
 
-In this repo that check is `bun run docs:check` (`scripts/doccheck.ts`): it
-fails on any exported symbol without a JSDoc block, and type-checks every
-`@example` block as its own module. An example missing its `import` therefore
-fails the build rather than merely reading badly.
+In this repo that check is `vp check`. The oxlint jsdoc plugin is enabled in
+`vite.config.ts` with two tag rules at error: `jsdoc/check-tag-names` catches a
+mistyped `@retruns`, and `jsdoc/empty-tags` catches an empty `@example`. The
+`require-param` and `require-returns` rules stay off, as they contradict the
+Types rule above.
+
+Know what is missing, too. **Nothing counts exported symbols against their JSDoc
+blocks, and nothing type-checks an `@example`.** Coverage here is discipline, not
+a gate: when you add an `export`, add the block above it in the same change.
 
 ## Renderer-dependent syntax
 
@@ -112,12 +117,36 @@ supports them before use:
 - `@typeParam` is a TSDoc tag; `@template` is the JSDoc equivalent. Use whichever
   the repo already uses, consistently.
 
-## Applying these rules in barlo
+## Applying these rules in comicyuri
 
-- The package entry point is `src/index.ts`; examples import from `barlo`.
+- This is an application, not a published package. There is no module index, so
+  no `@module` blocks: a file-level note stays a plain block comment, the way
+  `types.ts`, `storage.ts`, and `zip.ts` already write one. The entry point is
+  `src/entry.ts`, and an `@example` has no package specifier to import from —
+  use a relative path.
 - This repo has no JSR renderer, so avoid the renderer-dependent syntax above.
   Keep `@example` titles short — they read as a plain line in editor tooltips.
-- `@template` is the tag to use for type parameters, matching what the repo
-  already writes.
-- Verify with `bun run docs:check`, `bunx tsc --noEmit`, and `bun test` in the
-  same change.
+- Nothing type-checks an `@example`, so they rot silently. Use them sparingly.
+- `@template` is the tag for type parameters. Nothing generic is exported yet, so
+  the first one to need it sets the precedent.
+- `makeCover` is the only place `@param` / `@returns` earn their keep: that
+  `maxSize` is the longest edge of the result, not its size, is a fact the
+  signature cannot state.
+- Verify with `vp check` and `vp test` in the same change.
+
+## Language
+
+The comments themselves are written in Korean, as are commit messages and
+`SPEC.md`. This document and `CLAUDE.md` are rules rather than prose about the
+code, and stay in English.
+
+Left in English inside comments:
+
+- **Anything quoted in backticks** — `flex-row-reverse`, `aria-valuenow`,
+  `Effect.callback`, Message tag names. These are quotations, not prose.
+- **Test names**, which `SPEC.md` cites as evidence for its items.
+- **Section markers** such as `// FLAGS` and `// INIT`, which name Foldkit's own
+  divisions.
+
+Follow the register `SPEC.md` established: plain declarative endings (`~한다`),
+with technical nouns left in English ("툴바", "스프레드", "`data-theme`").
