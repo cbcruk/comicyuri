@@ -19,17 +19,17 @@ Message 목록은 각 `message.ts`, 아키텍처는 `README.md`에 있습니다.
 | ✅  | 자동 테스트가 이 동작을 고정하고 있음 (테스트 이름 병기)                |
 | 📖  | 코드를 읽은 근거만 있음. 테스트 없음                                    |
 | ❓  | **브라우저에서만 확인 가능** — 레이아웃, 실제 포인터 입력, 브라우저 API |
+| 🔍  | 브라우저에서 직접 확인함 (확인 날짜 병기)                               |
 | ⚠️  | 알려진 한계 또는 의도적 미구현                                          |
 
-이 코드는 아직 브라우저에서 실행된 적이 없습니다. ❓ 표시가 지금 수동으로
-확인하셔야 할 목록입니다.
+❓ 표시가 아직 손으로 확인해야 할 목록이고, 확인이 끝난 항목은 🔍로 바뀝니다.
 
 **Runtime 전체를 부팅하는 테스트는 쓸 수 없습니다.** vitest + happy-dom에서
 `Runtime.run`은 아무것도 렌더링하지 않으며, 최소 Foldkit 앱으로도 같습니다. 이
 저장소의 자동 검증은 `update`(story)와 view(scene)까지이고, init·구독·
 ManagedResource·라우팅이 실제로 맞물리는지는 브라우저에서만 확인됩니다.
 
-기준 커밋: `19c45e24` · 테스트 82개 통과
+기준 커밋: `50309fdd` · 테스트 135개 통과
 
 ---
 
@@ -350,7 +350,7 @@ leftward", "reading right to left, the filled part of the track sits on the
 right", "reading left to right, the fill is the fill", "the row of controls
 turns around with the reading direction", "and reading left to right it stays
 as written"
-❓ **실제로 만화를 넘겨봤을 때 채워지는 쪽과 줄어드는 쪽이 맞는지**
+🔍 2026-09-09 · 만화를 넘겨보며 채워지는 쪽과 줄어드는 쪽을 확인함
 
 **R-265 · 슬라이더에 포커스가 있는 동안에는 리더가 키를 양보한다**
 슬라이더는 화살표·Home/End·PageUp/Down을 스스로 처리하고, 리더의 키 구독은
@@ -358,6 +358,8 @@ as written"
 두 페이지(LTR)이거나 서로 밀어내기(RTL).
 ✅ subscription "the page slider keeps the keys it handles", "and so does
 anything inside it", "everything else leaves the key to the reader"
+🔍 2026-09-09 · 슬라이더에 포커스를 준 뒤 화살표가 한 번에 한 페이지만 넘기는 것을
+확인함
 
 ### 2.8 모든 페이지 (썸네일)
 
@@ -577,3 +579,8 @@ subscription "a key held with a modifier belongs to the browser",
 
 - [ ] R-272 썸네일 패널이 열리는 즉시 채워지는지
 - [ ] R-251 툴바 3초 자동 숨김
+
+**확인 완료**
+
+- [x] R-264 RTL에서 슬라이더가 오른쪽에서 왼쪽으로 채워지고 줄어드는 감각 (2026-09-09)
+- [x] R-265 슬라이더 포커스 중 화살표가 한 번에 한 페이지만 넘기는지 (2026-09-09)
