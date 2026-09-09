@@ -31,14 +31,14 @@ describe('windowing', () => {
       100,
     )
     expect(pages[0]).toBe(0)
-    // Overscan only, since nothing is known to be on screen yet.
+    // 화면에 무엇이 있는지 아직 모르므로 미리 읽는 몫만 나온다.
     expect(pages.length).toBeLessThan(100)
   })
 
   test('scrolling asks for the rows around the new position, not the whole book', () => {
     const pages = pagesInView(listAt(THUMB_ROW_HEIGHT * 10, THUMB_ROW_HEIGHT * 3), 500)
 
-    // Row 10, three rows on screen, two rows of overscan either side.
+    // 10번 행, 화면에 세 행, 양옆으로 두 행씩 미리 읽기.
     expect(pages[0]).toBe(8 * THUMBS_PER_ROW)
     expect(pages.length).toBeLessThan(500)
     expect(pages).not.toContain(0)

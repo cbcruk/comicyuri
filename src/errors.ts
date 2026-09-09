@@ -1,43 +1,43 @@
 /**
- * Every failure the app can recover from or report, as an Effect tagged error.
+ * 앱이 복구하거나 알릴 수 있는 모든 실패. Effect의 태그드 에러로 쓴다.
  *
- * Modelling these in the error channel means `Effect.Effect<A, AppError>`
- * spells out what a call site has to handle, and `describe` is the single
- * place that turns a failure into text for the shelf status line.
+ * 실패를 에러 채널에 두면 `Effect.Effect<A, AppError>`가 호출부에서 무엇을
+ * 다뤄야 하는지 그대로 말해 준다. 실패를 책장 상태 줄의 문장으로 바꾸는 곳은
+ * `describe` 한 군데뿐이다.
  */
 
 import { Array, Data, Match, Predicate } from 'effect'
 
-/** IndexedDB refused an operation (`op` is the store call that failed). */
+/** IndexedDB가 작업을 거절했다(`op`는 실패한 스토어 호출). */
 export class DbError extends Data.TaggedError('DbError')<{
   readonly op: string
   readonly cause: unknown
 }> {}
 
-/** A `.cbz` / `.zip` could not be parsed, read or inflated. */
+/** `.cbz` / `.zip`을 파싱하거나 읽거나 풀지 못했다. */
 export class ArchiveError extends Data.TaggedError('ArchiveError')<{
   readonly reason: string
   readonly cause?: unknown
 }> {}
 
-/** The archive or folder held no usable images. */
+/** 아카이브나 폴더에 쓸 만한 이미지가 없었다. */
 export class EmptyBookError extends Data.TaggedError('EmptyBookError')<{
   readonly title: string
 }> {}
 
-/** The picked files contained nothing importable. */
+/** 고른 파일 중에 들여올 수 있는 것이 없었다. */
 export class NoComicFilesError extends Data.TaggedError('NoComicFilesError')<{}> {}
 
-/** The cover thumbnail could not be rendered — always recoverable. */
+/** 표지 썸네일을 그리지 못했다 — 언제나 복구할 수 있는 실패다. */
 export class CoverError extends Data.TaggedError('CoverError')<{
   readonly reason: string
 }> {}
 
 /**
- * Every failure this application reports to the reader.
+ * 이 애플리케이션이 읽는 사람에게 알리는 모든 실패.
  *
- * {@linkcode describe} turns one into text, so a new member of this union is a
- * type error there until it has something to say.
+ * {@linkcode describe}가 이것을 문장으로 바꾸므로, 유니온에 새 멤버를 더하면
+ * 할 말이 생기기 전까지 그곳에서 타입 에러가 난다.
  */
 export type AppError = DbError | ArchiveError | EmptyBookError | NoComicFilesError | CoverError
 
@@ -52,7 +52,7 @@ const APP_ERROR_TAGS = [
 const isAppError = (error: unknown): error is AppError =>
   Array.some(APP_ERROR_TAGS, (tag) => Predicate.isTagged(error, tag))
 
-/** Human-readable text for the shelf status line. */
+/** 책장 상태 줄에 그대로 걸 수 있는 문장. */
 export const describe: (error: AppError) => string = Match.type<AppError>().pipe(
   Match.tag('DbError', (e) => `Shelf storage is unavailable (${e.op})`),
   Match.tag('ArchiveError', (e) => e.reason),
@@ -63,8 +63,8 @@ export const describe: (error: AppError) => string = Match.type<AppError>().pipe
 )
 
 /**
- * `describe` for a channel typed `unknown`. A ManagedResource reports its
- * acquire failure that way, so the tag has to be recovered before matching.
+ * 채널이 `unknown`으로 타입 지어진 경우의 `describe`. ManagedResource는 획득
+ * 실패를 그렇게 알리므로, 매칭하기 전에 태그를 되찾아야 한다.
  */
 export const describeUnknown = (error: unknown): string =>
   isAppError(error) ? describe(error) : 'Something went wrong'

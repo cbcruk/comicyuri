@@ -3,14 +3,13 @@ import { Array, Option } from 'effect'
 import { buildSpreads, spreadOfPage } from '../../spreads.ts'
 import type { Settings } from '../../types.ts'
 
-/** Spreads to warm on each side of the reader, and to keep loaded. */
+/** 읽는 자리 양옆으로 미리 데워 둘 스프레드 수, 그리고 계속 쥐고 있을 수. */
 const PRELOAD = 1
 const KEEP = 3
 
 /**
- * The spreads are derived, never stored: the page count and the settings are
- * all they depend on, and deriving them means a one-page/two-page toggle
- * cannot leave a stale grouping in the Model.
+ * 스프레드는 저장하지 않고 매번 이끌어 낸다. 기대는 것이 페이지 수와 설정뿐이고,
+ * 이끌어 내면 한 장/두 장을 바꿨을 때 낡은 묶음이 Model에 남을 수 없다.
  */
 export const spreadsFor = (
   pageCount: number,
@@ -19,8 +18,8 @@ export const spreadsFor = (
   buildSpreads(pageCount, settings.view, settings.coverAlone)
 
 /**
- * Which spread a page is part of. Pages outside the book answer with the first
- * spread rather than nothing.
+ * 페이지가 어느 스프레드에 속하는지. 책 밖의 페이지는 없음이 아니라 첫 스프레드로
+ * 답한다.
  */
 export const indexOfPage = (spreads: ReadonlyArray<ReadonlyArray<number>>, page: number): number =>
   spreadOfPage(
@@ -28,7 +27,7 @@ export const indexOfPage = (spreads: ReadonlyArray<ReadonlyArray<number>>, page:
     page,
   )
 
-/** The pages of one spread, empty past either end of the book. */
+/** 스프레드 하나의 페이지들. 책의 양 끝을 넘어가면 비어 있다. */
 export const pagesAt = (
   spreads: ReadonlyArray<ReadonlyArray<number>>,
   index: number,
@@ -41,22 +40,22 @@ const pagesWithin = (
 ): ReadonlyArray<number> =>
   Array.flatMap(Array.range(index - reach, index + reach), (at) => pagesAt(spreads, at))
 
-/** The pages worth having ready: this spread and the one on each side. */
+/** 준비해 둘 만한 페이지. 지금 스프레드와 양옆 하나씩. */
 export const neighbourPages = (
   spreads: ReadonlyArray<ReadonlyArray<number>>,
   index: number,
 ): ReadonlyArray<number> => pagesWithin(spreads, index, PRELOAD)
 
 /**
- * The pages worth holding on to. Anything further out than this has its object
- * URL released, which is what stops a long book from filling memory.
+ * 쥐고 있을 만한 페이지. 이보다 멀리 있는 것은 object URL을 놓아 주며, 그것이
+ * 긴 책이 메모리를 채우는 것을 막는다.
  */
 export const pagesToKeep = (
   spreads: ReadonlyArray<ReadonlyArray<number>>,
   index: number,
 ): ReadonlyArray<number> => pagesWithin(spreads, index, KEEP)
 
-/** The page a step lands on, clamped to the book. */
+/** 한 걸음 뒤에 닿는 페이지. 책 밖으로는 나가지 않는다. */
 export const pageAfterStep = (
   spreads: ReadonlyArray<ReadonlyArray<number>>,
   page: number,
@@ -70,12 +69,11 @@ export const pageAfterStep = (
 }
 
 /**
- * The page slider's value for a page, and a page for its value: reading right
- * to left runs the slider the other way, so the value is the page counted from
- * the end. Mirroring the value rather than the pixels keeps the component's own
- * pointer maths and arrow keys pointing where the reader expects.
+ * 페이지에 대한 슬라이더 값이자, 그 값에 대한 페이지. 오른쪽에서 왼쪽으로 읽으면
+ * 슬라이더도 반대로 가므로, 값은 끝에서부터 센 페이지가 된다. 픽셀이 아니라 값을
+ * 뒤집으므로 컴포넌트 자신의 포인터 계산과 화살표 키가 기대한 쪽을 가리킨다.
  *
- * Its own inverse, so one function serves both directions of the mapping.
+ * 스스로의 역함수라서, 이 매핑의 양방향을 한 함수가 맡는다.
  */
 export const mirrorForDirection = (
   page: number,

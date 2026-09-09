@@ -5,15 +5,14 @@ import { VirtualList } from '@foldkit/ui'
 import { THUMBS_PER_ROW, THUMB_OVERSCAN } from './constant.ts'
 import type { Panel } from './model.ts'
 
-/** The pages of each row of the grid. `Array.range` counts inclusively, so an
- *  empty book has to be turned away before it asks for `range(0, -1)`. */
+/** 격자의 각 행에 들어갈 페이지들. `Array.range`는 끝을 포함해서 세므로, 빈 책은
+ *  `range(0, -1)`을 부르기 전에 돌려보내야 한다. */
 export const rowsFor = (pageCount: number): ReadonlyArray<ReadonlyArray<number>> =>
   pageCount <= 0 ? [] : Array.chunksOf(Array.range(0, pageCount - 1), THUMBS_PER_ROW)
 
 /**
- * Which pages the grid could show right now, read back out of the list's own
- * scroll state. The component renders the window; this works out what to
- * extract for it.
+ * 지금 격자가 보여 줄 수 있는 페이지들. 리스트 자신의 스크롤 상태에서 읽어 낸다.
+ * 창을 그리는 것은 컴포넌트이고, 그 창에 무엇을 뽑아 줄지 정하는 것이 여기다.
  */
 export const pagesInView = (list: VirtualList.Model, pageCount: number): ReadonlyArray<number> => {
   const containerHeight =
@@ -32,8 +31,8 @@ export const pagesInView = (list: VirtualList.Model, pageCount: number): Readonl
 }
 
 /**
- * The wanted pages that have not been extracted yet, so a scroll only asks for
- * what the last one did not already fetch.
+ * 필요한 페이지 중 아직 뽑지 않은 것. 그래서 스크롤할 때마다 직전에 가져오지
+ * 않은 것만 요청한다.
  */
 export const missingFrom = (
   loaded: ReadonlyArray<Panel>,
@@ -41,13 +40,13 @@ export const missingFrom = (
 ): ReadonlyArray<number> =>
   Array.filter(wanted, (page) => !Array.some(loaded, (panel) => panel.page === page))
 
-/** The thumbnail for a page, absent until it has been extracted. */
+/** 페이지의 썸네일. 뽑기 전까지는 없다. */
 export const urlFor = (loaded: ReadonlyArray<Panel>, page: number): Option.Option<string> =>
   Option.map(
     Array.findFirst(loaded, (panel) => panel.page === page),
     (panel) => panel.url,
   )
 
-/** Every page already extracted, which is what the release side works from. */
+/** 이미 뽑아 둔 모든 페이지. 놓아 주는 쪽이 이것을 기준으로 삼는다. */
 export const loadedPages = (loaded: ReadonlyArray<Panel>): ReadonlyArray<number> =>
   Array.map(loaded, (panel) => panel.page)

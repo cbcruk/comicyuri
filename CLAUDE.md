@@ -25,3 +25,15 @@ release. Add a tool name to select part of the graph. For example, run
 - [ ] If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
 
 <!--VITE PLUS END-->
+
+## Conventions in this repository
+
+- **Write in Korean**: code comments, commit messages, and `SPEC.md`. Quotations
+  in backticks and test names stay in English. See the Language section of
+  `.claude/rules/jsdoc.md`. Rule documents themselves — this file included — are
+  written in English.
+- **Every exported symbol carries a JSDoc block**, following
+  `.claude/rules/jsdoc.md`. Nothing counts them for you, so add the block in the
+  same change as the `export`.
+- **`SPEC.md` is the feature spec.** When behaviour changes, update its item and
+  the test names it cites as evidence.

@@ -28,8 +28,8 @@ import { view } from './view.ts'
 const program = { update, view }
 
 /**
- * The grid renders the rows its container has room for, and nothing has
- * measured that container in a test, so the measurement is supplied here.
+ * 격자는 컨테이너에 자리가 나는 만큼의 행을 그리는데, 테스트에서는 아무도 그
+ * 컨테이너를 잰 적이 없다. 그래서 잰 값을 여기서 넣어 준다.
  */
 const measuredThumbs = (model: Model): Model => ({
   ...model,
@@ -115,8 +115,8 @@ describe('reading', () => {
 })
 
 describe('which side a page came from', () => {
-  // The mark is drawn only where `import.meta.hot` is set, which a test run is.
-  // A production build drops it, so this covers the development behaviour.
+  // 표시는 `import.meta.hot`이 있는 곳에서만 그려지고, 테스트 실행이 그런 곳이다.
+  // 프로덕션 빌드에서는 사라지므로, 이 테스트가 덮는 것은 개발 환경의 동작이다.
   test('a recorded turn draws the edge it came from', () => {
     scene(
       program,
@@ -186,8 +186,8 @@ describe('page slider', () => {
   const slider = role('slider', { name: 'Page' })
 
   test('reading right to left, the slider starts full and empties leftward', () => {
-    // Six pages, so page one sits at the right-hand end. The label still names
-    // the page, because a page number does not mirror.
+    // 여섯 페이지라서 1페이지가 오른쪽 끝에 앉는다. 라벨은 여전히 페이지를
+    // 부르는데, 페이지 번호는 뒤집히지 않기 때문이다.
     scene(
       program,
       given(readingModel()),
@@ -226,14 +226,13 @@ describe('page slider', () => {
   })
 
   const track = selector('[data-slider-track-id]')
-  // The fill is the track's only child, and the height tells the two apart.
+  // 채움은 트랙의 유일한 자식이고, 높이가 둘을 갈라 준다.
   const filled = within(track, selector('.h-full'))
 
   test('reading right to left, the filled part of the track sits on the right', () => {
-    // The component fills from its own minimum, which is the left. Reading
-    // right to left, that end is the end of the book, so the colours trade
-    // places: the accent runs the whole track and the fill covers the pages
-    // still to come.
+    // 컴포넌트는 자기 최솟값, 그러니까 왼쪽부터 채운다. 오른쪽에서 왼쪽으로
+    // 읽으면 그 끝이 책의 끝이므로 두 색이 자리를 바꾼다. accent가 트랙 전체를
+    // 달리고, 채움이 아직 남은 페이지를 덮는다.
     scene(
       program,
       given(readingModel()),
@@ -252,8 +251,8 @@ describe('page slider', () => {
   })
 
   test('the row of controls turns around with the reading direction', () => {
-    // Next has to sit on the side the next page comes from, which is the side
-    // the slider fills from.
+    // Next는 다음 페이지가 오는 쪽에 있어야 하고, 그쪽이 곧 슬라이더가 채워지기
+    // 시작하는 쪽이다.
     scene(
       program,
       given(readingModel()),
@@ -270,8 +269,8 @@ describe('page slider', () => {
   })
 
   test('the track fills the row, so the thumb sits where it says it does', () => {
-    // The thumb is placed at a percentage of the row, and the track fills the
-    // row. Anything else in flow narrows the track and the two drift apart.
+    // thumb은 행의 비율로 놓이고 트랙은 그 행을 채운다. 흐름에 다른 것이 끼면
+    // 트랙만 좁아져 둘이 어긋난다.
     scene(
       program,
       given(readingModel()),
@@ -293,8 +292,8 @@ describe('page slider', () => {
         }),
       ),
       ...settleTurn(1),
-      // The toolbar is back rather than merely present: it is faded out and
-      // hidden from assistive tech while the chrome is down.
+      // 툴바가 그저 있는 것이 아니라 돌아왔다는 뜻이다. 툴바가 내려가 있는 동안
+      // 그것은 흐려지고 보조기기에서도 감춰진다.
       expect(selector('header')).toHaveAttr('aria-hidden', 'false'),
     )
   })

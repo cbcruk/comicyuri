@@ -37,7 +37,7 @@ const buttonView = (config: ButtonConfig, h: HtmlBuilder<Message>): Html =>
     h,
   )
 
-/** The toggle says where it will take you, not where you already are. */
+/** 토글은 지금 있는 곳이 아니라 데려갈 곳을 말한다. */
 const themeToggleLabel = (theme: Theme): string =>
   theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
 
@@ -78,8 +78,8 @@ const headerView = (theme: Theme, h: HtmlBuilder<Message>): Html =>
   )
 
 /**
- * Rendered on every route so the live region exists before it has anything to
- * say; a region created together with its text is not announced.
+ * 할 말이 생기기 전에 live region이 이미 있도록 모든 라우트에서 그린다. 문구와
+ * 함께 만들어진 region은 읽히지 않는다.
  */
 const noticeView = (notice: Notice, h: HtmlBuilder<Message>): Html =>
   h.p(
@@ -120,8 +120,8 @@ const coverView = (book: Book.BookSummary, h: HtmlBuilder<Message>): Html =>
   })
 
 /**
- * The title lives inside the link so the link has an accessible name; the
- * delete control is a sibling so it is not part of it.
+ * 링크가 접근 가능한 이름을 갖도록 제목을 링크 안에 둔다. 삭제 버튼은 그 이름에
+ * 섞이지 않게 형제로 둔다.
  */
 const cardView = (book: Book.BookSummary, h: HtmlBuilder<Message>): Html =>
   h.keyed('li')(
@@ -198,10 +198,7 @@ const shelfContentView = (shelf: Shelf, h: HtmlBuilder<Message>): Html =>
     onStale: ({ data }) => gridView(data, h),
   })
 
-/**
- * Draws the shelf: the header, the status line, and the grid of books inside
- * the drop zone that takes an import.
- */
+/** 책장을 그린다. 헤더, 상태 줄, 그리고 임포트를 받는 드롭 존 안의 책 격자. */
 export const shelfView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     [h.Class('flex h-full flex-col')],
@@ -213,13 +210,12 @@ export const shelfView = (model: Model, h: HtmlBuilder<Message>): Html =>
         model: model.fileDrop,
         view: FileDrop.view,
         viewInputs: {
-          // NOTE: the component's hidden file input is deliberately not
-          // rendered, and `accept`/`multiple` are omitted with it, because they
-          // only shape that input. Dropping is entirely on the root element;
-          // the input exists for the `label for` click-to-browse pattern, which
-          // this shelf does not use — the zone is the whole page, so a label
-          // would open the picker on every click of a book. Browsing is on the
-          // header buttons, which reach it through `File.selectMultiple`.
+          // NOTE: 컴포넌트의 숨은 file input을 일부러 그리지 않고, 그 input의
+          // 모양만 정하는 `accept`/`multiple`도 함께 뺐다. 드롭은 전적으로 루트
+          // 요소가 받는다. 그 input은 `label for`로 눌러서 고르는 방식을 위한
+          // 것인데 이 책장은 그 방식을 쓰지 않는다 — 드롭 존이 페이지 전체라서
+          // label을 두면 책을 누를 때마다 선택기가 열린다. 파일 고르기는 헤더
+          // 버튼이 맡고, 그쪽은 `File.selectMultiple`로 간다.
           toView: (attributes) =>
             h.main(
               [

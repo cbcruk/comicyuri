@@ -1,10 +1,9 @@
 /**
- * `localStorage` mirrors of the settings and per-book progress.
+ * 설정과 책별 진행 상태를 담아 두는 `localStorage` 사본.
  *
- * Both reads decode through a schema, so a corrupt or stale entry degrades to
- * the defaults instead of poisoning the UI with whatever JSON happened to be
- * there. Writes are best-effort: storage may be unavailable (private mode) or
- * full, and neither is worth interrupting the reader for.
+ * 읽기는 둘 다 스키마를 통해 디코딩한다. 그래서 깨졌거나 오래된 항목은 그 JSON이
+ * UI로 흘러드는 대신 기본값으로 물러난다. 쓰기는 최선을 다할 뿐이다 — 저장소가
+ * 없거나(시크릿 모드) 꽉 찰 수 있고, 둘 다 읽는 사람을 멈춰 세울 일은 아니다.
  */
 
 import { Effect, Schema } from 'effect'
@@ -26,30 +25,30 @@ const decodeProgress = Schema.decodeUnknownSync(ProgressJson)
 const encodeProgress = Schema.encodeSync(ProgressJson)
 
 /**
- * Reads the saved settings, falling back to {@linkcode defaultSettings} when
- * nothing is stored or what is stored no longer decodes.
+ * 저장된 설정을 읽는다. 저장된 것이 없거나 더 이상 디코딩되지 않으면
+ * {@linkcode defaultSettings}로 물러난다.
  */
 export const loadSettings: Effect.Effect<Settings> = Effect.try(() =>
   decodeSettings(localStorage.getItem(SETTINGS_KEY)),
 ).pipe(Effect.orElseSucceed(() => ({ ...defaultSettings })))
 
 /**
- * Writes the settings. A storage failure is swallowed: it costs the reader
- * nothing this session.
+ * 설정을 쓴다. 저장에 실패해도 삼킨다 — 이번 세션에서 읽는 사람이 잃는 것은
+ * 없다.
  */
 export const saveSettings = (settings: Settings): Effect.Effect<void> =>
   Effect.try(() => localStorage.setItem(SETTINGS_KEY, encodeSettings(settings))).pipe(Effect.ignore)
 
 /**
- * Reads where a book was left off, answering page zero with no bookmarks for a
- * book that has never been opened.
+ * 책을 어디까지 읽었는지 읽어 온다. 한 번도 연 적 없는 책은 0페이지에 북마크
+ * 없음으로 답한다.
  */
 export const loadProgress = (bookId: string): Effect.Effect<BookProgress> =>
   Effect.try(() => decodeProgress(localStorage.getItem(PROGRESS_PREFIX + bookId))).pipe(
     Effect.orElseSucceed(() => emptyProgress),
   )
 
-/** Writes where a book has been left off, stamping it with the current time. */
+/** 책을 어디까지 읽었는지 지금 시각을 찍어 저장한다. */
 export const saveProgress = (bookId: string, progress: BookProgress): Effect.Effect<void> =>
   Effect.try(() =>
     localStorage.setItem(

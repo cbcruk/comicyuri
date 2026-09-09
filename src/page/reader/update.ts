@@ -53,8 +53,8 @@ const nextFit = (fit: FitMode): FitMode =>
   )
 
 /**
- * Everything the reader has to do after its position or its layout changes:
- * ask for the images on screen, warm the neighbours, release the rest.
+ * 위치나 배치가 바뀐 뒤에 리더가 해야 하는 모든 일. 화면에 걸릴 이미지를 요청하고,
+ * 이웃을 데우고, 나머지를 놓아 준다.
  */
 const showPage = (model: Model, page: number): UpdateReturn =>
   OpenState.match(model.openState, {
@@ -74,8 +74,8 @@ const showPage = (model: Model, page: number): UpdateReturn =>
           LoadSpread({ page, pages }),
           PreloadNeighbours({
             warm: neighbourPages(spreads, index),
-            // Thumbnails on screen hold URLs from these same pages, so
-            // releasing them would blank the grid.
+            // 화면의 썸네일이 바로 이 페이지들의 URL을 쥐고 있으므로, 놓아
+            // 주면 격자가 빈다.
             keep: Array.appendAll(pagesToKeep(spreads, index), loadedPages(model.thumbPanels)),
           }),
         ],
@@ -89,10 +89,10 @@ const showPage = (model: Model, page: number): UpdateReturn =>
   })
 
 /**
- * Moving to another page starts fresh. The pan offset was measured against the
- * page being left, so carrying it over lands on an arbitrary part of the next
- * one — which is why the viewer this replaced reset on every turn and jump.
- * Re-showing the same page after a settings change keeps the zoom.
+ * 다른 페이지로 옮기면 처음부터 시작한다. pan 오프셋은 떠나는 페이지를 기준으로
+ * 잰 값이라 그대로 가져가면 다음 페이지의 엉뚱한 곳에 앉는다 — 이것이 이 뷰어가
+ * 대신한 예전 뷰어가 넘길 때와 건너뛸 때마다 초기화한 이유다. 설정을 바꾼 뒤 같은
+ * 페이지를 다시 보여 줄 때는 배율을 지킨다.
  */
 const goToPage = (model: Model, page: number): UpdateReturn =>
   showPage(evo(model, { zoom: () => ZOOM_MIN, pan: () => ORIGIN }), page)
@@ -105,7 +105,7 @@ const step = (model: Model, by: number): UpdateReturn =>
       goToPage(model, pageAfterStep(spreadsFor(pageCount, model.settings), model.page, by)),
   })
 
-/** A setting the reader owns changed: relayout, and tell the application. */
+/** 리더가 가진 설정이 바뀌었다. 다시 배치하고 애플리케이션에 알린다. */
 const withSettings = (model: Model, settings: Model['settings']): UpdateReturn => {
   const next = showPage(evo(model, { settings: () => settings }), model.page)
 
@@ -115,7 +115,7 @@ const withSettings = (model: Model, settings: Model['settings']): UpdateReturn =
   }
 }
 
-/** Brings the chrome back and restarts the wait that hides it. */
+/** 툴바를 다시 불러오고, 그것을 숨기는 대기를 처음부터 다시 시작한다. */
 const withActivity = (model: Model): Model =>
   evo(model, {
     isChromeVisible: () => true,
@@ -123,9 +123,9 @@ const withActivity = (model: Model): Model =>
   })
 
 /**
- * A press restarts the wait but does not itself reveal the chrome. A tap in
- * the middle of the page is a request to toggle it, and revealing on the way
- * down would mean every one of those taps resolved to hidden.
+ * 누름은 대기를 다시 시작시키지만 그 자체로 툴바를 보이지는 않는다. 페이지
+ * 가운데를 탭하는 것은 툴바를 토글하라는 뜻인데, 누르는 길에 보여 버리면 그
+ * 탭들이 하나같이 '숨김'으로 끝난다.
  */
 const withPress = (model: Model): Model => evo(model, { activityToken: (token) => token + 1 })
 
@@ -137,7 +137,7 @@ const zoomedTo = (model: Model, nextZoom: number, anchor: Point): Model => {
   })
 }
 
-/** A press either starts tracking, or joins an existing one into a pinch. */
+/** 누름은 추적을 시작하거나, 이미 있는 추적에 붙어 핀치가 된다. */
 const pressed = (model: Model, pointerId: number, at: Point): Model =>
   Gesture.match(model.gesture, {
     Idle: () =>
@@ -151,10 +151,9 @@ const pressed = (model: Model, pointerId: number, at: Point): Model =>
           }),
       }),
     Tracking: (tracking) =>
-      // The same pointer pressing again is the previous sequence never having
-      // been released — a lost `pointerup` — not a second finger. Reading it
-      // as a pinch spans a stale point to a fresh one and sends the zoom
-      // wherever that ratio lands.
+      // 같은 포인터가 다시 눌렀다면 앞선 흐름이 끝내 놓이지 않은 것이지 —
+      // `pointerup`을 놓친 것이다 — 두 번째 손가락이 아니다. 이것을 핀치로 읽으면
+      // 낡은 점과 새 점 사이를 재게 되고, 그 비율이 닿는 아무 데로나 배율이 튄다.
       tracking.pointerId === pointerId || distance(tracking.last, at) < MIN_PINCH_SPAN
         ? evo(model, {
             gesture: () =>
@@ -176,13 +175,13 @@ const pressed = (model: Model, pointerId: number, at: Point): Model =>
                 startZoom: model.zoom,
               }),
           }),
-    // A third finger is not a gesture this reader knows.
+    // 세 번째 손가락은 이 리더가 아는 제스처가 아니다.
     Pinching: () => model,
   })
 
 /**
- * Steps in the visual direction the reader pointed. Right-to-left reading puts
- * the next page on the left, which is what makes a left tap advance a manga.
+ * 가리킨 방향이 눈에 보이는 대로 한 걸음 옮긴다. 오른쪽에서 왼쪽으로 읽으면 다음
+ * 페이지가 왼쪽에 있고, 그래서 왼쪽 탭이 만화를 앞으로 넘긴다.
  */
 const stepForSide = (model: Model, side: 'Left' | 'Right'): number => {
   const forward = model.settings.direction === 'rtl' ? 'Left' : 'Right'
@@ -198,7 +197,7 @@ const moved = (model: Model, pointerId: number, at: Point): Model =>
 
       const hasLeftSlop = tracking.hasLeftSlop || distance(tracking.origin, at) > TAP_SLOP
 
-      // Panning only makes sense once there is more page than screen.
+      // 페이지가 화면보다 커야 옮기는 것이 뜻을 갖는다.
       const panned =
         model.zoom > ZOOM_MIN
           ? evo(model, { pan: () => translate(model.pan, tracking.last, at) })
@@ -229,9 +228,9 @@ const moved = (model: Model, pointerId: number, at: Point): Model =>
   })
 
 /**
- * A release is where a press finally means something. Panning has already been
- * applied while moving, so what is left is what a press means when the page
- * fits the screen: a swipe, or a tap on one of three zones.
+ * 누름이 마침내 뜻을 갖는 자리가 놓음이다. 옮기는 일은 움직이는 동안 이미
+ * 적용했으므로, 여기 남는 것은 페이지가 화면에 들어맞을 때 누름이 뜻하는 것 —
+ * 스와이프이거나, 세 구역 중 한 곳의 탭이다.
  */
 const released = (
   model: Model,
@@ -242,11 +241,11 @@ const released = (
 ): UpdateReturn => {
   const settled = evo(model, { gesture: () => Gesture.Idle() })
 
-  // A drag is never a tap, and it closes any pair a previous tap opened.
+  // 드래그는 결코 탭이 아니며, 앞선 탭이 열어 둔 짝도 닫는다.
   if (tracking.hasLeftSlop) {
     const dragged = evo(settled, { lastTapAt: () => 0 })
 
-    // Zoomed in, a press that moved was a pan, and it is already applied.
+    // 확대된 상태에서 움직인 누름은 이동이었고, 이미 적용되어 있다.
     if (model.zoom > ZOOM_MIN) return { model: dragged }
 
     const swipe = swipeFrom(tracking.origin, at)
@@ -255,17 +254,17 @@ const released = (
 
   const zone = zoneAt(at.x, viewportWidth)
 
-  // The outer thirds turn pages and do nothing else. Tapping one twice quickly
-  // is someone reading fast, and reading it as a request to zoom is how a
-  // trackpad turned two pages into an enlargement.
+  // 바깥쪽 1/3은 페이지를 넘길 뿐 다른 일은 하지 않는다. 그곳을 빠르게 두 번
+  // 탭하는 것은 빨리 읽고 있다는 뜻이고, 그것을 확대 요청으로 읽었기에 트랙패드에서
+  // 두 페이지를 넘긴 것이 확대가 되었다.
   if (zone !== 'Middle') {
     const turning = evo(settled, { lastTapAt: () => 0 })
     return withTapFlash(step(turning, stepForSide(turning, zone)), turning.page, zone)
   }
 
-  // The middle is where the modes live: once for the chrome, twice for zoom.
+  // 가운데가 모드가 사는 곳이다. 한 번은 툴바, 두 번은 줌.
   if (timeStamp - model.lastTapAt < DOUBLE_TAP_MILLIS) {
-    // Consumed, so a third tap opens a fresh pair rather than undoing this one.
+    // 여기서 써 버리므로, 세 번째 탭은 이것을 되돌리지 않고 새 짝을 연다.
     const consumed = evo(settled, { lastTapAt: () => 0 })
 
     return {
@@ -286,10 +285,9 @@ const released = (
 }
 
 /**
- * Marks which side a page came from, but only when one actually did. Two
- * pages of the same comic can look alike enough that a turn reads as the same
- * image having moved, and at the end of the book a flash would claim a turn
- * that never happened.
+ * 페이지가 어느 쪽에서 왔는지 표시한다. 다만 실제로 넘어갔을 때만이다. 같은 만화의
+ * 두 페이지는 넘김이 같은 이미지가 움직인 것처럼 보일 만큼 닮을 수 있고, 책 끝에서는
+ * 일어나지도 않은 넘김을 표시가 주장하게 된다.
  */
 const withTapFlash = (turned: UpdateReturn, pageBefore: number, side: Side): UpdateReturn =>
   turned.model.page === pageBefore
@@ -309,9 +307,9 @@ const withTapFlash = (turned: UpdateReturn, pageBefore: number, side: Side): Upd
       }
 
 /**
- * The slider works in its own value, which runs the other way when reading
- * right to left. The mapping is its own inverse, so the same call turns a page
- * into a value in the view and a value back into a page here.
+ * 슬라이더는 자기 값으로 일하고, 오른쪽에서 왼쪽으로 읽을 때 그 값은 반대로 간다.
+ * 이 매핑은 스스로의 역함수라서, 같은 호출이 뷰에서는 페이지를 값으로 바꾸고
+ * 여기서는 값을 다시 페이지로 되돌린다.
  */
 export const sliderPage = (model: Model, value: number): number =>
   mirrorForDirection(
@@ -324,7 +322,7 @@ export const sliderPage = (model: Model, value: number): number =>
     model.settings.direction,
   )
 
-/** The slider reports pages, which is exactly what `showPage` takes. */
+/** 슬라이더는 페이지를 알려 오고, 그것이 바로 `showPage`가 받는 것이다. */
 const foldSliderOutMessage = Slider.OutMessage.match<
   Update.StepWithOutMessage<Model, Message, OutMessage, OpenBookService>
 >({
@@ -342,7 +340,7 @@ const foldSlider = Update.foldChild({
   foldOutMessage: foldSliderOutMessage,
 })
 
-/** Asks for whatever the grid could show and has not extracted yet. */
+/** 격자가 보여 줄 수 있으면서 아직 뽑지 않은 것을 요청한다. */
 const fillThumbs = (model: Model): UpdateReturn => {
   const pageCount = OpenState.match(model.openState, {
     Opening: () => 0,
@@ -366,17 +364,17 @@ const foldThumbs = Update.foldChild({
 })
 
 /**
- * Whether this Message is someone using a control, which keeps the chrome up
- * and restarts the wait that hides it.
+ * 이 Message가 누군가 컨트롤을 쓴 것인지. 그렇다면 툴바를 띄워 두고 그것을 숨기는
+ * 대기를 처음부터 다시 시작한다.
  *
- * Keyed on how the Message is named rather than a list of handlers to visit.
- * A list is what let the toolbar time out from under a reader who was using
- * it: every control added since had to remember to say so, and they did not.
- * `Clicked*` and `Selected*` already mean a person acted on a control, so a
- * new one is covered by being named the way the conventions require.
+ * 들를 핸들러 목록이 아니라 Message의 이름을 기준으로 삼는다. 쓰고 있는 사람 밑에서
+ * 툴바가 사라지게 만든 것이 바로 그 목록이었다. 그 뒤로 더해진 컨트롤마다 목록에
+ * 적어 넣기를 기억해야 했고, 아무도 기억하지 않았다. `Clicked*`와 `Selected*`는
+ * 이미 사람이 컨트롤에 손댔다는 뜻이므로, 규약대로 이름 붙인 새 컨트롤은 저절로
+ * 포함된다.
  *
- * Pointer Messages are deliberately absent. A press must not reveal the
- * chrome, or the tap that toggles it would resolve to hidden every time.
+ * 포인터 Message는 일부러 빠져 있다. 누름이 툴바를 보여서는 안 된다. 그러면 툴바를
+ * 토글하는 탭이 매번 '숨김'으로 끝난다.
  */
 const isControlUse = (message: Message): boolean =>
   message._tag !== 'ClickedExit' &&
@@ -387,11 +385,10 @@ const isControlUse = (message: Message): boolean =>
     message._tag === 'GotSliderMessage')
 
 /**
- * Folds one Message into the reader.
+ * Message 하나를 리더에 접어 넣는다.
  *
- * Anything the reader did on purpose also counts as activity, which brings the
- * chrome back and restarts the wait that hides it — so that lives here rather
- * than being repeated in every branch below.
+ * 사람이 일부러 한 일은 모두 활동으로도 쳐서 툴바를 되불러오고 숨김 대기를 다시
+ * 시작시킨다 — 그래서 그 처리가 아래 모든 분기에 되풀이되는 대신 여기에 있다.
  */
 export const update = (model: Model, message: Message): UpdateReturn =>
   applyMessage(isControlUse(message) ? withActivity(model) : model, message)
@@ -416,8 +413,7 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
 
     CompletedReleaseBook: () => ({ model }),
 
-    // An answer for a page the reader has already left is not the answer to
-    // the question it is asking now.
+    // 이미 떠난 페이지에 대한 답은 지금 묻고 있는 질문의 답이 아니다.
     CompletedLoadSpread: ({ page, panels }) =>
       page === model.page
         ? { model: evo(model, { spread: () => SpreadState.Shown({ panels }) }) }
@@ -478,8 +474,8 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       }
     },
 
-    // The document reports the outcome through `ChangedFullscreen`, including
-    // the times the browser declines or the reader leaves with Escape.
+    // 결과는 document가 `ChangedFullscreen`으로 알린다. 브라우저가 거절했을 때나
+    // Escape로 빠져나왔을 때도 마찬가지다.
     ClickedToggleFullscreen: () => ({
       model,
       commands: [ToggleFullscreen({ wantFullscreen: !model.isFullscreen })],
@@ -496,8 +492,8 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
         ? {
             model: evo(model, {
               isThumbsOpen: () => false,
-              // Nothing is showing them any more, and the pages they came
-              // from are free to be released on the next turn.
+              // 이제 아무도 그것들을 보여 주지 않으므로, 그 출처인 페이지들은
+              // 다음 넘김에 놓아 주어도 된다.
               thumbPanels: () => [],
             }),
           }
@@ -548,7 +544,7 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
           tracking.pointerId === pointerId
             ? released(model, tracking, at, timeStamp, viewportWidth)
             : { model },
-        // Lifting one finger of a pinch leaves the other still down.
+        // 핀치에서 손가락 하나를 떼도 다른 하나는 아직 눌려 있다.
         Pinching: (pinching) => ({
           model: evo(model, {
             gesture: () =>
@@ -573,8 +569,8 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       model: evo(model, { gesture: () => Gesture.Idle() }),
     }),
 
-    // The page stopped being touchable with a gesture still open, so whatever
-    // it was holding is no longer true.
+    // 제스처가 열린 채로 페이지를 만질 수 없게 되었으므로, 그것이 쥐고 있던 것은
+    // 더 이상 사실이 아니다.
     AbandonedPointer: () => ({
       model: evo(model, { gesture: () => Gesture.Idle() }),
     }),
@@ -583,7 +579,7 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       model: zoomedTo(model, model.zoom * Math.exp(-delta / 300), at),
     }),
 
-    // Panning by wheel or trackpad, which the page can only need while zoomed.
+    // 휠이나 트랙패드로 옮기기. 확대된 동안에만 필요한 일이다.
     ScrolledToPan: ({ delta }) => ({
       model: evo(withPress(model), {
         pan: (pan) => ({ x: pan.x - delta.x, y: pan.y - delta.y }),
@@ -602,8 +598,8 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       model: evo(model, { isPointerOverChrome: () => true }),
     }),
 
-    // Leaving restarts the wait rather than letting the one from before the
-    // pointer arrived finish immediately.
+    // 벗어날 때는 대기를 다시 시작한다. 포인터가 오기 전의 대기가 곧바로 끝나
+    // 버리게 두지 않는다.
     LeftChrome: () => ({
       model: evo(model, {
         isPointerOverChrome: () => false,
@@ -611,7 +607,7 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       }),
     }),
 
-    // Only the wait started for the current activity may hide the chrome.
+    // 지금의 활동을 위해 시작된 대기만 툴바를 숨길 수 있다.
     ElapsedChromeIdle: ({ token }) =>
       token === model.activityToken
         ? { model: evo(model, { isChromeVisible: () => false }) }

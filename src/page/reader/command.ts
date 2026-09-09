@@ -12,8 +12,8 @@ const panelFor = (page: Page, index: number): Effect.Effect<Panel, AppError> =>
   Effect.map(page.load(), (url) => ({ page: index, url }))
 
 /**
- * Resolves the images for one spread. The result carries the page it was asked
- * for, so update can drop an answer that arrives after the reader has moved on.
+ * 스프레드 하나의 이미지를 가져온다. 결과는 요청받은 페이지를 지고 오므로,
+ * 이미 다른 데로 옮겨 간 뒤에 도착한 답은 update가 버릴 수 있다.
  */
 export const LoadSpread = Command.define('LoadSpread', {
   args: { page: Schema.Number, pages: Schema.Array(Schema.Number) },
@@ -31,8 +31,8 @@ export const LoadSpread = Command.define('LoadSpread', {
 })
 
 /**
- * Warms the neighbouring spreads and releases every page far from the reader,
- * so a long book does not hold on to everything it has ever shown.
+ * 이웃한 스프레드를 미리 데워 두고, 읽는 자리에서 먼 페이지는 모두 놓아 준다.
+ * 그래야 긴 책이 한 번 보여 준 것을 전부 쥐고 있지 않는다.
  */
 export const PreloadNeighbours = Command.define('PreloadNeighbours', {
   args: { warm: Schema.Array(Schema.Number), keep: Schema.Array(Schema.Number) },
@@ -58,8 +58,8 @@ export const PreloadNeighbours = Command.define('PreloadNeighbours', {
 })
 
 /**
- * Thumbnails come from the same lazily-extracted pages the stage shows, so a
- * page already on screen costs nothing to put in the grid as well.
+ * 썸네일은 화면이 보여 주는 것과 같은, 필요할 때 뽑아 두는 페이지에서 온다.
+ * 그래서 이미 화면에 있는 페이지는 격자에 같이 놓아도 값이 들지 않는다.
  */
 export const LoadThumbs = Command.define('LoadThumbs', {
   args: { pages: Schema.Array(Schema.Number) },
@@ -73,15 +73,14 @@ export const LoadThumbs = Command.define('LoadThumbs', {
       )
       return Message.CompletedLoadThumbs({ panels })
     }).pipe(
-      // A thumbnail that will not resolve is not worth reporting.
+      // 끝내 나오지 않는 썸네일은 알릴 만한 일이 아니다.
       Effect.catch(() => Effect.succeed(Message.CompletedLoadThumbs({ panels: [] }))),
     ),
 })
 
 /**
- * The Fullscreen API is a promise that rejects when the browser declines, and
- * the document reports the result through its own event either way, so this
- * Command only has to ask.
+ * Fullscreen API는 브라우저가 거절하면 reject 되는 promise이고, 어느 쪽이든
+ * 결과는 document가 자기 이벤트로 알린다. 그래서 이 Command는 묻기만 하면 된다.
  */
 export const ToggleFullscreen = Command.define('ToggleFullscreen', {
   args: { wantFullscreen: Schema.Boolean },

@@ -25,7 +25,7 @@ const noticePageView = (heading: string, detail: string, h: HtmlBuilder<Message>
     ],
   )
 
-/** Draws the route, and titles the browser tab with it. */
+/** 라우트를 그리고, 그것으로 브라우저 탭 제목을 짓는다. */
 export const view = (model: Model, h: HtmlBuilder<Message>): Document =>
   AppRoute.match(model.route, {
     Shelf: () => ({ title: 'comicyuri', body: shelfView(model, h) }),

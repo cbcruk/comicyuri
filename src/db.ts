@@ -1,29 +1,29 @@
-/** IndexedDB-backed shelf so opened books survive a page reload. */
+/** IndexedDB에 얹은 책장. 한 번 연 책이 새로고침을 넘겨 살아남는다. */
 
 import { Effect } from 'effect'
 import { DbError } from './errors.ts'
 import type { BookSource } from './types.ts'
 
 /**
- * One book as it sits in IndexedDB: the imported bytes plus what the shelf
- * needs to draw a card without opening them.
+ * IndexedDB에 놓인 그대로의 책 한 권. 들여온 바이트와, 그것을 열어 보지 않고도
+ * 책장이 카드를 그리는 데 필요한 것들.
  */
 export interface StoredBook {
-  /** Stable across imports of the same file, so progress finds its book again. */
+  /** 같은 파일을 다시 들여와도 같다. 그래야 진행 상태가 제 책을 찾는다. */
   id: string
-  /** The file or folder name with its extension taken off. */
+  /** 확장자를 뗀 파일 또는 폴더 이름. */
   title: string
-  /** Which of the three import shapes produced this record. */
+  /** 세 가지 임포트 방식 중 어느 것이 이 레코드를 만들었는지. */
   source: BookSource
-  /** Entry names in reading order, index-aligned with {@linkcode StoredBook.blobs}. */
+  /** 읽는 순서대로의 이름들. {@linkcode StoredBook.blobs}와 번호가 맞물린다. */
   names: string[]
-  /** The archive as a single blob, or one blob per loose image. */
+  /** 아카이브 하나를 담은 blob, 또는 낱장 이미지마다 하나씩. */
   blobs: Blob[]
-  /** Import time in epoch milliseconds; the shelf lists newest first. */
+  /** 들여온 시각(epoch 밀리초). 책장은 최신 것부터 늘어놓는다. */
   createdAt: number
-  /** Small cover thumbnail generated at import time (optional). */
+  /** 들여올 때 만들어 둔 작은 표지 썸네일(없을 수 있다). */
   cover?: Blob
-  /** Known only once the archive has been opened, so absent on a fresh import. */
+  /** 아카이브를 열어 봐야 알 수 있으므로, 갓 들여온 레코드에는 없다. */
   pageCount?: number
 }
 
@@ -32,10 +32,9 @@ const STORE = 'books'
 const VERSION = 1
 
 /**
- * `indexedDB` is absent in some embeddings and `open` itself throws in
- * private-browsing modes, so the call is guarded: without this the failure is
- * a defect that takes the whole program down instead of a `DbError` the shelf
- * can report.
+ * 어떤 환경에는 `indexedDB` 자체가 없고, 시크릿 모드에서는 `open`이 곧바로
+ * 던진다. 그래서 호출을 감싼다. 감싸지 않으면 이 실패는 책장이 알릴 수 있는
+ * `DbError`가 아니라 프로그램 전체를 무너뜨리는 결함이 된다.
  */
 const openDb = Effect.callback<IDBDatabase, DbError>((resume) => {
   try {
@@ -54,7 +53,7 @@ const openDb = Effect.callback<IDBDatabase, DbError>((resume) => {
   }
 })
 
-/** A connection tied to a scope, so it is closed however the effect ends. */
+/** 스코프에 묶인 연결. Effect가 어떻게 끝나든 닫힌다. */
 const connection = Effect.acquireRelease(openDb, (db) => Effect.sync(() => db.close()))
 
 const request = <A>(
@@ -78,10 +77,10 @@ const request = <A>(
   )
 
 /**
- * Every stored book, newest import first.
+ * 저장된 모든 책. 최근에 들여온 것이 앞에 온다.
  *
- * That order is the shelf's order, applied here rather than in the view so a
- * reload cannot rearrange the grid.
+ * 이 순서가 곧 책장의 순서다. 뷰가 아니라 여기서 정하므로 새로고침이 격자를
+ * 다시 배열하는 일은 없다.
  */
 export const getAllBooks: Effect.Effect<StoredBook[], DbError> = request<StoredBook[]>(
   'getAll',
@@ -89,10 +88,10 @@ export const getAllBooks: Effect.Effect<StoredBook[], DbError> = request<StoredB
   (s) => s.getAll(),
 ).pipe(Effect.map((books) => books.sort((a, b) => b.createdAt - a.createdAt)))
 
-/** Writes a book, replacing any record already under its id. */
+/** 책을 쓴다. 같은 id의 레코드가 있으면 덮어쓴다. */
 export const putBook = (book: StoredBook): Effect.Effect<void, DbError> =>
   request('put', 'readwrite', (s) => s.put(book)).pipe(Effect.asVoid)
 
-/** Removes a book. Deleting an id that is not there is not an error. */
+/** 책을 지운다. 없는 id를 지우는 것은 실패가 아니다. */
 export const deleteBook = (id: string): Effect.Effect<void, DbError> =>
   request('delete', 'readwrite', (s) => s.delete(id)).pipe(Effect.asVoid)

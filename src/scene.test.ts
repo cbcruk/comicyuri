@@ -149,10 +149,9 @@ describe('interaction', () => {
   })
 
   test('the shelf carries no stray file input', () => {
-    // The drop zone's own hidden input is not rendered. The header pickers
-    // already open the file dialog, and `sr-only` hides an element without
-    // taking it out of the tab order, so leaving it in puts an invisible tab
-    // stop in the middle of the shelf.
+    // 드롭 존 자신의 숨은 input은 그리지 않는다. 파일 대화상자는 헤더 버튼이
+    // 이미 열고, `sr-only`는 요소를 감출 뿐 탭 순서에서 빼지는 않으므로, 남겨
+    // 두면 책장 한복판에 보이지 않는 탭 정거장이 생긴다.
     scene(
       program,
       given(shelfModel()),
