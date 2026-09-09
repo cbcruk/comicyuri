@@ -173,6 +173,10 @@ const panelView = (panel: Panel, fit: FitMode, h: HtmlBuilder<Message>): Html =>
     h.Class(FIT_CLASS[fit]),
     h.Src(panel.url),
     h.Alt(`Page ${panel.page + 1}`),
+    // 이미지는 기본으로 끌 수 있고, 끌기 시작하면 브라우저가 포인터 이벤트를 거두어
+    // 드래그 이벤트로 갈아탄다. 그러면 스와이프가 첫 움직임 뒤에 잘린다 — 포인터로
+    // 넘기려던 페이지 대신 이미지가 끌려간다.
+    h.Draggable(false),
   ])
 
 /**
@@ -223,7 +227,11 @@ const stageView = (
       h.div(
         [
           h.Class(
-            clsx('flex items-center justify-center gap-1', {
+            // 맞춤 모드는 페이지에 `h-full`·`w-full`·`max-h-full`을 건다. 퍼센트
+            // 크기는 담는 상자가 크기를 정해 두어야 풀리는데, 이 상자는 스테이지의
+            // flex 자식이라 내버려 두면 내용만큼만 커진다. 그러면 페이지가 자기
+            // 크기를 기준으로 자기를 재는 꼴이라 어떤 맞춤 모드도 듣지 않는다.
+            clsx('flex h-full w-full items-center justify-center gap-1', {
               'flex-row-reverse': settings.direction === 'rtl',
               // 확대를 풀고 제자리로 돌아가는 것은 애니메이션할 값이 있지만,
               // 끌고 있는 중은 아니다.

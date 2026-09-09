@@ -19,17 +19,22 @@ Message 목록은 각 `message.ts`, 아키텍처는 `README.md`에 있습니다.
 | ✅  | 자동 테스트가 이 동작을 고정하고 있음 (테스트 이름 병기)                |
 | 📖  | 코드를 읽은 근거만 있음. 테스트 없음                                    |
 | ❓  | **브라우저에서만 확인 가능** — 레이아웃, 실제 포인터 입력, 브라우저 API |
+| 🔍  | 브라우저에서 직접 확인함 (확인 날짜 병기)                               |
 | ⚠️  | 알려진 한계 또는 의도적 미구현                                          |
 
-이 코드는 아직 브라우저에서 실행된 적이 없습니다. ❓ 표시가 지금 수동으로
-확인하셔야 할 목록입니다.
+❓ 표시가 아직 손으로 확인해야 할 목록이고, 확인이 끝난 항목은 🔍로 바뀝니다.
 
-**Runtime 전체를 부팅하는 테스트는 쓸 수 없습니다.** vitest + happy-dom에서
-`Runtime.run`은 아무것도 렌더링하지 않으며, 최소 Foldkit 앱으로도 같습니다. 이
-저장소의 자동 검증은 `update`(story)와 view(scene)까지이고, init·구독·
-ManagedResource·라우팅이 실제로 맞물리는지는 브라우저에서만 확인됩니다.
+**vitest에서는 Runtime 전체를 부팅할 수 없습니다.** happy-dom에서 `Runtime.run`은
+아무것도 렌더링하지 않으며, 최소 Foldkit 앱으로도 같습니다. `vp test`가 덮는 것은
+`update`(story)와 view(scene)까지입니다.
 
-기준 커밋: `19c45e24` · 테스트 82개 통과
+**그 너머는 `vp run e2e`가 덮습니다.** Playwright가 프로덕션 빌드를 띄우고 실제
+Chromium에서 앱을 몰아 봅니다 — 레이아웃과 계산된 색, 두 손가락 핀치를 포함한
+포인터 입력, Fullscreen API, 폴더 선택창, 그리고 새로고침을 넘겨 남는지. init·구독·
+ManagedResource·라우팅이 맞물리는지도 여기서만 드러납니다. 테스트 이름은 이 문서의
+항목 번호로 시작합니다.
+
+기준 커밋: `50309fdd` · 단위 테스트 135개, 브라우저 테스트 23개 통과
 
 ---
 
@@ -67,12 +72,13 @@ ManagedResource·라우팅이 실제로 맞물리는지는 브라우저에서만
 
 **S-112 · "Open files"는 파일 선택창을 연다**
 `.cbz`, `.zip`, 이미지 파일을 여러 개 고를 수 있다.
-✅ scene "the open-files button reaches the picker"
-❓ 실제 선택창이 뜨는지, accept 필터가 먹는지
+✅ scene "the open-files button reaches the picker",
+e2e "S-112 · \"Open files\"가 여러 개를 고를 수 있는 선택창을 연다"
+❓ accept 필터가 실제로 먹는지 — 선택창이 거르는 것은 앱 바깥이라 관찰할 수 없다
 
 **S-113 · "Open folder"는 디렉터리 선택창을 연다**
 `webkitdirectory` 기반. 하위 이미지 전체를 폴더명으로 된 책 하나로 묶는다.
-📖 ❓ 테스트 경로가 없음 — **브라우저 확인 필요**
+✅ e2e "S-113 · 폴더를 고르면 폴더 이름의 책 한 권이 된다"
 
 **S-114 · 아카이브는 각각 한 권, 낱장 이미지는 묶어서 한 권**
 `.cbz`/`.zip`은 파일마다 한 권이고 제목은 확장자를 뗀 파일명. 낱장 이미지는 전부
@@ -81,7 +87,7 @@ ManagedResource·라우팅이 실제로 맞물리는지는 브라우저에서만
 
 **S-115 · 같은 파일을 다시 열면 같은 책이다**
 책 id는 `제목::바이트크기`. 그래서 다시 임포트해도 읽던 위치와 북마크가 살아 있다.
-📖 ❓
+✅ e2e "S-115 · 같은 파일을 다시 열면 같은 책이고, 읽던 자리도 그대로다"
 
 **S-116 · 임포트 중에는 상태줄이 "Importing…"이라고 말하고, 끝나면 사라진다**
 ✅ scene "dropping an archive on the shelf imports it",
@@ -127,12 +133,14 @@ story "picking files imports them and refreshes the shelf"
 **S-143 · DevTools 오버레이가 개발 중에 뜬다**
 `@foldkit/devtools`가 설치돼 있으면 Vite 플러그인이 개발 빌드에만 주입한다. 기본
 위치는 오른쪽 아래. Message 흐름과 Model을 들여다보고 시간을 되감을 수 있다.
-📖 ❓ **브라우저 확인 필요**
+📖 ❓ **브라우저 확인 필요** — 브라우저 테스트는 프로덕션 빌드를 띄우므로 이
+오버레이가 없는 쪽을 본다.
 
 **S-142 · 테마는 즉시 적용되고 저장된다**
 `<html data-theme>`를 바꾼다. 모든 색은 이 속성에서 갈라지는 CSS 변수를 통해 나온다.
-✅ story "toggling the theme flips it, persists it and applies it"
-❓ **라이트 테마 전체 배색** — 토큰이 실제로 덮이는지
+✅ story "toggling the theme flips it, persists it and applies it",
+e2e "S-142 · 라이트로 바꾸면 토큰이 실제로 덮인다", "S-142 · 고른 테마는
+새로고침을 넘긴다"
 
 ⚠️ 부팅 시 `index.html`이 `data-theme="dark"`로 시작한다. 라이트 사용자는 첫
 프레임이 어둡게 보일 수 있다.
@@ -200,9 +208,13 @@ reader/story "in right-to-left reading the left key advances"
 
 **R-224 · 맞춤 모드는 네 가지를 순환한다**
 Fit → Width → Height → 1:1 → Fit.
+Fit은 화면 안에 통째로, Width는 너비를, Height는 높이를 채우고, 1:1은 원래 픽셀
+크기다. 세로로 긴 페이지에서는 Fit과 Height가 같은 그림이 된다 — 정의상 Fit은 먼저
+닿는 쪽을 따른다.
 ✅ reader/story "cycling the fit mode walks the four modes and comes back",
-reader/scene "the fit control names the mode it is in"
-❓ **각 모드가 실제로 그렇게 보이는지**
+reader/scene "the fit control names the mode it is in",
+e2e "R-224 · Fit은 페이지를 화면 안에 통째로 넣는다", "R-224 · Width는 너비를
+채운다", "R-224 · Height는 높이를 채운다", "R-224 · 1:1은 원래 픽셀 크기로 둔다"
 
 **R-225 · 바꾼 설정은 저장되고 다음 책에도 적용된다**
 📖
@@ -215,15 +227,18 @@ reader/scene "the fit control names the mode it is in"
 **R-232 · 두 손가락 핀치로 확대·축소**
 손가락 사이 간격에 비례한다. 24px보다 가까운 두 지점은 핀치로 보지 않는다 —
 간격 비율로 배율을 정하므로 0에 가까운 간격에서 시작하면 배율이 무한대가 된다.
-✅ reader/story "two fingers zoom, and lifting one leaves the other panning"
-❓ **실기기 확인 필요**
+✅ reader/story "two fingers zoom, and lifting one leaves the other panning",
+e2e "R-232 · 두 손가락을 벌리면 그만큼 확대된다"
+❓ 실기기의 손가락 감각
 
 **R-233 · 확대해도 손가락 사이 지점이 제자리에 머문다**
-✅ gesture "what sits under the anchor stays under it"
-❓ **좌표 변환이 실제 레이아웃과 맞아야 성립** — 가장 의심스러운 항목
+손가락이 하나씩 따로 도착하므로 그 사이 순간에는 두 손가락의 한가운데가 잠깐
+쏠리고, 그만큼 몇 픽셀이 남는다. 잘게 움직이면 눈에 띄지 않는다.
+✅ gesture "what sits under the anchor stays under it",
+e2e "R-233 · 확대해도 손가락 사이 지점이 제자리에 머문다"
 
 **R-234 · Ctrl+휠 / 트랙패드 핀치로 확대·축소**
-📖 ❓ **브라우저 확인 필요**
+✅ e2e "R-234 · Ctrl+휠로 확대하고 축소한다"
 
 **R-244 · 브라우저가 닫아주지 않은 제스처는 버린다**
 창이 포커스를 잃거나 탭이 배경으로 가면 `pointerup`이 오지 않을 수 있다. 그
@@ -269,8 +284,8 @@ reader/scene "the fit control names the mode it is in"
 읽는 방향을 따른다 — RTL에서는 왼쪽 탭이 다음 쪽. 이 영역은 페이지 넘김 외에
 아무 일도 하지 않는다.
 ✅ reader/story "a tap on the forward zone turns the page",
-gesture "the outer thirds turn pages and the middle shows the chrome"
-❓ **실기기 확인 필요**
+gesture "the outer thirds turn pages and the middle shows the chrome",
+e2e "R-241 · 오른쪽에서 왼쪽으로 읽을 때 왼쪽 1/3 탭이 앞으로 넘긴다"
 
 **R-245 · 탭으로 페이지가 넘어가면 그 쪽 가장자리가 잠깐 빛난다 (개발 빌드만)**
 같은 만화의 두 장은 서로 닮아서, 페이지가 넘어간 것이 "같은 그림이 움직였다"로
@@ -294,9 +309,11 @@ gesture "the outer thirds turn pages and the middle shows the chrome"
 
 **R-243 · 옆으로 45px 넘게 끌면 페이지가 넘어간다**
 왼쪽으로 끌면 오른쪽 페이지를 부른다.
+페이지 이미지는 끌 수 없게 해 두었다. 그러지 않으면 브라우저가 이미지 드래그를
+시작하면서 포인터 이벤트를 거두어 가고, 스와이프가 첫 움직임 뒤에 잘린다.
 ✅ gesture "dragging leftwards asks for the page on the right",
-reader/story "dragging leftwards asks for the right-hand page"
-❓ **실기기 확인 필요**
+reader/story "dragging leftwards asks for the right-hand page",
+e2e "R-243 · 옆으로 끌면 그 반대쪽 페이지를 부른다"
 
 **R-244 · 10px 이내의 움직임은 탭으로 친다**
 📖
@@ -312,8 +329,10 @@ reader/story "dragging leftwards asks for the right-hand page"
 subscription "waits before it says the reader has gone idle",
 "it does not run out from under an open grid",
 "holds the wait for as long as it is there",
-reader/story "entering holds it, and leaving starts the wait over"
-❓ 페이드 동작
+reader/story "entering holds it, and leaving starts the wait over",
+e2e "R-251 · 3초 동안 아무 일도 없으면 툴바가 사라지고, 다시 만지면 돌아온다",
+"R-251 · 포인터가 툴바 위에 있는 동안에는 시간이 흐르지 않는다"
+❓ 페이드가 눈에 어떻게 보이는지
 
 **R-252 · 컨트롤을 쓰면 툴바가 다시 나오고 대기가 처음부터 다시 간다**
 툴바·푸터의 버튼, 슬라이더, 썸네일 선택, 키보드가 모두 해당한다. 툴바를 쓰는
@@ -350,7 +369,7 @@ leftward", "reading right to left, the filled part of the track sits on the
 right", "reading left to right, the fill is the fill", "the row of controls
 turns around with the reading direction", "and reading left to right it stays
 as written"
-❓ **실제로 만화를 넘겨봤을 때 채워지는 쪽과 줄어드는 쪽이 맞는지**
+🔍 2026-09-09 · 만화를 넘겨보며 채워지는 쪽과 줄어드는 쪽을 확인함
 
 **R-265 · 슬라이더에 포커스가 있는 동안에는 리더가 키를 양보한다**
 슬라이더는 화살표·Home/End·PageUp/Down을 스스로 처리하고, 리더의 키 구독은
@@ -358,6 +377,8 @@ as written"
 두 페이지(LTR)이거나 서로 밀어내기(RTL).
 ✅ subscription "the page slider keeps the keys it handles", "and so does
 anything inside it", "everything else leaves the key to the reader"
+🔍 2026-09-09 · 슬라이더에 포커스를 준 뒤 화살표가 한 번에 한 페이지만 넘기는 것을
+확인함
 
 ### 2.8 모든 페이지 (썸네일)
 
@@ -368,9 +389,8 @@ anything inside it", "everything else leaves the key to the reader"
 **R-272 · 화면에 보일 만큼만 추출한다**
 스크롤 위치에서 창을 계산해 그 주변 2행까지만 읽는다. 500쪽 책이 500장을 풀지 않는다.
 ✅ thumbs "scrolling asks for the rows around the new position, not the whole book",
-reader/story "opening the grid asks only for the thumbnails it can show"
-❓ **패널을 여는 순간 실제로 채워지는지** — 컨테이너 높이가 측정되기 전에는 아무
-행도 그리지 않는다
+reader/story "opening the grid asks only for the thumbnails it can show",
+e2e "R-272 · 패널을 여는 순간 썸네일이 채워진다"
 
 **R-273 · 썸네일을 고르면 그 페이지로 가고 패널이 닫힌다**
 ✅ reader/scene "picking a page from the grid goes there",
@@ -404,13 +424,13 @@ reader/story "picking a thumbnail jumps there and closes the grid"
 ### 2.10 전체화면
 
 **R-291 · Full 버튼이 전체화면을 오간다**
-✅ reader/story "the control asks, and the document reports what happened"
-❓ **브라우저 API — 실제 확인 필요**
+✅ reader/story "the control asks, and the document reports what happened",
+e2e "R-291 · Full 버튼이 전체화면을 오간다"
 
 **R-292 · 브라우저가 거절하거나 사용자가 브라우저 방식으로 나가도 상태가 맞는다**
 Model을 움직이는 것은 요청이 아니라 `fullscreenchange` 이벤트다.
-✅ reader/story "leaving fullscreen outside the app is still noticed"
-❓
+✅ reader/story "leaving fullscreen outside the app is still noticed",
+e2e "R-292 · 브라우저 쪽에서 나가도 상태가 맞는다"
 
 ### 2.11 키보드
 
@@ -446,15 +466,15 @@ subscription "a key held with a modifier belongs to the browser",
 
 **P-301 · 책은 IndexedDB에 남는다**
 원본 바이트 그대로. 새로고침해도 책장이 그대로다.
-📖 ❓
+✅ e2e "P-301 · 책은 새로고침을 넘겨 책장에 남는다"
 
 **P-302 · 읽던 위치와 북마크는 책마다 localStorage에 남는다**
 키는 `comicyuri:progress:<book id>`.
-📖 ❓
+✅ e2e "P-302 · 읽던 위치와 북마크가 남는다"
 
 **P-303 · 설정은 localStorage에 남는다**
 키는 `comicyuri:settings`. 방향·한두장·맞춤·테마.
-📖 ❓
+✅ e2e "P-303 · 설정은 남고 다음 책에도 적용된다"
 
 **P-304 · 저장된 값이 깨져 있으면 기본값으로 떨어진다**
 스키마로 디코딩하므로, 손상되거나 오래된 항목이 UI에 도달하지 않는다.
@@ -551,29 +571,29 @@ subscription "a key held with a modifier belongs to the browser",
 
 ## 7. 브라우저에서 확인할 목록
 
-❓ 항목만 모은 것입니다. 위에서부터 훑으시면 됩니다.
+이 목록에 있던 항목은 대부분 `vp run e2e`가 가져갔습니다. Playwright가 프로덕션
+빌드를 띄우고 Chromium에서 직접 확인합니다 — 무엇을 덮는지는 각 항목의 ✅ e2e
+표시에 있습니다.
 
-**배치와 색**
+**하네스가 가져간 것** (2026-09-09)
 
-- [ ] S-142 라이트 테마 전체 배색
-- [ ] R-224 맞춤 모드 네 가지가 실제로 다르게 보이는지
-- [ ] 리더 스테이지가 툴바·푸터를 뺀 높이를 다 쓰는지
+- [x] S-113 폴더 열기
+- [x] S-142 라이트 테마 전체 배색
+- [x] R-224 맞춤 모드 네 가지 · 스테이지가 툴바·푸터를 뺀 높이를 다 쓰는지
+- [x] R-232 핀치 줌 · R-233 확대 시 손가락 아래 지점 · R-234 Ctrl+휠
+- [x] R-241 탭 존 방향 · R-243 스와이프 방향 · R-244 탭 판정
+- [x] R-251 툴바 3초 자동 숨김과 포인터가 붙잡는 것
+- [x] R-272 썸네일 패널이 열리는 즉시 채워지는지
+- [x] R-291 · R-292 전체화면
+- [x] P-301~303 새로고침 후 책장·위치·설정 유지
 
-**포인터**
+**여전히 사람 눈이 필요한 것**
 
-- [ ] R-232 핀치 줌
-- [ ] R-233 **확대 시 손가락 아래 지점이 제자리인지** (좌표 변환 검증)
-- [ ] R-234 Ctrl+휠 / 트랙패드 핀치
-- [ ] R-241 탭 존이 방향에 맞는지
-- [ ] R-243 스와이프 방향
+- [ ] R-251 툴바가 사라지고 나타나는 페이드가 눈에 어떻게 보이는지
+- [ ] R-232 실기기에서 두 손가락의 감각
+- [ ] R-244 창이 포커스를 잃어 `pointerup`이 오지 않는 경우 — 재현이 불안정하다
 
-**브라우저 API**
+**확인 완료**
 
-- [ ] R-291 전체화면 진입·이탈
-- [ ] S-113 폴더 열기
-- [ ] P-301~303 새로고침 후 책장·위치·설정 유지
-
-**타이밍**
-
-- [ ] R-272 썸네일 패널이 열리는 즉시 채워지는지
-- [ ] R-251 툴바 3초 자동 숨김
+- [x] R-264 RTL에서 슬라이더가 오른쪽에서 왼쪽으로 채워지고 줄어드는 감각 (2026-09-09)
+- [x] R-265 슬라이더 포커스 중 화살표가 한 번에 한 페이지만 넘기는지 (2026-09-09)
