@@ -15,8 +15,11 @@ Everything runs client-side — your files never leave the browser.
 - **Fit modes** — fit to screen, fit width, fit height, or original size.
 - **Zoom & pan** — pinch, `Ctrl`+wheel, the toolbar buttons, or double-tap;
   drag to pan when zoomed in.
-- **Navigation** — tap zones (left / centre / right), swipe, keyboard, or the
-  page slider. A thumbnail grid lets you jump anywhere.
+- **Navigation** — tap zones (left / centre / right), swipe, keyboard, the wheel,
+  or the page slider. A thumbnail grid lets you jump anywhere.
+- **Scroll to read** — a page taller than the screen scrolls; with a mouse
+  wheel, another notch at its end turns the page, and turning back lands at the
+  bottom of the previous one.
 - **Bookmarks** — mark any page, jump between marks with `[` / `]`, or narrow
   the thumbnail grid to the marked pages.
 - **Fullscreen**, an auto-hiding immersive UI, and a light / dark theme.

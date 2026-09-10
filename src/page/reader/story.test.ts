@@ -14,7 +14,10 @@ import { defaultSettings } from '../../types.ts'
 import { LoadSpread, LoadThumbs, PreloadNeighbours, ToggleFullscreen } from './command.ts'
 import { Message, OutMessage } from './message.ts'
 import { DOUBLE_TAP_ZOOM, ORIGIN, ZOOM_MIN } from './gesture.ts'
+import type { Point } from './gesture.ts'
 import { Model, OpenState, SpreadState, init } from './model.ts'
+import { NO_ROOM } from './scroll.ts'
+import type { ScrollDevice } from './scroll.ts'
 import { update } from './update.ts'
 
 const PAGE_COUNT = 6
@@ -1085,11 +1088,116 @@ describe('zoom across pages', () => {
       update,
       given({ ...openingModel(), zoom: 3, pan: ORIGIN }),
       ...opened(0),
-      message(Message.ScrolledToPan({ delta: { x: 20, y: 50 } })),
+      message(
+        Message.ScrolledStage({
+          delta: { x: 20, y: 50 },
+          room: { up: 0, down: 300, left: 0, right: 300 },
+          device: 'trackpad',
+        }),
+      ),
       model((model) => {
         // 아래로 스크롤하면 페이지는 위로 간다. 스크롤이 늘 그렇듯이.
         expect(model.pan).toStrictEqual({ x: -20, y: -50 })
       }),
+    )
+  })
+})
+
+describe('scrolling to the edge of the page', () => {
+  const scrolled = (delta: Point, room = NO_ROOM, device: ScrollDevice = 'wheel') =>
+    message(Message.ScrolledStage({ delta, room, device }))
+
+  test('a page with nowhere left to go turns instead', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      scrolled({ x: 0, y: 50 }),
+      model((model) => {
+        expect(model.page).toBe(1)
+      }),
+      ...settle(1),
+    )
+  })
+
+  test('the scroll that reaches the edge does not also turn the page', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      scrolled({ x: 0, y: 400 }, { up: 0, down: 100, left: 0, right: 0 }),
+      model((model) => {
+        expect(model.page).toBe(0)
+        expect(model.pan).toStrictEqual({ x: 0, y: -100 })
+      }),
+    )
+  })
+
+  test('a trackpad stops at the edge instead of turning', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      scrolled({ x: 0, y: 50 }, NO_ROOM, 'trackpad'),
+      scrolled({ x: 0, y: 50 }, NO_ROOM, 'trackpad'),
+      model((model) => {
+        expect(model.page).toBe(0)
+      }),
+    )
+  })
+
+  test('one notch turns one page, however many follow it', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      scrolled({ x: 0, y: 50 }),
+      ...settle(1),
+      scrolled({ x: 0, y: 50 }),
+      model((model) => {
+        expect(model.page).toBe(2)
+      }),
+      ...settle(2),
+    )
+  })
+
+  test('scrolling back at the top enters the page before it at its end', () => {
+    story(
+      update,
+      given({ ...openingModel(), page: 2 }),
+      ...opened(2),
+      scrolled({ x: 0, y: -50 }),
+      model((model) => {
+        expect(model.page).toBe(1)
+        expect(model.entry).toBe('end')
+      }),
+      ...settle(1),
+    )
+  })
+
+  test('a page entered forwards starts at its start', () => {
+    story(
+      update,
+      given({ ...openingModel(), entry: 'end' }),
+      ...opened(0),
+      message(Message.ClickedNext()),
+      model((model) => {
+        expect(model.entry).toBe('start')
+      }),
+      ...settle(1),
+    )
+  })
+
+  test('jumping is not turning, so a jump starts at the start', () => {
+    story(
+      update,
+      given({ ...openingModel(), page: 3 }),
+      ...opened(3),
+      message(Message.SelectedThumb({ page: 1 })),
+      model((model) => {
+        expect(model.entry).toBe('start')
+      }),
+      ...settle(1),
     )
   })
 })
