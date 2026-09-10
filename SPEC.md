@@ -34,7 +34,7 @@ Chromium에서 앱을 몰아 봅니다 — 레이아웃과 계산된 색, 두 �
 ManagedResource·라우팅이 맞물리는지도 여기서만 드러납니다. 테스트 이름은 이 문서의
 항목 번호로 시작합니다.
 
-기준 커밋: `873a08c4` · 단위 테스트 166개, 브라우저 테스트 28개 통과
+기준 커밋: `9fda4f1f` · 단위 테스트 177개, 브라우저 테스트 31개 통과
 
 ---
 
@@ -239,6 +239,24 @@ one is left alone rather than paired across it", "one wide page does not push ev
 pair after it off by one",
 reader/story "a wide page is read on its own and the pairs after it stay in step",
 e2e "R-226 · 넓은 페이지는 두 장 모드에서도 혼자 나온다"
+
+**R-227 · 묶기를 손으로 뒤집을 수 있다**
+두 장 모드에서 `⇹` 버튼과 `s` 키가 지금 보고 있는 스프레드의 묶기를 뒤집는다.
+두 장이 보이고 있으면 앞 장을 혼자 세우고, 한 장만 보이고 있으면 다음 장과 묶는다.
+같은 자리에서 두 번 누르면 처음 보던 묶음으로 돌아온다.
+
+손으로 건 표시는 `R-226`의 자동 판정을 이긴다. 그러지 못하면 탈출구가 아니다.
+표시는 읽던 자리·북마크와 같은 자리에 책마다 저장된다(`P-302`). 한 장 모드에는
+뒤집을 묶기가 없어서 버튼도 없다.
+✅ spreads "a page told to stand alone does, however narrow it is", "a page told to
+pair does, however wide it is", "a page bound to the next one wins over the cover
+rule",
+reader/story "flipping the binding splits the spread being read, and saves it",
+"flipping twice comes back to the spread it started from", "flipping binds a wide
+page back to its neighbour", "one-page mode has no binding to flip",
+reader/scene "the binding control is only there when there is a binding to flip",
+e2e "R-227 · 자동 묶기를 손으로 뒤집고, 그것이 새로고침을 넘긴다", "R-227 · 넓다고
+갈라 놓은 페이지를 손으로 다시 묶는다", "R-227 · 한 장 모드에는 뒤집을 묶기가 없다"
 
 ### 2.4 줌과 팬
 
@@ -463,7 +481,8 @@ e2e "R-292 · 브라우저 쪽에서 나가도 상태가 맞는다"
 📌 슬라이더에 포커스가 있을 때는 R-265에 따라 리더가 물러난다.
 
 **R-2A2 · 토글**
-`d` 방향 · `v` 한/두 장 · `t` 썸네일 · `b` 북마크 · `f` 전체화면 · `+`/`-` 줌.
+`d` 방향 · `v` 한/두 장 · `s` 묶기 뒤집기 · `t` 썸네일 · `b` 북마크 · `f` 전체화면 ·
+`+`/`-` 줌.
 📖
 
 **R-2A3 · Escape는 한 겹씩 벗긴다**
@@ -489,9 +508,11 @@ subscription "a key held with a modifier belongs to the browser",
 원본 바이트 그대로. 새로고침해도 책장이 그대로다.
 ✅ e2e "P-301 · 책은 새로고침을 넘겨 책장에 남는다"
 
-**P-302 · 읽던 위치와 북마크는 책마다 localStorage에 남는다**
-키는 `comicyuri:progress:<book id>`.
-✅ e2e "P-302 · 읽던 위치와 북마크가 남는다"
+**P-302 · 읽던 위치와 북마크, 묶기 교정은 책마다 localStorage에 남는다**
+키는 `comicyuri:progress:<book id>`. 묶기 교정(`R-227`)은 디코딩 기본값을 지고
+있어서, 이 항목이 생기기 전에 저장된 책도 읽던 자리와 북마크를 잃지 않는다.
+✅ e2e "P-302 · 읽던 위치와 북마크가 남는다",
+"R-227 · 자동 묶기를 손으로 뒤집고, 그것이 새로고침을 넘긴다"
 
 **P-303 · 설정은 localStorage에 남는다**
 키는 `comicyuri:settings`. 방향·한두장·맞춤·테마.
@@ -588,7 +609,6 @@ subscription "a key held with a modifier belongs to the browser",
 | L-610 | Runtime 전체를 부팅하는 테스트가 불가능하다 — vitest + happy-dom에서 `Runtime.run`이 아무것도 렌더링하지 않는다 (최소 Foldkit 앱으로 대조 확인) |
 | L-611 | 프로덕션 배포 시 `/book/:id` 직접 접근에는 SPA 폴백 설정이 필요하다                                                                             |
 | L-612 | `singleThreshold`를 바꿀 수 있는 UI가 없다 — `L-602`와 같은 자리의 구멍이다                                                                     |
-| L-613 | 자동 판정이 틀린 페이지를 손으로 고칠 방법이 없다 (`COOVIEWER.md`의 `C-102`)                                                                    |
 
 ---
 

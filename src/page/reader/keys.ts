@@ -15,6 +15,7 @@ const COMMAND_KEYS: Readonly<Record<string, () => Message>> = {
   End: Message.ClickedLast,
   d: Message.ClickedToggleDirection,
   v: Message.ClickedToggleView,
+  s: Message.ClickedToggleBinding,
   f: Message.ClickedToggleFullscreen,
   t: Message.ClickedToggleThumbs,
   b: Message.ClickedToggleBookmark,

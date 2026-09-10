@@ -14,7 +14,7 @@ export { defaultSettings }
 const SETTINGS_KEY = 'comicyuri:settings'
 const PROGRESS_PREFIX = 'comicyuri:progress:'
 
-const emptyProgress: BookProgress = { page: 0, bookmarks: [], updatedAt: 0 }
+const emptyProgress: BookProgress = { page: 0, bookmarks: [], marks: [], updatedAt: 0 }
 
 const SettingsJson = Schema.fromJsonString(Settings)
 const decodeSettings = Schema.decodeUnknownSync(SettingsJson)

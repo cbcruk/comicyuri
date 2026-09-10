@@ -3,7 +3,7 @@ import { defineMessageUnion } from 'foldkit/message'
 
 import { Slider, VirtualList } from '@foldkit/ui'
 
-import { Settings } from '../../types.ts'
+import { PageMark, Settings } from '../../types.ts'
 import { Point } from './gesture.ts'
 import { Panel } from './model.ts'
 
@@ -34,6 +34,7 @@ export const Message = defineMessageUnion({
   ClickedExit: {},
   ClickedToggleDirection: {},
   ClickedToggleView: {},
+  ClickedToggleBinding: {},
   ClickedCycleFit: {},
   PressedKey: { key: Schema.String },
 
@@ -81,6 +82,7 @@ export const OutMessage = defineMessageUnion({
     bookId: Schema.String,
     page: Schema.Number,
     bookmarks: Schema.Array(Schema.Number),
+    marks: Schema.Array(PageMark),
   },
 })
 

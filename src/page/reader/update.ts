@@ -29,6 +29,7 @@ import { Gesture, Model, OpenState, SpreadState } from './model.ts'
 import type { OpenBookService } from './resource.ts'
 import { loadedPages, missingFrom, pagesInView } from './thumbs.ts'
 import {
+  flipBinding,
   indexOfPage,
   mirrorForDirection,
   neighbourPages,
@@ -61,7 +62,7 @@ const showPage = (model: Model, page: number): UpdateReturn =>
     Opening: () => ({ model: evo(model, { page: () => page }) }),
     Failed: () => ({ model: evo(model, { page: () => page }) }),
     Ready: ({ pageCount, ratios }) => {
-      const spreads = spreadsFor(pageCount, model.settings, ratios)
+      const spreads = spreadsFor({ pageCount, ratios, marks: model.marks }, model.settings)
       const index = indexOfPage(spreads, page)
       const pages = pagesAt(spreads, index)
 
@@ -83,6 +84,7 @@ const showPage = (model: Model, page: number): UpdateReturn =>
           bookId: model.bookId,
           page,
           bookmarks: model.bookmarks,
+          marks: model.marks,
         }),
       }
     },
@@ -102,7 +104,14 @@ const step = (model: Model, by: number): UpdateReturn =>
     Opening: () => ({ model }),
     Failed: () => ({ model }),
     Ready: ({ pageCount, ratios }) =>
-      goToPage(model, pageAfterStep(spreadsFor(pageCount, model.settings, ratios), model.page, by)),
+      goToPage(
+        model,
+        pageAfterStep(
+          spreadsFor({ pageCount, ratios, marks: model.marks }, model.settings),
+          model.page,
+          by,
+        ),
+      ),
   })
 
 /** 리더가 가진 설정이 바뀌었다. 다시 배치하고 애플리케이션에 알린다. */
@@ -114,6 +123,27 @@ const withSettings = (model: Model, settings: Model['settings']): UpdateReturn =
     outMessage: OutMessage.ChangedSettings({ settings }),
   }
 }
+
+/**
+ * 지금 보고 있는 스프레드의 묶기를 뒤집는다. 자리는 그대로 두고 배치만 바꾸므로
+ * `goToPage`가 아니라 `showPage`다 — 배율을 되돌릴 이유가 없다.
+ *
+ * 한 장 모드에는 뒤집을 묶기가 없다.
+ */
+const flipBindingHere = (model: Model): UpdateReturn =>
+  model.settings.view === 'single'
+    ? { model }
+    : OpenState.match(model.openState, {
+        Opening: () => ({ model }),
+        Failed: () => ({ model }),
+        Ready: ({ pageCount, ratios }) => {
+          const layout = { pageCount, ratios, marks: model.marks }
+          const spreads = spreadsFor(layout, model.settings)
+          const marks = flipBinding(model.marks, pagesAt(spreads, indexOfPage(spreads, model.page)))
+
+          return showPage(evo(model, { marks: () => marks }), model.page)
+        },
+      })
 
 /** 툴바를 다시 불러오고, 그것을 숨기는 대기를 처음부터 다시 시작한다. */
 const withActivity = (model: Model): Model =>
@@ -457,6 +487,8 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
 
     ClickedCycleFit: () => withSettings(model, evo(model.settings, { fit: nextFit })),
 
+    ClickedToggleBinding: () => flipBindingHere(model),
+
     GotSliderMessage: ({ message }) => foldSlider(model, message),
 
     ClickedToggleBookmark: () => {
@@ -470,6 +502,7 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
           bookId: model.bookId,
           page: model.page,
           bookmarks,
+          marks: model.marks,
         }),
       }
     },

@@ -51,6 +51,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   spread: SpreadState.Shown({ panels: [{ page, url: `blob:${page}` }] }),
   page,
   bookmarks: [],
+  marks: [],
   settings,
   zoom: ZOOM_MIN,
   pan: ORIGIN,
@@ -192,6 +193,17 @@ describe('layout controls', () => {
       expect(role('button', { name: 'Change how pages are fitted' })).toContainText('Width'),
     )
   })
+
+  test('the binding control is only there when there is a binding to flip', () => {
+    const flip = role('button', { name: 'Flip how this spread is paired' })
+
+    scene(program, given(readingModel()), expect(flip).not.toExist())
+    scene(
+      program,
+      given(readingModel(0, { ...defaultSettings, view: 'spread' })),
+      expect(flip).toExist(),
+    )
+  })
 })
 
 describe('failure', () => {
@@ -226,6 +238,7 @@ describe('page slider', () => {
           bookId: 'volume-1::42',
           page: 1,
           bookmarks: [],
+          marks: [],
         }),
       ),
       ...settleTurn(1),
@@ -245,6 +258,7 @@ describe('page slider', () => {
           bookId: 'volume-1::42',
           page: 1,
           bookmarks: [],
+          marks: [],
         }),
       ),
       ...settleTurn(1),
@@ -316,6 +330,7 @@ describe('page slider', () => {
           bookId: 'volume-1::42',
           page: 1,
           bookmarks: [],
+          marks: [],
         }),
       ),
       ...settleTurn(1),
@@ -338,6 +353,7 @@ describe('bookmarks', () => {
           bookId: 'volume-1::42',
           page: 0,
           bookmarks: [0],
+          marks: [],
         }),
       ),
       expect(role('button', { name: 'Remove bookmark from this page' })).toHaveAttr(

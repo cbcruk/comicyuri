@@ -330,6 +330,7 @@ describe('routing', () => {
           bookId: 'volume-1::42',
           page: 7,
           bookmarks: [2],
+          marks: [],
         }),
       ),
       model((model) => {

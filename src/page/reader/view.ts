@@ -149,6 +149,17 @@ const toolbarView = (
         },
         h,
       ),
+      // 한 장 모드에는 뒤집을 묶기가 없으므로 자리도 두지 않는다.
+      model.settings.view === 'spread'
+        ? controlView(
+            {
+              label: '⇹',
+              message: Message.ClickedToggleBinding(),
+              attributes: [h.AriaLabel('Flip how this spread is paired')],
+            },
+            h,
+          )
+        : h.empty,
       controlView(
         {
           label: '−',
@@ -420,7 +431,7 @@ export const view = defineView<Model, Message>((model, h): Html =>
     Opening: () => openingView('Opening…', h),
     Failed: ({ text }) => openingView(text, h),
     Ready: ({ title, pageCount, ratios }) => {
-      const spreads = spreadsFor(pageCount, model.settings, ratios)
+      const spreads = spreadsFor({ pageCount, ratios, marks: model.marks }, model.settings)
       const index = indexOfPage(spreads, model.page)
 
       return h.main(
