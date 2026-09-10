@@ -8,9 +8,6 @@ import { control, counter, readBook, stage } from './fixture/app.ts'
 /** 너비를 채우면 화면보다 훨씬 길어지는 페이지. */
 const TALL_BOOK = { fileName: 'volume-1.cbz', pageCount: 6, size: { width: 800, height: 4000 } }
 
-/** 한 번의 굴림이 끝났다고 보는 시간보다 넉넉히 쉰다. */
-const PAUSE = 400
-
 const boxOf = async (page: Page, what: 'stage' | 'image') => {
   const box = await (what === 'stage' ? stage(page) : stage(page).getByRole('img')).boundingBox()
   if (box === null) throw new Error(`${what}가 없다`)
@@ -18,8 +15,8 @@ const boxOf = async (page: Page, what: 'stage' | 'image') => {
 }
 
 /**
- * 페이지의 끝까지 굴린다. 한 번의 굴림으로 친다 — 끝에 닿는 그 이벤트는 남은 거리만
- * 움직이고 페이지를 넘기지 않는다.
+ * 페이지의 끝까지 굴린다. 끝에 닿는 그 이벤트는 남은 거리만 움직이고 페이지를
+ * 넘기지 않는다.
  */
 const scrollToBottom = async (page: Page): Promise<void> => {
   const stageBox = await boxOf(page, 'stage')
@@ -78,7 +75,6 @@ test('R-246 · 끝에 닿은 뒤 다시 굴리면 페이지가 넘어간다', as
   // 끝에 닿기까지 굴린 그 이벤트로는 넘어가지 않는다.
   await expect(counter(page)).toHaveText('1 / 6')
 
-  await page.waitForTimeout(PAUSE)
   await page.mouse.wheel(0, 120)
   await expect(counter(page)).toHaveText('2 / 6')
 
@@ -93,12 +89,11 @@ test('R-247 · 뒤로 넘겨 온 긴 페이지는 끝에서 시작한다', async
   await readTall(page)
 
   await scrollToBottom(page)
-  await page.waitForTimeout(PAUSE)
   await page.mouse.wheel(0, 120)
   await expect(counter(page)).toHaveText('2 / 6')
+  await expect(page.getByRole('img', { name: 'Page 2' })).toBeVisible()
 
   // 두 번째 페이지의 첫 줄에 서 있으므로, 위로 굴리는 것이 곧 되돌아가는 것이다.
-  await page.waitForTimeout(PAUSE)
   await page.mouse.wheel(0, -120)
   await expect(counter(page)).toHaveText('1 / 6')
 

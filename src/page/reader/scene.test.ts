@@ -58,7 +58,6 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   pan: ORIGIN,
   gesture: Gesture.Idle(),
   entry: 'start',
-  lastScrollAt: 0,
   isChromeVisible: true,
   isPointerOverChrome: false,
   activityToken: 0,

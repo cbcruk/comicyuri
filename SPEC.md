@@ -333,20 +333,30 @@ e2e "R-233 · 확대해도 손가락 사이 지점이 제자리에 머문다"
 reader/story "a wheel scroll moves a zoomed page",
 e2e "R-240 · 굴리면 페이지가 그만큼 움직인다"
 
-**R-246 · 끝에 닿은 뒤 다시 굴리면 페이지가 넘어간다**
+**R-246 · 마우스 휠로 끝에 닿은 뒤 다시 굴리면 페이지가 넘어간다**
 아래로 굴려 페이지의 끝에 닿아 있으면 다음 장, 위로 굴려 처음에 닿아 있으면 앞
-장이다. 화면에 통째로 들어가는 페이지는 처음부터 양쪽 끝에 닿아 있으므로, 한 번
-굴리는 것이 곧 한 장 넘기는 것이다.
+장이다. 화면에 통째로 들어가는 페이지는 처음부터 양쪽 끝에 닿아 있으므로, 한 칸
+굴리는 것이 곧 한 장 넘기는 것이다. 끝에 닿기까지 굴린 그 이벤트로는 넘어가지
+않는다 — 그 이벤트는 남은 거리를 움직이는 데 쓰였다. 가로로 굴리는 것도 넘기지
+않는다.
 
-넘어가는 것은 언제나 **새 굴림의 첫 이벤트**뿐이다. 끝에 닿기까지 굴린 그 이벤트로는
-넘어가지 않고, 트랙패드가 손을 뗀 뒤 흘리는 관성으로도 넘어가지 않는다 — 한 번
-멈췄다가 다시 굴려야 한다. 가로로 굴리는 것은 넘기지 않는다.
+**넘기는 것은 마우스 휠뿐이다.** 트랙패드는 끝에 닿으면 거기서 멈춘다. 트랙패드는
+손가락을 뗀 뒤에도 관성으로 이벤트를 흘리므로, 그 흐름 속에서 "한 번 더 굴렸다"를
+가려내려면 굴림이 멎기를 기다려야 하고, 그러면 넘기려고 몇 번씩 밀어야 한다 —
+2026-09-10에 실제로 그랬다. 마우스 휠은 한 칸이 한 이벤트라 그런 판정이 필요 없다.
+
+둘을 가르는 것은 판정이 아니라 짐작이다. 브라우저는 같은 이벤트로 보내고 어느
+쪽인지 말해 주지 않는다. 줄·페이지 단위로 오면 마우스이고(파이어폭스), 픽셀
+단위라면 `wheelDeltaY`가 120의 배수인 것이 마우스다(크로미움·사파리). 가로 성분이
+섞여 있으면 트랙패드다.
 ✅ scroll "scrolling down at the bottom asks for the next page", "a page that fits is
-already at both of its edges", "the events of one flick belong together",
-reader/story "a page with nowhere left to go turns instead", "the flick that reaches the
-edge does not also turn the page", "the inertia of a flick does not turn a second page",
+already at both of its edges", "a mouse wheel carries a multiple of 120", "a trackpad
+carries how far the fingers went", "anything sideways is a trackpad",
+reader/story "a page with nowhere left to go turns instead", "the scroll that reaches the
+edge does not also turn the page", "a trackpad stops at the edge instead of turning",
 e2e "R-246 · 끝에 닿은 뒤 다시 굴리면 페이지가 넘어간다", "R-246 · 화면에 통째로
 들어가는 페이지는 한 번 굴리면 넘어간다"
+❓ 실제 트랙패드에서 넘어가지 않는지 — 하네스가 만드는 휠 이벤트는 언제나 마우스다
 
 **R-247 · 페이지는 들어선 쪽에서 시작한다**
 앞으로 넘겨 온 페이지는 첫 줄부터, 뒤로 넘겨 온 페이지는 끝에서 시작한다. 되돌아
@@ -356,7 +366,8 @@ e2e "R-246 · 끝에 닿은 뒤 다시 굴리면 페이지가 넘어간다", "R-
 
 세우는 일은 CSS가 한다(`items-center-safe`, 그리고 뒤로 왔을 때 `flex-wrap-reverse`).
 재고 나서 옮기는 것이 아니라 처음부터 그 자리에 그려지므로, 긴 페이지가 가운데
-걸렸다가 튀는 일이 없다.
+걸렸다가 튀는 일이 없다. 페이지를 담은 상자는 페이지 번호를 키로 삼는다 — 그러지
+않으면 앞 페이지를 굴려 둔 자리에서 새 페이지가 미끄러져 들어온다.
 ✅ reader/story "scrolling back at the top enters the page before it at its end", "a page
 entered forwards starts at its start", "jumping is not turning, so a jump starts at the
 start",
@@ -765,7 +776,8 @@ the app"
 
 - [ ] R-251 툴바가 사라지고 나타나는 페이드가 눈에 어떻게 보이는지
 - [ ] R-232 실기기에서 두 손가락의 감각
-- [ ] R-246 한 굴림이 끝났다고 보는 200ms가 마우스 휠에도 트랙패드에도 맞는지
+- [ ] R-246 마우스 휠과 트랙패드를 가르는 짐작이 실제 장치에서 맞는지 — 하네스가
+      만드는 휠 이벤트는 언제나 마우스로 보인다
 - [ ] R-244 창이 포커스를 잃어 `pointerup`이 오지 않는 경우 — 재현이 불안정하다
 
 **확인 완료**

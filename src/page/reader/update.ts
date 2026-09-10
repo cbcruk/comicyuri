@@ -31,7 +31,7 @@ import { Message, OutMessage } from './message.ts'
 import { Gesture, Model, OpenState, SpreadState } from './model.ts'
 import type { PageEntry } from './model.ts'
 import type { OpenBookService } from './resource.ts'
-import { isNewFlick, pannedBy, turnFromEdge } from './scroll.ts'
+import { pannedBy, turnFromEdge } from './scroll.ts'
 import { loadedPages, missingFrom, pagesInView, shownPages } from './thumbs.ts'
 import {
   flipBinding,
@@ -719,20 +719,21 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
 
     /**
      * 휠이나 트랙패드로 굴렸다. 페이지가 아직 갈 곳이 있으면 그만큼 움직이고,
-     * 끝에 닿아 있으면 페이지를 넘긴다 — 화면에 통째로 들어가는 페이지는 처음부터
-     * 끝에 닿아 있으므로 한 번 굴리는 것이 곧 한 장 넘기는 것이다.
+     * 끝에 닿아 있으면 마우스 휠에 한해 페이지를 넘긴다 — 화면에 통째로 들어가는
+     * 페이지는 처음부터 끝에 닿아 있으므로 한 칸 굴리는 것이 곧 한 장 넘기는 것이다.
+     *
+     * 끝에 닿기까지 굴린 그 이벤트로는 넘어가지 않는다. 그 이벤트는 남은 거리를
+     * 움직이는 데 쓰였고, 읽던 사람은 아직 페이지의 끝을 보지도 못했다.
      */
-    ScrolledStage: ({ delta, room, timeStamp }) => {
-      const scrolled = evo(withPress(model), { lastScrollAt: () => timeStamp })
+    ScrolledStage: ({ delta, room, device }) => {
+      const scrolled = withPress(model)
       const pan = pannedBy(model.pan, delta, room)
 
       if (pan.x !== model.pan.x || pan.y !== model.pan.y) {
         return { model: evo(scrolled, { pan: () => pan }) }
       }
 
-      // 끝에 닿기까지 굴린 그 이벤트로는 넘어가지 않는다. 관성으로 이어지는
-      // 이벤트도 마찬가지다.
-      if (!isNewFlick(timeStamp, model.lastScrollAt)) return { model: scrolled }
+      if (device === 'trackpad') return { model: scrolled }
 
       return Option.match(turnFromEdge(delta, room), {
         onNone: () => ({ model: scrolled }),

@@ -17,6 +17,7 @@ import { DOUBLE_TAP_ZOOM, ORIGIN, ZOOM_MIN } from './gesture.ts'
 import type { Point } from './gesture.ts'
 import { Model, OpenState, SpreadState, init } from './model.ts'
 import { NO_ROOM } from './scroll.ts'
+import type { ScrollDevice } from './scroll.ts'
 import { update } from './update.ts'
 
 const PAGE_COUNT = 6
@@ -1091,7 +1092,7 @@ describe('zoom across pages', () => {
         Message.ScrolledStage({
           delta: { x: 20, y: 50 },
           room: { up: 0, down: 300, left: 0, right: 300 },
-          timeStamp: 1000,
+          device: 'trackpad',
         }),
       ),
       model((model) => {
@@ -1103,16 +1104,15 @@ describe('zoom across pages', () => {
 })
 
 describe('scrolling to the edge of the page', () => {
-  /** 화면에 통째로 들어가는 페이지. 어느 쪽으로도 갈 곳이 없다. */
-  const scrolled = (delta: Point, timeStamp: number, room = NO_ROOM) =>
-    message(Message.ScrolledStage({ delta, room, timeStamp }))
+  const scrolled = (delta: Point, room = NO_ROOM, device: ScrollDevice = 'wheel') =>
+    message(Message.ScrolledStage({ delta, room, device }))
 
   test('a page with nowhere left to go turns instead', () => {
     story(
       update,
       given(openingModel()),
       ...opened(0),
-      scrolled({ x: 0, y: 50 }, 1000),
+      scrolled({ x: 0, y: 50 }),
       model((model) => {
         expect(model.page).toBe(1)
       }),
@@ -1120,12 +1120,12 @@ describe('scrolling to the edge of the page', () => {
     )
   })
 
-  test('the flick that reaches the edge does not also turn the page', () => {
+  test('the scroll that reaches the edge does not also turn the page', () => {
     story(
       update,
       given(openingModel()),
       ...opened(0),
-      scrolled({ x: 0, y: 400 }, 1000, { up: 0, down: 100, left: 0, right: 0 }),
+      scrolled({ x: 0, y: 400 }, { up: 0, down: 100, left: 0, right: 0 }),
       model((model) => {
         expect(model.page).toBe(0)
         expect(model.pan).toStrictEqual({ x: 0, y: -100 })
@@ -1133,29 +1133,27 @@ describe('scrolling to the edge of the page', () => {
     )
   })
 
-  test('the inertia of a flick does not turn a second page', () => {
+  test('a trackpad stops at the edge instead of turning', () => {
     story(
       update,
       given(openingModel()),
       ...opened(0),
-      scrolled({ x: 0, y: 50 }, 1000),
-      ...settle(1),
-      scrolled({ x: 0, y: 40 }, 1016),
-      scrolled({ x: 0, y: 30 }, 1032),
+      scrolled({ x: 0, y: 50 }, NO_ROOM, 'trackpad'),
+      scrolled({ x: 0, y: 50 }, NO_ROOM, 'trackpad'),
       model((model) => {
-        expect(model.page).toBe(1)
+        expect(model.page).toBe(0)
       }),
     )
   })
 
-  test('a flick after a pause turns the next page', () => {
+  test('one notch turns one page, however many follow it', () => {
     story(
       update,
       given(openingModel()),
       ...opened(0),
-      scrolled({ x: 0, y: 50 }, 1000),
+      scrolled({ x: 0, y: 50 }),
       ...settle(1),
-      scrolled({ x: 0, y: 50 }, 1400),
+      scrolled({ x: 0, y: 50 }),
       model((model) => {
         expect(model.page).toBe(2)
       }),
@@ -1168,7 +1166,7 @@ describe('scrolling to the edge of the page', () => {
       update,
       given({ ...openingModel(), page: 2 }),
       ...opened(2),
-      scrolled({ x: 0, y: -50 }, 1000),
+      scrolled({ x: 0, y: -50 }),
       model((model) => {
         expect(model.page).toBe(1)
         expect(model.entry).toBe('end')

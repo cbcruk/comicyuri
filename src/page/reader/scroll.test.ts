@@ -2,7 +2,7 @@ import { Option } from 'effect'
 import { describe, expect, test } from 'vite-plus/test'
 
 import { ORIGIN } from './gesture.ts'
-import { NO_ROOM, SCROLL_QUIET_MILLIS, isNewFlick, pannedBy, turnFromEdge } from './scroll.ts'
+import { NO_ROOM, deviceFor, pannedBy, turnFromEdge } from './scroll.ts'
 
 const roomAllRound = { up: 100, down: 100, left: 100, right: 100 }
 
@@ -57,16 +57,32 @@ describe('turning from the edge', () => {
   })
 })
 
-describe('telling one flick from the next', () => {
-  test('the events of one flick belong together', () => {
-    expect(isNewFlick(1016, 1000)).toBe(false)
+describe('telling a wheel from a trackpad', () => {
+  /** 크로미움이 마우스 휠 한 칸에 싣는 값. */
+  const notch = { deltaX: 0, deltaY: 100, deltaMode: 0, wheelDeltaY: -120 }
+
+  test('a mouse wheel carries a multiple of 120', () => {
+    expect(deviceFor(notch)).toBe('wheel')
+    expect(deviceFor({ ...notch, deltaY: 300, wheelDeltaY: -360 })).toBe('wheel')
   })
 
-  test('a flick after a pause is a new one', () => {
-    expect(isNewFlick(1000 + SCROLL_QUIET_MILLIS + 1, 1000)).toBe(true)
+  test('a wheel counted in lines is a wheel too', () => {
+    // 파이어폭스의 마우스 휠. `wheelDeltaY`가 없는 대신 줄 단위로 온다.
+    expect(deviceFor({ deltaX: 0, deltaY: 3, deltaMode: 1, wheelDeltaY: undefined })).toBe('wheel')
   })
 
-  test('the first scroll of all is a new flick', () => {
-    expect(isNewFlick(1000, 0)).toBe(true)
+  test('a trackpad carries how far the fingers went', () => {
+    expect(deviceFor({ deltaX: 0, deltaY: 7, deltaMode: 0, wheelDeltaY: -21 })).toBe('trackpad')
+    expect(deviceFor({ deltaX: 0, deltaY: 1.5, deltaMode: 0, wheelDeltaY: -4 })).toBe('trackpad')
+  })
+
+  test('anything sideways is a trackpad', () => {
+    expect(deviceFor({ ...notch, deltaX: 4 })).toBe('trackpad')
+  })
+
+  test('a browser that says nothing at all is taken for a trackpad', () => {
+    expect(deviceFor({ deltaX: 0, deltaY: 7, deltaMode: 0, wheelDeltaY: undefined })).toBe(
+      'trackpad',
+    )
   })
 })

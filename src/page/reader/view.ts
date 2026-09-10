@@ -243,6 +243,7 @@ const stageView = (
   zoom: number,
   pan: Point,
   entry: PageEntry,
+  page: number,
   maybeTapFlash: Option.Option<TapFlash>,
   h: HtmlBuilder<Message>,
 ): Html =>
@@ -254,7 +255,12 @@ const stageView = (
       ),
     ],
     [
-      h.div(
+      // 페이지 번호를 키로 삼아, 넘길 때마다 이 상자를 새로 세운다. 그러지 않으면
+      // 앞 페이지를 굴려 둔 자리에서 새 페이지가 미끄러져 들어온다 — 아래 전환
+      // 애니메이션이 그 transform까지 애니메이션할 값으로 보기 때문이다. 미끄러지는
+      // 동안에는 페이지가 어디까지 왔는지 재는 값도 사실이 아니다.
+      h.keyed('div')(
+        String(page),
         [
           h.Id(PAGE_ID),
           h.Class(
@@ -674,6 +680,7 @@ export const view = defineView<Model, Message>((model, h): Html =>
             model.zoom,
             model.pan,
             model.entry,
+            model.page,
             model.maybeTapFlash,
             h,
           ),

@@ -8,7 +8,7 @@ import { handlesKeysItself, isReaderKey } from './keys.ts'
 import type { Point } from './gesture.ts'
 import { Message } from './message.ts'
 import { Model } from './model.ts'
-import { NO_ROOM } from './scroll.ts'
+import { NO_ROOM, deviceFor } from './scroll.ts'
 import type { Room } from './scroll.ts'
 
 /** 아무 일도 없을 때 툴바가 숨기까지 기다리는 시간. */
@@ -22,6 +22,13 @@ const centreRelative = (event: PointerEvent): Point => ({
   x: event.clientX - window.innerWidth / 2,
   y: event.clientY - window.innerHeight / 2,
 })
+
+/**
+ * 마우스 휠인지 트랙패드인지를 가르는 옛 값. 표준이 아니라 `WheelEvent`의 타입에
+ * 없고, 주지 않는 브라우저도 있다.
+ */
+const wheelDeltaOf = (event: WheelEvent & { wheelDeltaY?: number }): number | undefined =>
+  event.wheelDeltaY
 
 /** 누름은 툴바가 아니라 페이지 위에 떨어졌을 때만 친다. */
 const isOnStage = (event: Event): boolean =>
@@ -267,7 +274,12 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
               Message.ScrolledStage({
                 delta: { x: event.deltaX, y: event.deltaY },
                 room: roomOnStage(),
-                timeStamp: event.timeStamp,
+                device: deviceFor({
+                  deltaX: event.deltaX,
+                  deltaY: event.deltaY,
+                  deltaMode: event.deltaMode,
+                  wheelDeltaY: wheelDeltaOf(event),
+                }),
               }),
             )
           },

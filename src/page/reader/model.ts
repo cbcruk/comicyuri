@@ -138,8 +138,6 @@ export const Model = Schema.Struct({
    * 끝에서 시작한다 — 되돌아 읽는 움직임과 맞는다.
    */
   entry: PageEntry,
-  /** 마지막 휠 이벤트의 시각. 다음 이벤트가 새 굴림인지 알아보는 데 쓴다. */
-  lastScrollAt: Schema.Number,
 
   /** 툴바는 읽는 동안 스스로 숨고, 무슨 일이든 있으면 돌아온다. */
   isChromeVisible: Schema.Boolean,
@@ -205,7 +203,6 @@ export const init = (config: InitConfig): Model => ({
   pan: ORIGIN,
   gesture: Gesture.Idle(),
   entry: 'start',
-  lastScrollAt: 0,
   isChromeVisible: true,
   isPointerOverChrome: false,
   activityToken: 0,
