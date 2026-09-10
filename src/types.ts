@@ -1,5 +1,6 @@
-import { Effect, Schema } from 'effect'
+import { Effect, Option, Schema } from 'effect'
 import type { ArchiveError } from './errors.ts'
+import type { ImageSize } from './imageSize.ts'
 
 /**
  * 저장되는 모양은 평범한 타입이 아니라 스키마로 선언한다. `localStorage`에서
@@ -41,6 +42,7 @@ const DEFAULTS = {
   fit: 'contain',
   theme: 'dark',
   coverAlone: true,
+  singleThreshold: 0.74,
 } as const
 
 /**
@@ -57,6 +59,14 @@ export const Settings = Schema.Struct({
   /** 두 장 모드에서 맨 첫 장(표지)을 혼자 보여 준다. */
   coverAlone: Schema.Boolean.pipe(
     Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.coverAlone)),
+  ),
+  /**
+   * 이 가로세로비를 넘는 페이지는 두 장 모드에서도 혼자 나온다. 원본 뷰어의
+   * "Single page:" 값과 같은 뜻이고 기본값도 같다. 인쇄된 만화 한 쪽은 대체로
+   * 0.7 언저리이므로, 0.74를 넘는 페이지는 양면 삽화이거나 눕힌 스캔이다.
+   */
+  singleThreshold: Schema.Number.pipe(
+    Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.singleThreshold)),
   ),
 })
 /** {@linkcode Settings} 스키마의 디코딩된 값. */
@@ -85,6 +95,11 @@ export interface Page {
   load(): Effect.Effect<string, ArchiveError>
   /** 캐시해 둔 object URL을 놓아 메모리를 돌려준다. */
   unload(): void
+  /**
+   * 이미지 헤더를 읽어 픽셀 크기를 잰다. 임포트할 때 한 번 부르고, 그 답은
+   * 책 레코드에 남는다. 형식을 알아보지 못하면 실패가 아니라 `None`이다.
+   */
+  measure(): Effect.Effect<Option.Option<ImageSize>, ArchiveError>
 }
 
 /**
@@ -100,4 +115,9 @@ export interface LoadedBook {
   readonly source: BookSource
   /** 모든 페이지, 읽는 순서대로. */
   readonly pages: Page[]
+  /**
+   * 임포트할 때 재어 둔 페이지별 크기. {@linkcode LoadedBook.pages}와 번호가
+   * 맞물린다. 재기 전에 들여온 책이나 형식을 알아보지 못한 페이지는 `None`이다.
+   */
+  readonly pageSizes: ReadonlyArray<Option.Option<ImageSize>>
 }

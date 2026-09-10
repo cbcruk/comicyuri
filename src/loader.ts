@@ -1,10 +1,17 @@
-import { Effect } from 'effect'
+import { Effect, Option } from 'effect'
 import type { LoadedBook, Page } from './types.ts'
 import type { StoredBook } from './db.ts'
-import { EmptyBookError, NoComicFilesError } from './errors.ts'
-import type { ArchiveError } from './errors.ts'
+import { ArchiveError, EmptyBookError, NoComicFilesError } from './errors.ts'
+import { imageSize } from './imageSize.ts'
+import type { ImageSize } from './imageSize.ts'
 import { ZipArchive } from './zip.ts'
 import type { ZipEntry } from './zip.ts'
+
+/**
+ * 헤더를 찾기에 넉넉한 앞머리. JPEG는 EXIF와 ICC 프로파일을 다 지나서야 프레임
+ * 헤더가 나오는데, 그 세그먼트들은 하나에 64KB까지 커질 수 있다.
+ */
+const HEADER_BYTES = 128 * 1024
 
 const IMAGE_RE = /\.(jpe?g|png|gif|webp|avif|bmp)$/i
 const ZIP_RE = /\.(cbz|zip)$/i
@@ -56,6 +63,12 @@ class BlobPage implements Page {
       this.url = null
     }
   }
+  measure(): Effect.Effect<Option.Option<ImageSize>, ArchiveError> {
+    return Effect.tryPromise({
+      try: async () => new Uint8Array(await this.blob.slice(0, HEADER_BYTES).arrayBuffer()),
+      catch: (cause) => new ArchiveError({ reason: `Could not read "${this.name}"`, cause }),
+    }).pipe(Effect.map(imageSize))
+  }
 }
 
 class ZipPage implements Page {
@@ -83,6 +96,11 @@ class ZipPage implements Page {
       URL.revokeObjectURL(this.url)
       this.url = null
     }
+  }
+  // deflate는 앞부분만 풀 수 없으므로 엔트리를 통째로 편다. 재는 일은 임포트할
+  // 때 한 번뿐이라 그 값을 치를 만하다.
+  measure(): Effect.Effect<Option.Option<ImageSize>, ArchiveError> {
+    return this.archive.extract(this.entry).pipe(Effect.map(imageSize))
   }
 }
 
@@ -131,6 +149,29 @@ export function storedBooksFromFiles(
   })
 }
 
+/**
+ * 레코드에 남아 있는 크기를 페이지 수에 맞춰 편다. 재기 전에 들여온 책은 배열
+ * 자체가 없고, 그러면 모든 페이지가 크기를 모르는 채로 열린다.
+ */
+function sizesFor(stored: StoredBook, count: number): ReadonlyArray<Option.Option<ImageSize>> {
+  return Array.from({ length: count }, (_, i) => Option.fromNullishOr(stored.pageSizes?.[i]))
+}
+
+/**
+ * 책의 모든 페이지를 재어 레코드에 넣을 모양으로 돌려준다.
+ *
+ * 한 장이 실패해도 임포트를 멈추지 않는다. 크기를 모르는 페이지는 묶기 규칙에서
+ * 빠질 뿐이라, 못 잰 자리는 `null`로 두고 나머지를 살린다.
+ */
+export function measurePages(book: LoadedBook): Effect.Effect<Array<ImageSize | null>> {
+  return Effect.forEach(book.pages, (page) =>
+    page.measure().pipe(
+      Effect.orElseSucceed(() => Option.none<ImageSize>()),
+      Effect.map(Option.getOrNull),
+    ),
+  )
+}
+
 /** 책장 레코드에서 책을 되살린다. 페이지는 필요할 때 읽는다. */
 export function bookFromStored(
   stored: StoredBook,
@@ -140,7 +181,13 @@ export function bookFromStored(
       const pages: Page[] = stored.blobs.map(
         (blob, i) => new BlobPage(baseName(stored.names[i] ?? `page ${i + 1}`), blob),
       )
-      return { id: stored.id, title: stored.title, source: stored.source, pages }
+      return {
+        id: stored.id,
+        title: stored.title,
+        source: stored.source,
+        pages,
+        pageSizes: sizesFor(stored, pages.length),
+      }
     }
 
     const file = stored.blobs[0]
@@ -153,6 +200,12 @@ export function bookFromStored(
       .map((e) => new ZipPage(baseName(e.name), archive, e))
     if (!pages.length) return yield* new EmptyBookError({ title: stored.title })
 
-    return { id: stored.id, title: stored.title, source: 'zip', pages }
+    return {
+      id: stored.id,
+      title: stored.title,
+      source: 'zip',
+      pages,
+      pageSizes: sizesFor(stored, pages.length),
+    }
   })
 }

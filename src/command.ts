@@ -8,7 +8,7 @@ import type { StoredBook } from './db.ts'
 import { Book } from './domain/index.ts'
 import { describe } from './errors.ts'
 import type { AppError } from './errors.ts'
-import { bookFromStored, storedBooksFromFiles } from './loader.ts'
+import { bookFromStored, measurePages, storedBooksFromFiles } from './loader.ts'
 import { Message } from './message.ts'
 import { loadProgress, saveProgress, saveSettings } from './storage.ts'
 import { makeCover } from './thumbnail.ts'
@@ -81,14 +81,18 @@ export const SelectFolder = Command.define('SelectFolder', {
   }).pipe(Effect.map((files) => Message.CompletedSelectFiles({ files }))),
 })
 
-/** 책을 한 번 열어 유효한지 보고, 페이지를 세고, 표지를 떠 둔다. */
+/** 책을 한 번 열어 유효한지 보고, 페이지를 세어 재고, 표지를 떠 둔다. */
 const importOne = (record: StoredBook): Effect.Effect<void, AppError> =>
   Effect.gen(function* () {
     const book = yield* bookFromStored(record)
     const first = book.pages[0]
 
+    // 크기는 지금 재 둔다. 그려야 알 수 있는 값이 되면 스프레드 묶기가 읽는
+    // 도중에 바뀌고, 그러면 위치라는 개념이 무너진다.
+    const pageSizes = yield* measurePages(book)
+
     const maybeCover = first
-      ? // A missing cover is cosmetic; the object URL is released either way.
+      ? // 표지가 없는 것은 겉모습의 문제다. object URL은 어느 쪽이든 놓아 준다.
         yield* makeCover(yield* first.load()).pipe(
           Effect.ensuring(Effect.sync(() => first.unload())),
           Effect.option,
@@ -103,6 +107,7 @@ const importOne = (record: StoredBook): Effect.Effect<void, AppError> =>
       blobs: record.blobs,
       createdAt: record.createdAt,
       pageCount: book.pages.length,
+      pageSizes,
       cover: Option.getOrUndefined(maybeCover),
     })
   })

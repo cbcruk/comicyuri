@@ -2,6 +2,7 @@
 
 import { Effect } from 'effect'
 import { DbError } from './errors.ts'
+import type { ImageSize } from './imageSize.ts'
 import type { BookSource } from './types.ts'
 
 /**
@@ -25,6 +26,14 @@ export interface StoredBook {
   cover?: Blob
   /** 아카이브를 열어 봐야 알 수 있으므로, 갓 들여온 레코드에는 없다. */
   pageCount?: number
+  /**
+   * 들여올 때 재어 둔 페이지별 픽셀 크기. 이 책을 열었을 때 나오는 페이지
+   * 순서와 번호가 맞물리고, 재지 못한 페이지 자리에는 `null`이 들어간다.
+   *
+   * 여기 두는 이유는 스프레드 묶기가 크기를 알아야 하기 때문이다. 그릴 때
+   * 재면 읽는 도중에 묶기가 바뀌어 위치라는 개념이 무너진다.
+   */
+  pageSizes?: Array<ImageSize | null>
 }
 
 const DB_NAME = 'comicyuri'
