@@ -34,7 +34,7 @@ Chromium에서 앱을 몰아 봅니다 — 레이아웃과 계산된 색, 두 �
 ManagedResource·라우팅이 맞물리는지도 여기서만 드러납니다. 테스트 이름은 이 문서의
 항목 번호로 시작합니다.
 
-기준 커밋: `000de50b` · 단위 테스트 185개, 브라우저 테스트 34개 통과
+기준 커밋: `62621436` · 단위 테스트 194개, 브라우저 테스트 37개 통과
 
 ---
 
@@ -233,9 +233,9 @@ reader/story "in right-to-left reading the left key advances"
 ✅ reader/story "two-page mode regroups around the page being read"
 
 **R-223 · 두 장 모드에서 표지는 혼자 나온다**
-그래서 이후 쌍이 인쇄된 책처럼 맞는다.
-📖 ⚠️ 이 설정(`coverAlone`)을 끌 수 있는 UI가 없다. 항상 켜져 있다. 원본 뷰어도
-같았다.
+그래서 이후 쌍이 인쇄된 책처럼 맞는다. 설정 패널에서 끌 수 있다(`R-2B1`).
+✅ spreads "two-page mode leaves the cover alone so the pairs after it line up",
+"without the cover rule the pairing starts at the first page"
 
 **R-224 · 맞춤 모드는 네 가지를 순환한다**
 Fit → Width → Height → 1:1 → Fit.
@@ -493,7 +493,31 @@ Model을 움직이는 것은 요청이 아니라 `fullscreenchange` 이벤트다
 ✅ reader/story "leaving fullscreen outside the app is still noticed",
 e2e "R-292 · 브라우저 쪽에서 나가도 상태가 맞는다"
 
-### 2.11 키보드
+### 2.11 설정 패널
+
+**R-2B1 · ⚙ 버튼과 `,` 키가 읽기 설정 패널을 연다**
+툴바에 버튼이 없던 설정 셋이 여기 있다 — 표지를 혼자 둘지(`coverAlone`), 넓은
+페이지를 가르는 문턱(`singleThreshold`), 책의 끝에서 무엇을 할지(`atBookEnd`).
+
+방향·한 장/두 장·맞춤은 여기 없다. 그것들은 읽는 동안 손이 가는 것이라 툴바에
+남고, 여기 있는 셋은 책을 열기 전에 한 번 정하는 것이다.
+
+패널에서 바꾼 것은 곧바로 배치에 반영되고 다른 설정과 같이 저장된다(`P-303`).
+✅ reader/scene "the settings that have no toolbar button live here",
+"turning the cover rule off reports the new settings", "picking what happens at the
+end of a book reports it",
+reader/story "a setting picked in the panel lays the book out again at once",
+e2e "R-2B1 · ⚙ 버튼이 패널을 열고 닫는다", "R-2B1 · 표지를 혼자 두지 않기로 하면
+배치가 바로 바뀌고 새로고침을 넘긴다", "R-2B1 · 책 끝 동작을 고르면 그대로 남는다"
+
+**R-2B2 · 문턱은 0.02씩 움직이고 0.50과 1.00 사이에 머문다**
+`−`는 더 많이 묶고 `+`는 더 적게 묶는다. 끝에 닿은 버튼은 `aria-disabled`가 된다.
+더한 값은 소수 두 자리에서 끊는다 — 0.02를 거듭 더하면 그러지 않고서는 0.74가
+0.7400000000000001이 된다.
+✅ reader/story "the threshold stops at the ends of its range",
+reader/scene "nudging the threshold moves it one step, not to a long decimal"
+
+### 2.12 키보드
 
 **R-2A1 · 페이지 넘기기**
 `←`/`→` (읽는 방향을 따름), `↑`/`↓`, `PageUp`/`PageDown`, `Space`(다음),
@@ -503,12 +527,13 @@ e2e "R-292 · 브라우저 쪽에서 나가도 상태가 맞는다"
 📌 슬라이더에 포커스가 있을 때는 R-265에 따라 리더가 물러난다.
 
 **R-2A2 · 토글**
-`d` 방향 · `v` 한/두 장 · `s` 묶기 뒤집기 · `t` 썸네일 · `b` 북마크 · `f` 전체화면 ·
-`+`/`-` 줌.
+`d` 방향 · `v` 한/두 장 · `s` 묶기 뒤집기 · `t` 썸네일 · `,` 설정 · `b` 북마크 ·
+`f` 전체화면 · `+`/`-` 줌.
 📖
 
 **R-2A3 · Escape는 한 겹씩 벗긴다**
-썸네일 → 전체화면 → 책장.
+설정 → 썸네일 → 전체화면 → 책장.
+✅ reader/story "escape closes the settings panel before anything else"
 ✅ reader/story "escape closes the grid before it leaves anything",
 "escape then leaves fullscreen before it leaves the book",
 "escape with nothing left open goes back to the shelf"
@@ -620,7 +645,6 @@ subscription "a key held with a modifier belongs to the browser",
 | ID    | 내용                                                                                                                                            |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | L-601 | 썸네일 그리드가 반응형이 아니다 (한 행 4개, 180px 고정)                                                                                         |
-| L-602 | `coverAlone`을 끌 수 있는 UI가 없다                                                                                                             |
 | L-603 | 북마크 목록·이동 UI가 없다                                                                                                                      |
 | L-604 | 삭제에 확인 절차가 없다                                                                                                                         |
 | L-605 | `Shift`+`Space`가 없다                                                                                                                          |
@@ -630,7 +654,7 @@ subscription "a key held with a modifier belongs to the browser",
 | L-609 | `src/storage.ts`·`src/db.ts`·`src/zip.ts`를 직접 겨냥한 테스트가 없다. 이 계층은 update를 통해서만 간접 검증된다                                |
 | L-610 | Runtime 전체를 부팅하는 테스트가 불가능하다 — vitest + happy-dom에서 `Runtime.run`이 아무것도 렌더링하지 않는다 (최소 Foldkit 앱으로 대조 확인) |
 | L-611 | 프로덕션 배포 시 `/book/:id` 직접 접근에는 SPA 폴백 설정이 필요하다                                                                             |
-| L-612 | `singleThreshold`와 `atBookEnd`를 바꿀 수 있는 UI가 없다 — `L-602`와 같은 자리의 구멍이다. 설정 화면이 없다                                     |
+| L-612 | 설정 패널이 리더 안에만 있다. 책장에서는 테마 말고 아무것도 바꿀 수 없다                                                                        |
 
 ---
 

@@ -63,6 +63,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   maybeTapFlash: Option.none(),
   slider: Slider.init({ id: SLIDER_ID, min: 0, max: 5, step: 1 }),
   isFullscreen: false,
+  isSettingsOpen: false,
   isThumbsOpen: false,
   thumbs: VirtualList.init({ id: THUMBS_ID, rowHeightPx: THUMB_ROW_HEIGHT }),
   thumbPanels: [],
@@ -202,6 +203,69 @@ describe('layout controls', () => {
       program,
       given(readingModel(0, { ...defaultSettings, view: 'spread' })),
       expect(flip).toExist(),
+    )
+  })
+})
+
+describe('the settings panel', () => {
+  const open = role('button', { name: 'Reading settings' })
+  const panel = role('dialog', { name: 'Reading settings' })
+
+  test('the panel is closed until the control opens it', () => {
+    scene(
+      program,
+      given(readingModel()),
+      expect(panel).not.toExist(),
+      expect(open).toHaveAttr('aria-expanded', 'false'),
+    )
+  })
+
+  test('the settings that have no toolbar button live here', () => {
+    scene(
+      program,
+      given({ ...readingModel(), isSettingsOpen: true }),
+      expect(panel).toExist(),
+      expect(role('switch', { name: 'Cover on its own' })).toBeChecked(),
+      expect(text('0.74')).toExist(),
+      expect(role('button', { name: 'Next book' })).toHaveAttr('aria-pressed', 'true'),
+      expect(role('button', { name: 'Stay put' })).toHaveAttr('aria-pressed', 'false'),
+    )
+  })
+
+  test('turning the cover rule off reports the new settings', () => {
+    scene(
+      program,
+      given({ ...readingModel(), isSettingsOpen: true }),
+      click(role('switch', { name: 'Cover on its own' })),
+      expectOutMessage(
+        OutMessage.ChangedSettings({ settings: { ...defaultSettings, coverAlone: false } }),
+      ),
+      ...settleTurn(0),
+    )
+  })
+
+  test('picking what happens at the end of a book reports it', () => {
+    scene(
+      program,
+      given({ ...readingModel(), isSettingsOpen: true }),
+      click(role('button', { name: 'Stay put' })),
+      expectOutMessage(
+        OutMessage.ChangedSettings({ settings: { ...defaultSettings, atBookEnd: 'stop' } }),
+      ),
+      ...settleTurn(0),
+    )
+  })
+
+  test('nudging the threshold moves it one step, not to a long decimal', () => {
+    scene(
+      program,
+      given({ ...readingModel(), isSettingsOpen: true }),
+      click(role('button', { name: 'Pair fewer pages' })),
+      expectOutMessage(
+        OutMessage.ChangedSettings({ settings: { ...defaultSettings, singleThreshold: 0.76 } }),
+      ),
+      ...settleTurn(0),
+      expect(text('0.76')).toExist(),
     )
   })
 })

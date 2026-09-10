@@ -124,6 +124,8 @@ export const Model = Schema.Struct({
   slider: Slider.Model,
 
   isFullscreen: Schema.Boolean,
+  /** 읽는 규칙을 한 번 정해 두는 패널. 툴바와 달리 읽는 동안 쓰는 것이 아니다. */
+  isSettingsOpen: Schema.Boolean,
   isThumbsOpen: Schema.Boolean,
   thumbs: VirtualList.Model,
   /** 지금까지 뽑아 둔 썸네일. 격자는 보여 줄 수 있는 것만 요청한다. */
@@ -175,6 +177,7 @@ export const init = (config: InitConfig): Model => ({
   // 책이 페이지 수를 말해 주기 전까지 범위는 비어 있다.
   slider: Slider.init({ id: SLIDER_ID, min: 0, max: 0, step: 1 }),
   isFullscreen: false,
+  isSettingsOpen: false,
   isThumbsOpen: false,
   thumbs: VirtualList.init({
     id: THUMBS_ID,

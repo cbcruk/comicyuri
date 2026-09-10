@@ -4,6 +4,16 @@ export const STAGE_ID = 'reader-stage'
 /** 페이지 슬라이더. 부모가 드래그 구독을 lift 할 때 이 id로 부른다. */
 export const SLIDER_ID = 'reader-page-slider'
 
+/** 표지를 혼자 두는 스위치. 라벨과 설명이 이 id에서 갈라져 나온다. */
+export const COVER_ALONE_ID = 'reader-cover-alone'
+
+/** 넓은 페이지 문턱이 한 번 누를 때 움직이는 폭. */
+export const THRESHOLD_STEP = 0.02
+/** 문턱의 아래쪽 끝. 이보다 낮으면 세로로 긴 페이지까지 혼자 서기 시작한다. */
+export const THRESHOLD_MIN = 0.5
+/** 문턱의 위쪽 끝. 정사각형보다 넓은 페이지만 혼자 서는 자리다. */
+export const THRESHOLD_MAX = 1
+
 /** 페이지 격자. 부모가 리스트 구독을 lift 할 때 이 id로 부른다. */
 export const THUMBS_ID = 'reader-thumbs'
 

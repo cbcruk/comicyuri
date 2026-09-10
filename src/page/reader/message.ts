@@ -3,7 +3,7 @@ import { defineMessageUnion } from 'foldkit/message'
 
 import { Slider, VirtualList } from '@foldkit/ui'
 
-import { PageMark, Settings } from '../../types.ts'
+import { AtBookEnd, PageMark, Settings } from '../../types.ts'
 import { Point } from './gesture.ts'
 import { Panel } from './model.ts'
 
@@ -64,6 +64,11 @@ export const Message = defineMessageUnion({
   ClickedToggleFullscreen: {},
   CompletedToggleFullscreen: {},
   ChangedFullscreen: { isFullscreen: Schema.Boolean },
+
+  ClickedToggleSettings: {},
+  ToggledCoverAlone: { isChecked: Schema.Boolean },
+  SelectedAtBookEnd: { atBookEnd: AtBookEnd },
+  ClickedNudgeThreshold: { by: Schema.Number },
 
   ClickedToggleThumbs: {},
   GotThumbsMessage: { message: VirtualList.Message },
