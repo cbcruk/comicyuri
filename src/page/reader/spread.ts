@@ -118,18 +118,25 @@ export const pagesToKeep = (
   index: number,
 ): ReadonlyArray<number> => pagesWithin(spreads, index, KEEP)
 
-/** 한 걸음 뒤에 닿는 페이지. 책 밖으로는 나가지 않는다. */
+/**
+ * 한 걸음 뒤에 닿는 페이지. 책 밖으로 나가면 없음이다.
+ *
+ * 없음과 제자리를 가르는 것이 이 함수가 하는 일의 절반이다. 책의 끝을 넘어서려는
+ * 걸음이 곧 이웃한 책을 여는 걸음이기 때문에, 호출부가 그 순간을 알아야 한다.
+ */
 export const pageAfterStep = (
   spreads: ReadonlyArray<ReadonlyArray<number>>,
   page: number,
   step: number,
-): number => {
-  const next = indexOfPage(spreads, page) + step
-  return Option.match(Array.get(spreads, next), {
-    onNone: () => page,
-    onSome: (pages) => Option.getOrElse(Array.head(pages), () => page),
-  })
-}
+): Option.Option<number> =>
+  Option.flatMap(Array.get(spreads, indexOfPage(spreads, page) + step), Array.head)
+
+/** 책의 한쪽 끝에 있는 페이지. 앞으로 가던 걸음이면 첫 장, 뒤로 가던 걸음이면 끝 장. */
+export const pageAtEdge = (
+  spreads: ReadonlyArray<ReadonlyArray<number>>,
+  step: number,
+): Option.Option<number> =>
+  Option.flatMap(step > 0 ? Array.head(spreads) : Array.last(spreads), Array.head)
 
 /**
  * 페이지에 대한 슬라이더 값이자, 그 값에 대한 페이지. 오른쪽에서 왼쪽으로 읽으면

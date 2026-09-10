@@ -31,6 +31,16 @@ export const Theme = Schema.Literals(['dark', 'light'])
 /** {@linkcode Theme} 스키마의 디코딩된 값. */
 export type Theme = typeof Theme.Type
 
+/**
+ * 책의 끝을 넘어서 넘기려 할 때 무엇을 할지.
+ *
+ * `stop`은 제자리에 머물고, `wrap`은 같은 책의 반대쪽 끝으로 가며, `next`는
+ * 책장 순서상 이웃한 책을 그 자리에서 연다.
+ */
+export const AtBookEnd = Schema.Literals(['stop', 'wrap', 'next'])
+/** {@linkcode AtBookEnd} 스키마의 디코딩된 값. */
+export type AtBookEnd = typeof AtBookEnd.Type
+
 /** 책의 페이지가 어디서 왔는지. 아카이브, 낱장 이미지 묶음, 아니면 고른 폴더다. */
 export const BookSource = Schema.Literals(['zip', 'images', 'folder'])
 /** {@linkcode BookSource} 스키마의 디코딩된 값. */
@@ -43,6 +53,7 @@ const DEFAULTS = {
   theme: 'dark',
   coverAlone: true,
   singleThreshold: 0.74,
+  atBookEnd: 'next',
 } as const
 
 /**
@@ -68,13 +79,18 @@ export const Settings = Schema.Struct({
   singleThreshold: Schema.Number.pipe(
     Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.singleThreshold)),
   ),
+  /**
+   * 한 권을 다 읽고 계속 넘길 때 무엇을 할지. 원본 뷰어의 "Loop :"와 같은
+   * 자리이며, 그쪽에서 다음 권을 여는 동작도 이것이었다.
+   */
+  atBookEnd: AtBookEnd.pipe(Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.atBookEnd))),
 })
 /** {@linkcode Settings} 스키마의 디코딩된 값. */
 export type Settings = typeof Settings.Type
 
 /**
  * 아무것도 바꾼 적 없는 사람이 받는 설정. 만화 순서, 한 번에 한 장, 통째로
- * 맞춤, 어두운 테마, 표지는 혼자.
+ * 맞춤, 어두운 테마, 표지는 혼자, 그리고 책 끝에서 다음 권으로.
  */
 export const defaultSettings: Settings = DEFAULTS
 

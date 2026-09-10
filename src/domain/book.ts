@@ -54,6 +54,24 @@ export const coverUrls = (books: ReadonlyArray<BookSummary>): ReadonlyArray<stri
   Array.getSomes(Array.map(books, ({ maybeCoverUrl }) => maybeCoverUrl))
 
 /**
+ * 책장 순서에서 이웃한 책. 앞으로 한 칸이면 `1`, 뒤로 한 칸이면 `-1`이다.
+ *
+ * 책장의 끝을 넘어가면 없음이다. 여기서 감아 돌지 않는 것은, 한 권을 다 읽고
+ * 계속 넘겼을 때 책장 첫 권으로 돌아가는 것이 이어 읽기가 아니기 때문이다.
+ *
+ * @param id 지금 읽고 있는 책. 책장에 없으면 결과도 없음이다.
+ */
+export const neighbour = (
+  books: ReadonlyArray<BookSummary>,
+  id: string,
+  step: number,
+): Option.Option<BookSummary> =>
+  Option.flatMap(
+    Array.findFirstIndex(books, (book) => book.id === id),
+    (index) => Array.get(books, index + step),
+  )
+
+/**
  * 카드가 분량을 말하는 방식. 한 장이면 단수로, 여럿이면 복수로, 아직 아카이브를
  * 열어 보지 않은 책이면 모른다고 적는다.
  */

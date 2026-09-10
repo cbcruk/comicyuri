@@ -25,7 +25,7 @@ import { Book } from './domain/index.ts'
 import { Message } from './message.ts'
 import { Model, Notice, Shelf } from './model.ts'
 import { Reader } from './page/index.ts'
-import { AppRoute, shelfRouter, urlToAppRoute } from './route.ts'
+import { AppRoute, readerRouter, shelfRouter, urlToAppRoute } from './route.ts'
 import type { Theme } from './types.ts'
 
 type UpdateReturn = Update.Return<Model, Message, Reader.OpenBookService>
@@ -96,6 +96,25 @@ const foldReaderOutMessage = Reader.OutMessage.match<
     model,
     commands: [NavigateInternal({ url: shelfRouter() })],
   }),
+  /**
+   * 책장 순서를 아는 것은 여기다. 이웃한 책이 없으면 — 책장의 끝이거나 아직
+   * 책장을 읽는 중이라면 — 아무 일도 일어나지 않고, 리더는 제자리에 머문다.
+   */
+  RequestedNeighbourBook:
+    ({ bookId, step }) =>
+    (model) =>
+      Option.match(
+        Option.flatMap(AsyncData.getData(model.shelf), (books) =>
+          Book.neighbour(books, bookId, step),
+        ),
+        {
+          onNone: () => ({ model }),
+          onSome: (book) => ({
+            model,
+            commands: [NavigateInternal({ url: readerRouter({ id: book.id }) })],
+          }),
+        },
+      ),
   ChangedSettings:
     ({ settings }) =>
     (model) => ({

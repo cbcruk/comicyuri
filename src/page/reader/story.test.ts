@@ -27,6 +27,9 @@ const UNMEASURED: ReadonlyArray<Option.Option<number>> = Array.from({ length: PA
   Option.none(),
 )
 
+/** 책의 끝에서 이웃한 책으로 넘어가지 않고 제자리에 머무는 설정. */
+const STOPS_AT_THE_END = { ...defaultSettings, atBookEnd: 'stop' } as const
+
 /** 그 번호의 페이지만 가로로 넓은 책. 나머지는 인쇄된 만화 한 쪽의 비다. */
 const wideAt = (...pages: number[]): ReadonlyArray<Option.Option<number>> =>
   Array.from({ length: PAGE_COUNT }, (_, page) => Option.some(pages.includes(page) ? 1.4 : 0.7))
@@ -144,23 +147,55 @@ describe('turning pages', () => {
     )
   })
 
-  test('previous on the first page stays put', () => {
+  test('turning past the last page asks for the book after this one', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ClickedLast()),
+      ...settle(PAGE_COUNT - 1),
+      message(Message.ClickedNext()),
+      expectOutMessage(OutMessage.RequestedNeighbourBook({ bookId: 'volume-1::42', step: 1 })),
+      // 리더는 제자리에 머문다. 다른 책을 여는 것은 책장 순서를 아는 쪽의 일이다.
+      model((model) => {
+        expect(model.page).toBe(PAGE_COUNT - 1)
+      }),
+    )
+  })
+
+  test('turning back from the first page asks for the book before this one', () => {
     story(
       update,
       given(openingModel()),
       ...opened(0),
       message(Message.ClickedPrevious()),
+      expectOutMessage(OutMessage.RequestedNeighbourBook({ bookId: 'volume-1::42', step: -1 })),
+    )
+  })
+
+  test('set to wrap, the end of the book leads back to its start', () => {
+    story(
+      update,
+      given(openingModel({ ...defaultSettings, atBookEnd: 'wrap' })),
+      ...opened(0),
+      message(Message.ClickedLast()),
+      ...settle(PAGE_COUNT - 1),
+      message(Message.ClickedNext()),
+      Command.expectHas(LoadSpread({ page: 0, pages: [0] })),
+      ...settle(0),
+    )
+  })
+
+  test('previous on the first page stays put', () => {
+    story(
+      update,
+      given(openingModel(STOPS_AT_THE_END)),
+      ...opened(0),
+      message(Message.ClickedPrevious()),
+      expectNoOutMessage(),
       model((model) => {
         expect(model.page).toBe(0)
       }),
-      Command.resolve(
-        LoadSpread,
-        Message.CompletedLoadSpread({
-          page: 0,
-          panels: [{ page: 0, url: 'blob:0' }],
-        }),
-      ),
-      acknowledgePreload,
     )
   })
 
@@ -486,7 +521,7 @@ describe('gestures', () => {
   test('dragging leftwards asks for the right-hand page', () => {
     story(
       update,
-      given(openingModel()),
+      given(openingModel(STOPS_AT_THE_END)),
       ...opened(0),
       press(1, 0),
       move(1, -80),
@@ -496,7 +531,6 @@ describe('gestures', () => {
         // 그런 것이 없으므로 자리를 지킨다.
         expect(model.page).toBe(0)
       }),
-      ...settle(0),
     )
   })
 
@@ -887,7 +921,7 @@ describe('which side a page came from', () => {
   test('a tap at the end of the book marks nothing', () => {
     story(
       update,
-      given(openingModel()),
+      given(openingModel(STOPS_AT_THE_END)),
       ...opened(0),
       // 오른쪽 1/3은 뒤로 가는데, 1페이지에는 갈 곳이 없다.
       press(1, 250),
@@ -895,7 +929,6 @@ describe('which side a page came from', () => {
       model((model) => {
         expect(model.maybeTapFlash).toStrictEqual(Option.none())
       }),
-      ...settle(0),
     )
   })
 

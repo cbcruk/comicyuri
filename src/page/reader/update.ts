@@ -1,4 +1,4 @@
-import { Array, Option, Order } from 'effect'
+import { Array, Match, Option, Order } from 'effect'
 import { Update } from 'foldkit'
 import { evo } from 'foldkit/struct'
 
@@ -34,6 +34,7 @@ import {
   mirrorForDirection,
   neighbourPages,
   pageAfterStep,
+  pageAtEdge,
   pagesAt,
   pagesToKeep,
   spreadsFor,
@@ -99,19 +100,46 @@ const showPage = (model: Model, page: number): UpdateReturn =>
 const goToPage = (model: Model, page: number): UpdateReturn =>
   showPage(evo(model, { zoom: () => ZOOM_MIN, pan: () => ORIGIN }), page)
 
+/**
+ * 책의 끝을 넘어서 넘기려 할 때. 원본 뷰어에서 다음 권을 여는 동작이 바로 이
+ * 자리였다 — 끝을 넘기는 것이 곧 다음 권을 여는 것이라, 따로 만들면 두 기능이
+ * 겹친다.
+ *
+ * 이웃한 책은 리더가 열 수 없다. 책장 순서를 아는 것은 애플리케이션이므로
+ * 올려 보내고, 이웃이 없으면 그쪽에서 아무 일도 일어나지 않는다.
+ */
+const beyondBookEnd = (
+  model: Model,
+  spreads: ReadonlyArray<ReadonlyArray<number>>,
+  by: number,
+): UpdateReturn =>
+  Match.value(model.settings.atBookEnd).pipe(
+    Match.when('stop', (): UpdateReturn => ({ model })),
+    Match.when('wrap', (): UpdateReturn =>
+      Option.match(pageAtEdge(spreads, by), {
+        onNone: () => ({ model }),
+        onSome: (page) => goToPage(model, page),
+      }),
+    ),
+    Match.when('next', (): UpdateReturn => ({
+      model,
+      outMessage: OutMessage.RequestedNeighbourBook({ bookId: model.bookId, step: by }),
+    })),
+    Match.exhaustive,
+  )
+
 const step = (model: Model, by: number): UpdateReturn =>
   OpenState.match(model.openState, {
     Opening: () => ({ model }),
     Failed: () => ({ model }),
-    Ready: ({ pageCount, ratios }) =>
-      goToPage(
-        model,
-        pageAfterStep(
-          spreadsFor({ pageCount, ratios, marks: model.marks }, model.settings),
-          model.page,
-          by,
-        ),
-      ),
+    Ready: ({ pageCount, ratios }) => {
+      const spreads = spreadsFor({ pageCount, ratios, marks: model.marks }, model.settings)
+
+      return Option.match(pageAfterStep(spreads, model.page, by), {
+        onNone: () => beyondBookEnd(model, spreads, by),
+        onSome: (page) => goToPage(model, page),
+      })
+    },
   })
 
 /** 리더가 가진 설정이 바뀌었다. 다시 배치하고 애플리케이션에 알린다. */

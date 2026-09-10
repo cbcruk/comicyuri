@@ -34,7 +34,7 @@ Chromium에서 앱을 몰아 봅니다 — 레이아웃과 계산된 색, 두 �
 ManagedResource·라우팅이 맞물리는지도 여기서만 드러납니다. 테스트 이름은 이 문서의
 항목 번호로 시작합니다.
 
-기준 커밋: `9fda4f1f` · 단위 테스트 177개, 브라우저 테스트 31개 통과
+기준 커밋: `000de50b` · 단위 테스트 185개, 브라우저 테스트 34개 통과
 
 ---
 
@@ -183,8 +183,11 @@ ManagedResource가 Model 상태에 따라 해제한다.
 ✅ reader/scene "next turns the page and the counter follows",
 "last jumps to the end of the book"
 
-**R-212 · 책 끝에서는 제자리에 머문다**
-✅ reader/story "previous on the first page stays put"
+**R-212 · 책 끝에서 무엇을 할지는 설정이 정한다**
+`atBookEnd`가 셋 중 하나다. `next`(기본)는 이웃한 책으로 이어 읽고(`R-216`),
+`wrap`은 같은 책의 반대쪽 끝으로 돌아가며, `stop`은 제자리에 머문다.
+✅ reader/story "previous on the first page stays put",
+"set to wrap, the end of the book leads back to its start"
 
 **R-213 · 카운터는 현재 스프레드를 보여준다**
 한 장이면 `3 / 120`, 두 장이면 `4–5 / 120`.
@@ -196,6 +199,25 @@ ManagedResource가 Model 상태에 따라 해제한다.
 **R-215 · 앞뒤 스프레드를 미리 읽고, 멀어진 페이지는 해제한다**
 양쪽 1스프레드를 미리 읽고 3스프레드 밖은 해제한다.
 📖
+
+**R-216 · 책의 끝을 넘기면 이웃한 책이 그 자리에서 열린다**
+마지막 장에서 계속 넘기면 책장 순서상 다음 책이, 첫 장에서 뒤로 넘기면 앞 책이
+열린다. 책장으로 돌아갈 필요가 없다. 이웃한 책은 책장에서 열 때와 똑같이 저장된
+위치에서 시작한다(`N-403`).
+
+책장의 끝에서는 아무 일도 일어나지 않고 제자리에 머문다. 책장을 아직 읽는 중일
+때도 마찬가지다 — 순서를 모르는 채로 짐작해 여는 것보다 낫다.
+
+책 사이를 오가는 별도의 버튼은 없다. 원본 뷰어에서도 책의 끝을 넘기는 동작이 곧
+다음 권을 여는 동작이었고, 따로 만들면 두 기능이 겹친다.
+✅ book "a step forward lands on the next book in shelf order", "the shelf does not
+wrap around at either end",
+reader/story "turning past the last page asks for the book after this one",
+"turning back from the first page asks for the book before this one",
+e2e "R-216 · 마지막 장에서 넘기면 다음 권이 열린다", "R-216 · 첫 장에서 뒤로 넘기면
+앞 권으로 돌아간다", "R-216 · 책장의 끝에서는 제자리에 머문다"
+⚠️ 읽는 순서는 책장 순서 그대로다. 책장은 최근에 들여온 것이 앞이므로(`S-102`),
+한 권씩 따로 들여오면 순서가 뒤집힌다. 한 번에 들여오면 제목순으로 선다.
 
 ### 2.3 레이아웃
 
@@ -515,7 +537,7 @@ subscription "a key held with a modifier belongs to the browser",
 "R-227 · 자동 묶기를 손으로 뒤집고, 그것이 새로고침을 넘긴다"
 
 **P-303 · 설정은 localStorage에 남는다**
-키는 `comicyuri:settings`. 방향·한두장·맞춤·테마.
+키는 `comicyuri:settings`. 방향·한두장·맞춤·테마·책 끝 동작.
 ✅ e2e "P-303 · 설정은 남고 다음 책에도 적용된다"
 
 **P-304 · 저장된 값이 깨져 있으면 기본값으로 떨어진다**
@@ -608,7 +630,7 @@ subscription "a key held with a modifier belongs to the browser",
 | L-609 | `src/storage.ts`·`src/db.ts`·`src/zip.ts`를 직접 겨냥한 테스트가 없다. 이 계층은 update를 통해서만 간접 검증된다                                |
 | L-610 | Runtime 전체를 부팅하는 테스트가 불가능하다 — vitest + happy-dom에서 `Runtime.run`이 아무것도 렌더링하지 않는다 (최소 Foldkit 앱으로 대조 확인) |
 | L-611 | 프로덕션 배포 시 `/book/:id` 직접 접근에는 SPA 폴백 설정이 필요하다                                                                             |
-| L-612 | `singleThreshold`를 바꿀 수 있는 UI가 없다 — `L-602`와 같은 자리의 구멍이다                                                                     |
+| L-612 | `singleThreshold`와 `atBookEnd`를 바꿀 수 있는 UI가 없다 — `L-602`와 같은 자리의 구멍이다. 설정 화면이 없다                                     |
 
 ---
 
