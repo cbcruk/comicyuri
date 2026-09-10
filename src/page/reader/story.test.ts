@@ -19,6 +19,18 @@ import { update } from './update.ts'
 
 const PAGE_COUNT = 6
 
+/**
+ * 크기를 재기 전에 들여온 책. 넓은 페이지 규칙에 걸리는 것이 없으므로 묶기는
+ * 페이지 수만 따른다.
+ */
+const UNMEASURED: ReadonlyArray<Option.Option<number>> = Array.from({ length: PAGE_COUNT }, () =>
+  Option.none(),
+)
+
+/** 그 번호의 페이지만 가로로 넓은 책. 나머지는 인쇄된 만화 한 쪽의 비다. */
+const wideAt = (...pages: number[]): ReadonlyArray<Option.Option<number>> =>
+  Array.from({ length: PAGE_COUNT }, (_, page) => Option.some(pages.includes(page) ? 1.4 : 0.7))
+
 const openingModel = (settings = defaultSettings): Model =>
   init({ bookId: 'volume-1::42', page: 0, bookmarks: [], settings })
 
@@ -37,8 +49,8 @@ const settle = (page: number) => [
 ]
 
 /** 책을 열고 첫 스프레드까지 안정시킨다. 모든 테스트가 여기서 시작한다. */
-const opened = (page: number) => [
-  message(Message.CompletedOpenBook({ title: 'Volume 1', pageCount: PAGE_COUNT })),
+const opened = (page: number, ratios: ReadonlyArray<Option.Option<number>> = UNMEASURED) => [
+  message(Message.CompletedOpenBook({ title: 'Volume 1', pageCount: PAGE_COUNT, ratios })),
   Command.expectHas(LoadSpread({ page, pages: [page] })),
   Command.resolve(
     LoadSpread,
@@ -55,7 +67,9 @@ describe('opening', () => {
     story(
       update,
       given(openingModel()),
-      message(Message.CompletedOpenBook({ title: 'Volume 1', pageCount: PAGE_COUNT })),
+      message(
+        Message.CompletedOpenBook({ title: 'Volume 1', pageCount: PAGE_COUNT, ratios: UNMEASURED }),
+      ),
       expectOutMessage(
         OutMessage.UpdatedProgress({
           bookId: 'volume-1::42',
@@ -65,7 +79,7 @@ describe('opening', () => {
       ),
       model((model) => {
         expect(model.openState).toStrictEqual(
-          OpenState.Ready({ title: 'Volume 1', pageCount: PAGE_COUNT }),
+          OpenState.Ready({ title: 'Volume 1', pageCount: PAGE_COUNT, ratios: UNMEASURED }),
         )
         expect(model.spread._tag).toBe('Loading')
       }),
@@ -269,6 +283,49 @@ describe('layout', () => {
         }),
       ),
       acknowledgePreload,
+    )
+  })
+
+  test('a wide page is read on its own and the pairs after it stay in step', () => {
+    story(
+      update,
+      given(openingModel({ ...defaultSettings, view: 'spread' })),
+      ...opened(0, wideAt(3)),
+      message(Message.ClickedNext()),
+      Command.expectHas(LoadSpread({ page: 1, pages: [1, 2] })),
+      ...settle(1),
+      message(Message.ClickedNext()),
+      Command.expectHas(LoadSpread({ page: 3, pages: [3] })),
+      ...settle(3),
+      // 넓은 페이지 하나가 그 뒤를 한 장씩 밀어내지 않는다.
+      message(Message.ClickedNext()),
+      Command.expectHas(LoadSpread({ page: 4, pages: [4, 5] })),
+      ...settle(4),
+    )
+  })
+
+  test('the page before a wide one is read alone rather than paired across it', () => {
+    story(
+      update,
+      given(openingModel({ ...defaultSettings, view: 'spread' })),
+      ...opened(0, wideAt(2)),
+      message(Message.ClickedNext()),
+      Command.expectHas(LoadSpread({ page: 1, pages: [1] })),
+      ...settle(1),
+      message(Message.ClickedNext()),
+      Command.expectHas(LoadSpread({ page: 2, pages: [2] })),
+      ...settle(2),
+    )
+  })
+
+  test('a book whose pages were never measured is paired the way it always was', () => {
+    story(
+      update,
+      given(openingModel({ ...defaultSettings, view: 'spread' })),
+      ...opened(0),
+      message(Message.ClickedNext()),
+      Command.expectHas(LoadSpread({ page: 1, pages: [1, 2] })),
+      ...settle(1),
     )
   })
 
@@ -496,7 +553,7 @@ describe('using a control keeps the chrome up', () => {
   // 처리해 주어야 한다.
   const busyReading: Model = {
     ...openingModel(),
-    openState: OpenState.Ready({ title: 'Volume 1', pageCount: PAGE_COUNT }),
+    openState: OpenState.Ready({ title: 'Volume 1', pageCount: PAGE_COUNT, ratios: UNMEASURED }),
     isChromeVisible: false,
     activityToken: 5,
   }

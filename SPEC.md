@@ -34,7 +34,7 @@ Chromium에서 앱을 몰아 봅니다 — 레이아웃과 계산된 색, 두 �
 ManagedResource·라우팅이 맞물리는지도 여기서만 드러납니다. 테스트 이름은 이 문서의
 항목 번호로 시작합니다.
 
-기준 커밋: `50309fdd` · 단위 테스트 135개, 브라우저 테스트 23개 통과
+기준 커밋: `873a08c4` · 단위 테스트 166개, 브라우저 테스트 28개 통과
 
 ---
 
@@ -107,6 +107,15 @@ story "picking files imports them and refreshes the shelf"
 **S-120 · 임포트 시 표지 썸네일을 만든다**
 첫 페이지를 400px 이내 webp로 축소해 저장한다. 실패해도 임포트는 성공한다.
 📖 ❓ 15초 안에 디코딩되지 않으면 표지 없이 진행
+
+**S-121 · 임포트 시 페이지마다 픽셀 크기를 재 둔다**
+이미지를 디코딩하지 않고 헤더만 읽는다. PNG·JPEG·GIF·WebP·BMP·AVIF를 알아보고,
+JPEG는 EXIF 회전을 반영해 브라우저가 그릴 모양대로 잰다. 알아보지 못한 형식은
+실패가 아니라 크기를 모르는 페이지로 남는다. 잰 값은 책 레코드에 들어가므로
+`R-226`이 읽는 도중에 다시 재지 않는다.
+✅ imageSize "a PNG is measured from its IHDR" 외 14개,
+e2e "S-121 · 잰 크기는 새로고침을 넘겨 남는다"
+⚠️ 이 동작이 생기기 전에 들여온 책에는 크기가 없다. 다시 들여와야 재어진다.
 
 ### 1.3 삭제
 
@@ -218,6 +227,18 @@ e2e "R-224 · Fit은 페이지를 화면 안에 통째로 넣는다", "R-224 · 
 
 **R-225 · 바꾼 설정은 저장되고 다음 책에도 적용된다**
 📖
+
+**R-226 · 가로로 넓은 페이지는 두 장 모드에서도 혼자 나온다**
+가로세로비가 `singleThreshold`(기본 0.740)를 넘으면 짝을 짓지 않는다. 책 중간의
+양면 삽화나 눕혀 스캔한 쪽이 그것이다. 그 앞 장도 홀로 남는다 — 옆에 세울 짝이
+없다. 그래서 넓은 페이지 하나가 그 뒤의 모든 쌍을 한 장씩 밀어내지 않는다.
+크기를 모르는 페이지는 넓지 않은 것으로 쳐서, `S-121` 이전에 들여온 책은 예전
+그대로 묶인다.
+✅ spreads "a wide page in the middle is shown on its own", "the page before a wide
+one is left alone rather than paired across it", "one wide page does not push every
+pair after it off by one",
+reader/story "a wide page is read on its own and the pairs after it stay in step",
+e2e "R-226 · 넓은 페이지는 두 장 모드에서도 혼자 나온다"
 
 ### 2.4 줌과 팬
 
@@ -566,6 +587,8 @@ subscription "a key held with a modifier belongs to the browser",
 | L-609 | `src/storage.ts`·`src/db.ts`·`src/zip.ts`를 직접 겨냥한 테스트가 없다. 이 계층은 update를 통해서만 간접 검증된다                                |
 | L-610 | Runtime 전체를 부팅하는 테스트가 불가능하다 — vitest + happy-dom에서 `Runtime.run`이 아무것도 렌더링하지 않는다 (최소 Foldkit 앱으로 대조 확인) |
 | L-611 | 프로덕션 배포 시 `/book/:id` 직접 접근에는 SPA 폴백 설정이 필요하다                                                                             |
+| L-612 | `singleThreshold`를 바꿀 수 있는 UI가 없다 — `L-602`와 같은 자리의 구멍이다                                                                     |
+| L-613 | 자동 판정이 틀린 페이지를 손으로 고칠 방법이 없다 (`COOVIEWER.md`의 `C-102`)                                                                    |
 
 ---
 

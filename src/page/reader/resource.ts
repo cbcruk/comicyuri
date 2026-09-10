@@ -47,6 +47,10 @@ export const managedResources = ManagedResource.make<Model, Message>()((entry) =
       Message.CompletedOpenBook({
         title: book.title,
         pageCount: book.pages.length,
+        ratios: Array.map(
+          book.pageSizes,
+          Option.map(({ width, height }) => width / height),
+        ),
       }),
     onReleased: () => Message.CompletedReleaseBook(),
     onAcquireError: (error) => Message.FailedOpenBook({ text: describeUnknown(error) }),

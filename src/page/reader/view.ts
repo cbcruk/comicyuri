@@ -419,8 +419,8 @@ export const view = defineView<Model, Message>((model, h): Html =>
   OpenState.match(model.openState, {
     Opening: () => openingView('Opening…', h),
     Failed: ({ text }) => openingView(text, h),
-    Ready: ({ title, pageCount }) => {
-      const spreads = spreadsFor(pageCount, model.settings)
+    Ready: ({ title, pageCount, ratios }) => {
+      const spreads = spreadsFor(pageCount, model.settings, ratios)
       const index = indexOfPage(spreads, model.page)
 
       return h.main(

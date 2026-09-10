@@ -8,14 +8,31 @@ const PRELOAD = 1
 const KEEP = 3
 
 /**
- * 스프레드는 저장하지 않고 매번 이끌어 낸다. 기대는 것이 페이지 수와 설정뿐이고,
- * 이끌어 내면 한 장/두 장을 바꿨을 때 낡은 묶음이 Model에 남을 수 없다.
+ * 페이지별 가로세로비. 번호는 페이지 번호이고, 임포트할 때 재지 못한 페이지는
+ * `None`이다.
+ */
+export type Ratios = ReadonlyArray<Option.Option<number>>
+
+/** 그 페이지의 비. 책 밖이거나 재지 못했으면 없음. */
+const ratioAt = (ratios: Ratios, page: number): Option.Option<number> =>
+  Option.flatten(Array.get(ratios, page))
+
+/**
+ * 스프레드는 저장하지 않고 매번 이끌어 낸다. 기대는 것이 페이지 수와 설정, 그리고
+ * 책과 함께 도착한 페이지 비뿐이고, 이끌어 내면 한 장/두 장을 바꿨을 때 낡은
+ * 묶음이 Model에 남을 수 없다.
+ *
+ * 크기를 모르는 페이지는 넓지 않은 것으로 친다. 재기 전에 들여온 책이 예전과
+ * 똑같이 열리는 쪽이, 모른다는 이유로 통째로 한 장씩 보이는 쪽보다 낫다.
  */
 export const spreadsFor = (
   pageCount: number,
   settings: Settings,
+  ratios: Ratios,
 ): ReadonlyArray<ReadonlyArray<number>> =>
-  buildSpreads(pageCount, settings.view, settings.coverAlone)
+  buildSpreads(pageCount, settings.view, settings.coverAlone, (page) =>
+    Option.exists(ratioAt(ratios, page), (ratio) => ratio >= settings.singleThreshold),
+  )
 
 /**
  * 페이지가 어느 스프레드에 속하는지. 책 밖의 페이지는 없음이 아니라 첫 스프레드로

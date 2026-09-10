@@ -60,8 +60,8 @@ const showPage = (model: Model, page: number): UpdateReturn =>
   OpenState.match(model.openState, {
     Opening: () => ({ model: evo(model, { page: () => page }) }),
     Failed: () => ({ model: evo(model, { page: () => page }) }),
-    Ready: ({ pageCount }) => {
-      const spreads = spreadsFor(pageCount, model.settings)
+    Ready: ({ pageCount, ratios }) => {
+      const spreads = spreadsFor(pageCount, model.settings, ratios)
       const index = indexOfPage(spreads, page)
       const pages = pagesAt(spreads, index)
 
@@ -101,8 +101,8 @@ const step = (model: Model, by: number): UpdateReturn =>
   OpenState.match(model.openState, {
     Opening: () => ({ model }),
     Failed: () => ({ model }),
-    Ready: ({ pageCount }) =>
-      goToPage(model, pageAfterStep(spreadsFor(pageCount, model.settings), model.page, by)),
+    Ready: ({ pageCount, ratios }) =>
+      goToPage(model, pageAfterStep(spreadsFor(pageCount, model.settings, ratios), model.page, by)),
   })
 
 /** 리더가 가진 설정이 바뀌었다. 다시 배치하고 애플리케이션에 알린다. */
@@ -395,10 +395,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 
 const applyMessage = (model: Model, message: Message): UpdateReturn =>
   Message.match<UpdateReturn>(message, {
-    CompletedOpenBook: ({ title, pageCount }) =>
+    CompletedOpenBook: ({ title, pageCount, ratios }) =>
       showPage(
         evo(model, {
-          openState: () => OpenState.Ready({ title, pageCount }),
+          openState: () => OpenState.Ready({ title, pageCount, ratios }),
           slider: Slider.reflectRange({ min: 0, max: Math.max(0, pageCount - 1) }),
         }),
         model.page,

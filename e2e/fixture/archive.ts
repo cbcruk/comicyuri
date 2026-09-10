@@ -117,6 +117,20 @@ export const zip = (entries: ReadonlyArray<Entry>): Buffer => {
   return Buffer.concat([...locals, directory, end])
 }
 
+/** 페이지 한 장의 픽셀 크기. */
+export type Size = Readonly<{ width: number; height: number }>
+
+/**
+ * 한 권의 페이지 크기. 모든 페이지가 같은 크기이거나, 번호마다 다르다.
+ *
+ * 번호로 정하는 쪽은 책 중간에 넓은 페이지가 하나 섞인 책을 만들기 위한 것이다.
+ * 그런 책이 스프레드 묶기가 실제로 걸려 넘어지는 자리다.
+ */
+export type Sizing = Size | ((page: number) => Size)
+
+const sizeOf = (sizing: Sizing, page: number): Size =>
+  typeof sizing === 'function' ? sizing(page) : sizing
+
 /** 페이지마다 색이 다른 책 한 권. 색은 페이지 번호로 되짚을 수 있다. */
 export const pageColour = (page: number): readonly [number, number, number] => [
   (40 + page * 37) % 256,
@@ -127,13 +141,15 @@ export const pageColour = (page: number): readonly [number, number, number] => [
 /** 한 권 분량의 페이지. 이름은 `page-01.png`처럼 붙어 자연 정렬과도 맞는다. */
 export const pages = (
   count: number,
-  size: Readonly<{ width: number; height: number }> = { width: 120, height: 180 },
+  sizing: Sizing = { width: 120, height: 180 },
 ): ReadonlyArray<Entry> =>
-  Array.from({ length: count }, (_, page) => ({
-    name: `page-${String(page + 1).padStart(2, '0')}.png`,
-    bytes: png(size.width, size.height, pageColour(page)),
-  }))
+  Array.from({ length: count }, (_, page) => {
+    const size = sizeOf(sizing, page)
+    return {
+      name: `page-${String(page + 1).padStart(2, '0')}.png`,
+      bytes: png(size.width, size.height, pageColour(page)),
+    }
+  })
 
 /** 바로 들여올 수 있는 `.cbz` 한 권. */
-export const cbz = (count: number, size?: Readonly<{ width: number; height: number }>): Buffer =>
-  zip(pages(count, size))
+export const cbz = (count: number, sizing?: Sizing): Buffer => zip(pages(count, sizing))

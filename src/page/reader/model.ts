@@ -7,10 +7,21 @@ import { Settings } from '../../types.ts'
 import { SLIDER_ID, THUMBS_ID, THUMB_ROW_HEIGHT } from './constant.ts'
 import { ORIGIN, Point, Side, ZOOM_MIN } from './gesture.ts'
 
-/** 아카이브를 여는 일이 어디까지 왔는지. */
+/**
+ * 아카이브를 여는 일이 어디까지 왔는지.
+ *
+ * `Ready`가 페이지 비를 지고 있는 이유는 스프레드 묶기가 그것을 보기 때문이다.
+ * 넓은 페이지는 짝을 짓지 않으므로, 페이지 수만으로는 무엇이 한 화면인지 정할
+ * 수 없다.
+ */
 export const OpenState = defineTaggedUnion({
   Opening: {},
-  Ready: { title: Schema.String, pageCount: Schema.Number },
+  Ready: {
+    title: Schema.String,
+    pageCount: Schema.Number,
+    /** 페이지별 가로세로비. 임포트할 때 재지 못한 페이지는 없음이다. */
+    ratios: Schema.Array(Schema.Option(Schema.Number)),
+  },
   Failed: { text: Schema.String },
 })
 
