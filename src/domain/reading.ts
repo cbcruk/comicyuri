@@ -19,6 +19,7 @@ export const bookPartOf = (settings: Settings): BookSettings => ({
   coverAlone: settings.coverAlone,
   singleThreshold: settings.singleThreshold,
   enlargeToFit: settings.enlargeToFit,
+  splitWide: settings.splitWide,
 })
 
 /**

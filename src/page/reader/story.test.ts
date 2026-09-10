@@ -559,6 +559,7 @@ describe('layout', () => {
             coverAlone: false,
             singleThreshold: 0.8,
             enlargeToFit: true,
+            splitWide: false,
           }),
           settings: { ...defaultSettings, rememberBookSettings: true },
         }),
@@ -1294,6 +1295,77 @@ describe('bookmarks', () => {
       model((model) => {
         expect(model.page).toBe(0)
       }),
+    )
+  })
+})
+
+describe('reading a wide page in halves', () => {
+  const SPLITTING = { ...defaultSettings, splitWide: true }
+
+  test('the second half comes before the next page, and needs no new image', () => {
+    story(
+      update,
+      given({ ...openingModel(SPLITTING), page: 3 }),
+      ...opened(3, wideAt(3)),
+      model((model) => {
+        expect(model.half).toBe('first')
+      }),
+      message(Message.ClickedNext()),
+      model((model) => {
+        expect(model.page).toBe(3)
+        expect(model.half).toBe('second')
+      }),
+      message(Message.ClickedNext()),
+      model((model) => {
+        expect(model.page).toBe(4)
+        expect(model.half).toBe('first')
+      }),
+      ...settle(4),
+    )
+  })
+
+  test('stepping back into a wide page lands on the half read last', () => {
+    story(
+      update,
+      given({ ...openingModel(SPLITTING), page: 4 }),
+      ...opened(4, wideAt(3)),
+      message(Message.ClickedPrevious()),
+      model((model) => {
+        expect(model.page).toBe(3)
+        expect(model.half).toBe('second')
+      }),
+      ...settle(3),
+      message(Message.ClickedPrevious()),
+      model((model) => {
+        expect(model.page).toBe(3)
+        expect(model.half).toBe('first')
+      }),
+    )
+  })
+
+  test('a page that is not wide is one step, however the setting is set', () => {
+    story(
+      update,
+      given({ ...openingModel(SPLITTING), page: 1 }),
+      ...opened(1, wideAt(3)),
+      message(Message.ClickedNext()),
+      model((model) => {
+        expect(model.page).toBe(2)
+      }),
+      ...settle(2),
+    )
+  })
+
+  test('with the setting off a wide page is one step too', () => {
+    story(
+      update,
+      given({ ...openingModel(), page: 3 }),
+      ...opened(3, wideAt(3)),
+      message(Message.ClickedNext()),
+      model((model) => {
+        expect(model.page).toBe(4)
+      }),
+      ...settle(4),
     )
   })
 })

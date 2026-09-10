@@ -54,6 +54,7 @@ const DEFAULTS = {
   coverAlone: true,
   singleThreshold: 0.74,
   enlargeToFit: true,
+  splitWide: false,
   atBookEnd: 'next',
   rememberBookSettings: false,
 } as const
@@ -94,6 +95,14 @@ export const Settings = Schema.Struct({
     Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.enlargeToFit)),
   ),
   /**
+   * 넓은 페이지를 좌우 반씩 차례로 읽을지.
+   *
+   * 양면을 한 장으로 스캔한 페이지가 세로 화면에서는 통째로 작게 들어간다. 그것을
+   * 두 걸음으로 나누면 반쪽마다 화면을 다 쓴다. 무엇이 넓은지는 스프레드 묶기와
+   * 같은 판정(`singleThreshold`)을 쓴다.
+   */
+  splitWide: Schema.Boolean.pipe(Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.splitWide))),
+  /**
    * 한 권을 다 읽고 계속 넘길 때 무엇을 할지. 원본 뷰어의 "Loop :"와 같은
    * 자리이며, 그쪽에서 다음 권을 여는 동작도 이것이었다.
    */
@@ -130,6 +139,7 @@ export const BookSettings = Schema.Struct({
   coverAlone: Schema.Boolean,
   singleThreshold: Schema.Number,
   enlargeToFit: Schema.Boolean.pipe(Schema.withDecodingDefaultKey(Effect.succeed(true))),
+  splitWide: Schema.Boolean.pipe(Schema.withDecodingDefaultKey(Effect.succeed(false))),
 })
 /** {@linkcode BookSettings} 스키마의 디코딩된 값. */
 export type BookSettings = typeof BookSettings.Type

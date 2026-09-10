@@ -284,6 +284,33 @@ reader/scene "the binding control is only there when there is a binding to flip"
 e2e "R-227 · 자동 묶기를 손으로 뒤집고, 그것이 새로고침을 넘긴다", "R-227 · 넓다고
 갈라 놓은 페이지를 손으로 다시 묶는다", "R-227 · 한 장 모드에는 뒤집을 묶기가 없다"
 
+**R-229 · 넓은 페이지를 좌우 반씩 읽는다**
+설정 패널의 "Read wide pages in halves". 켜 두면 혼자 선 넓은 페이지가 두 걸음이
+된다 — 읽는 방향으로 먼저 오는 반쪽, 그다음 나머지 반쪽. 양면을 한 장으로 스캔한
+페이지가 세로 화면에서 통째로 작게 들어가는 것을 막는 자리다. 오른쪽에서 왼쪽으로
+읽으면 오른쪽 반이 먼저다.
+
+무엇이 넓은지는 스프레드 묶기와 같은 판정(`R-226`의 `singleThreshold`)이다. 옆에
+짝이 선 페이지는 나누지 않는다 — 한 화면에 네 쪽이 된다.
+
+반쪽으로 옮기는 걸음은 이미지를 새로 부르지 않는다. 같은 이미지의 다른 쪽을 볼
+뿐이다. 뒤로 넘겨 들어온 페이지는 나중에 읽는 반쪽에서 시작한다(`R-247`과 같은
+규칙).
+
+반쪽은 언제나 화면 안에 통째로 들어간다. 반쪽의 비를 지고 컨테이너 단위로 잰
+상자가 이미지를 잘라 내므로, 맞춤 모드(`R-224`)와 무관하고 세워 둔 페이지(`R-228`)도
+따라간다.
+✅ half "a step forward from the first half stays on the page", "right to left reads the
+right half first",
+reader/story "the second half comes before the next page, and needs no new image",
+"stepping back into a wide page lands on the half read last", "a page that is not wide is
+one step, however the setting is set",
+reader/scene "a wide page shows one half at a time when the setting is on",
+e2e "R-229 · 넓은 페이지가 두 걸음으로 나뉜다", "R-229 · 뒤로 넘겨 오면 나중에 읽는
+반쪽이 나온다", "R-229 · 반쪽은 화면 안에 통째로 들어간다"
+
+⚠️ 카운터는 반쪽을 세지 않는다. 두 걸음 모두 같은 페이지 번호다.
+
 **R-228 · `⟳` 버튼과 `r` 키가 페이지를 시계 방향으로 세운다**
 한 번에 90도씩, 네 번이면 제자리다. 눕혀 스캔된 책을 바로 세우는 자리다.
 
@@ -593,9 +620,9 @@ e2e "R-292 · 브라우저 쪽에서 나가도 상태가 맞는다"
 ### 2.11 설정 패널
 
 **R-2B1 · ⚙ 버튼과 `,` 키가 읽기 설정 패널을 연다**
-툴바에 버튼이 없던 설정 넷이 여기 있다 — 표지를 혼자 둘지(`coverAlone`), 넓은
-페이지를 가르는 문턱(`singleThreshold`), 작은 페이지를 늘릴지(`enlargeToFit`), 책의
-끝에서 무엇을 할지(`atBookEnd`).
+툴바에 버튼이 없던 설정 다섯이 여기 있다 — 표지를 혼자 둘지(`coverAlone`), 넓은
+페이지를 가르는 문턱(`singleThreshold`), 넓은 페이지를 반씩 읽을지(`splitWide`), 작은
+페이지를 늘릴지(`enlargeToFit`), 책의 끝에서 무엇을 할지(`atBookEnd`).
 
 방향·한 장/두 장·맞춤은 여기 없다. 그것들은 읽는 동안 손이 가는 것이라 툴바에
 남고, 여기 있는 셋은 책을 열기 전에 한 번 정하는 것이다.
@@ -618,7 +645,7 @@ reader/scene "nudging the threshold moves it one step, not to a long decimal"
 **R-2B3 · 설정을 책마다 기억할 수 있다**
 패널의 "Remember these for each book"를 켜면, 그 뒤로 바꾸는 배치가 전역 기본값이
 아니라 그 책에 남는다. 책마다 남는 것은 방향·한 장/두 장·맞춤·표지 규칙·넓은 페이지
-문턱·늘리기다. 테마와 책 끝 동작, 그리고 이 스위치 자신은 읽는 습관이라 전역에 남는다.
+문턱·반씩 읽기·늘리기다. 테마와 책 끝 동작, 그리고 이 스위치 자신은 읽는 습관이라 전역에 남는다.
 
 스위치를 켜는 것은 지금 보고 있는 배치를 이 책의 것으로 삼는다는 뜻이다. 끄면 이
 책이 정한 것을 놓고 전역 기본값으로 돌아간다 — 그러지 않으면 이 책의 배치가 그대로

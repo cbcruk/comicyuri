@@ -33,17 +33,41 @@ const markAt = (marks: ReadonlyArray<PageMark>, page: number): Option.Option<Pag
   Array.findFirst(marks, (mark) => mark.page === page)
 
 /**
+ * 그 페이지가 넓은지. 두 장 모드에서 혼자 서는 것도(`R-226`), 반씩 나뉘는 것도
+ * (`R-229`) 같은 판정을 쓴다.
+ */
+export const isWide = (layout: Layout, settings: Settings, page: number): boolean =>
+  Option.exists(ratioAt(layout.ratios, page), (ratio) => ratio >= settings.singleThreshold)
+
+/**
  * 손으로 걸어 둔 표시를 먼저 보고, 없으면 페이지 비로 정한다. 자동 판정이 아무리
  * 좋아도 틀릴 때가 있고, 그때 사람이 내린 답을 이길 근거는 없다.
  */
 const bindingFor = (layout: Layout, settings: Settings, page: number): Binding =>
   Option.match(markAt(layout.marks, page), {
     onSome: (mark) => mark.binding,
-    onNone: () =>
-      Option.exists(ratioAt(layout.ratios, page), (ratio) => ratio >= settings.singleThreshold)
-        ? 'alone'
-        : 'auto',
+    onNone: () => (isWide(layout, settings, page) ? 'alone' : 'auto'),
   })
+
+/**
+ * 지금 보고 있는 것이 반씩 나뉘는 자리라면 그 페이지의 비.
+ *
+ * 반씩 읽기를 켜 두었고, 혼자 선 넓은 페이지일 때만이다. 옆에 짝이 선 페이지를
+ * 나누면 한 화면에 네 쪽이 되고, 그것은 아무도 원하지 않는다.
+ *
+ * @returns 그 페이지의 가로세로비. 반쪽의 비는 그 절반이다. 나뉘지 않으면 없음.
+ */
+export const splitRatio = (
+  layout: Layout,
+  settings: Settings,
+  spread: ReadonlyArray<number>,
+): Option.Option<number> => {
+  if (!settings.splitWide || spread.length !== 1) return Option.none()
+
+  return Option.flatMap(Array.head(spread), (page) =>
+    isWide(layout, settings, page) ? ratioAt(layout.ratios, page) : Option.none(),
+  )
+}
 
 /**
  * 스프레드는 저장하지 않고 매번 이끌어 낸다. 기대는 것이 설정과 책 쪽 사실들뿐이고,

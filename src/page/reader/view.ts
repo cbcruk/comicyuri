@@ -5,12 +5,13 @@ import { defineView } from 'foldkit/submodel'
 import { Button, Slider, Switch, VirtualList } from '@foldkit/ui'
 import clsx from 'clsx'
 
-import type { AtBookEnd, FitMode, Rotation, Settings } from '../../types.ts'
+import type { AtBookEnd, FitMode, Settings } from '../../types.ts'
 import {
   COVER_ALONE_ID,
   ENLARGE_ID,
   PAGE_ID,
   REMEMBER_ID,
+  SPLIT_ID,
   STAGE_ID,
   THRESHOLD_MAX,
   THRESHOLD_MIN,
@@ -18,14 +19,13 @@ import {
   THUMB_ROW_HEIGHT,
 } from './constant.ts'
 import { ZOOM_MIN } from './gesture.ts'
-import type { Point } from './gesture.ts'
 import { Message } from './message.ts'
 import { Model, OpenState, SpreadState } from './model.ts'
-import type { PageEntry } from './model.ts'
 import type { TapFlash } from './model.ts'
 import type { Panel } from './model.ts'
+import { sideOf } from './half.ts'
 import { swapsSides } from './rotation.ts'
-import { indexOfPage, spreadsFor } from './spread.ts'
+import { indexOfPage, pagesAt, splitRatio, spreadsFor } from './spread.ts'
 import { sliderPage } from './update.ts'
 import { rowsFor, shownPages, urlFor } from './thumbs.ts'
 
@@ -226,6 +226,44 @@ const toolbarView = (
     ],
   )
 
+/** 반씩 읽는 중인 페이지와, 그중 지금 보고 있는 쪽. */
+type SplitHalf = Readonly<{
+  /** 나뉘기 전 페이지의 가로세로비. 반쪽은 그 절반이다. */
+  ratio: number
+  /** 화면의 어느 쪽 반인지. */
+  side: 'left' | 'right'
+}>
+
+/**
+ * 반쪽 하나. 상자가 반쪽의 비를 지고 화면 안에 들어가고, 그 안에서 이미지는 두 배
+ * 너비로 서서 보고 있는 쪽만 상자에 걸린다.
+ *
+ * 상자 크기를 컨테이너 단위로 재는 이유는 세워 둔 페이지 때문이다(`R-228`). 페이지를
+ * 담은 상자가 누우면 `cqw`·`cqh`도 함께 누우므로 반쪽이 그것을 따라간다.
+ */
+const halfView = (panel: Panel, half: SplitHalf, h: HtmlBuilder<Message>): Html => {
+  const ratio = half.ratio / 2
+
+  return h.div(
+    [
+      h.Class('relative overflow-hidden'),
+      h.Style({
+        width: `min(100cqw, calc(100cqh * ${ratio}))`,
+        aspectRatio: `${ratio}`,
+      }),
+    ],
+    [
+      h.keyed('img')(`${panel.page}-${half.side}`, [
+        h.Class('absolute top-0 h-full w-[200%] max-w-none'),
+        h.Style({ left: half.side === 'left' ? '0' : '-100%' }),
+        h.Src(panel.url),
+        h.Alt(`Page ${panel.page + 1}`),
+        h.Draggable(false),
+      ]),
+    ],
+  )
+}
+
 const panelView = (
   panel: Panel,
   fit: FitMode,
@@ -272,17 +310,13 @@ const tapFlashView = (flash: TapFlash, h: HtmlBuilder<Message>): Html =>
   ])
 
 const stageView = (
-  spread: SpreadState,
-  settings: Settings,
-  zoom: number,
-  pan: Point,
-  entry: PageEntry,
-  page: number,
-  rotation: Rotation,
-  maybeTapFlash: Option.Option<TapFlash>,
+  model: Model,
+  maybeHalf: Option.Option<SplitHalf>,
   h: HtmlBuilder<Message>,
-): Html =>
-  h.div(
+): Html => {
+  const { settings, spread, zoom, pan, entry, rotation } = model
+
+  return h.div(
     [
       h.Id(STAGE_ID),
       // 세운 페이지를 담을 상자는 화면의 높이만큼 넓어야 한다. `cqh`·`cqw`가 그
@@ -297,7 +331,7 @@ const stageView = (
       // 애니메이션이 그 transform까지 애니메이션할 값으로 보기 때문이다. 미끄러지는
       // 동안에는 페이지가 어디까지 왔는지 재는 값도 사실이 아니다.
       h.keyed('div')(
-        String(page),
+        String(model.page),
         [
           h.Id(PAGE_ID),
           h.Class(
@@ -314,7 +348,7 @@ const stageView = (
             // 뒤로 넘겨 온 페이지는 끝에서 시작한다(`R-247`). `flex-wrap-reverse`가
             // 교차축의 시작을 아래로 뒤집으므로, 넘치는 쪽에 붙는 자리도 함께
             // 뒤집힌다 — 화면에 들어가는 페이지는 그대로 가운데다.
-            clsx('flex items-center-safe justify-center gap-1', {
+            clsx('flex items-center-safe justify-center gap-1 [container-type:size]', {
               // 눕힌 상자는 가로와 세로가 맞바뀐다. 그래야 세운 페이지에 맞춤
               // 모드가 화면 크기대로 걸린다.
               'h-full w-full': !swapsSides(rotation),
@@ -336,17 +370,23 @@ const stageView = (
           Loading: () => [h.p([h.Class('text-sm text-muted')], ['Loading…'])],
           Failed: ({ text }) => [h.p([h.Class('text-sm text-danger')], [text])],
           Shown: ({ panels }) =>
-            Array.map(panels, (panel) => panelView(panel, settings.fit, settings.enlargeToFit, h)),
+            Array.map(panels, (panel) =>
+              Option.match(maybeHalf, {
+                onNone: () => panelView(panel, settings.fit, settings.enlargeToFit, h),
+                onSome: (half) => halfView(panel, half, h),
+              }),
+            ),
         }),
       ),
       SHOWS_TAP_FLASH
-        ? Option.match(maybeTapFlash, {
+        ? Option.match(model.maybeTapFlash, {
             onNone: () => h.empty,
             onSome: (flash) => tapFlashView(flash, h),
           })
         : h.empty,
     ],
   )
+}
 
 /**
  * 책 전체를 훑는 자리. 키보드 지원은 컴포넌트가 가져다준다.
@@ -576,6 +616,15 @@ const settingsView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
           settingRow('A page wider than this stands alone', thresholdView(settings, h), h),
           switchRow(
             {
+              id: SPLIT_ID,
+              label: 'Read wide pages in halves',
+              isChecked: settings.splitWide,
+              onToggle: (isChecked) => Message.ToggledSplitWide({ isChecked }),
+            },
+            h,
+          ),
+          switchRow(
+            {
               id: ENLARGE_ID,
               label: 'Stretch small pages to fit',
               isChecked: settings.enlargeToFit,
@@ -712,8 +761,13 @@ export const view = defineView<Model, Message>((model, h): Html =>
     Opening: () => openingView('Opening…', h),
     Failed: ({ text }) => openingView(text, h),
     Ready: ({ title, pageCount, ratios }) => {
-      const spreads = spreadsFor({ pageCount, ratios, marks: model.marks }, model.settings)
+      const layout = { pageCount, ratios, marks: model.marks }
+      const spreads = spreadsFor(layout, model.settings)
       const index = indexOfPage(spreads, model.page)
+      const maybeHalf = Option.map(
+        splitRatio(layout, model.settings, pagesAt(spreads, index)),
+        (ratio): SplitHalf => ({ ratio, side: sideOf(model.half, model.settings.direction) }),
+      )
 
       return h.main(
         [h.Class('relative flex h-full flex-col'), h.AriaLabel(title)],
@@ -727,17 +781,7 @@ export const view = defineView<Model, Message>((model, h): Html =>
             model.isChromeVisible,
             h,
           ),
-          stageView(
-            model.spread,
-            model.settings,
-            model.zoom,
-            model.pan,
-            model.entry,
-            model.page,
-            model.rotation,
-            model.maybeTapFlash,
-            h,
-          ),
+          stageView(model, maybeHalf, h),
           turnView(model, model.isChromeVisible, h),
           model.isThumbsOpen ? thumbsView(model, pageCount, h) : h.empty,
           model.isSettingsOpen ? settingsView(model.settings, h) : h.empty,

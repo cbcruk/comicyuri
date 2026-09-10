@@ -16,6 +16,9 @@ export const COVER_ALONE_ID = 'reader-cover-alone'
 /** 작은 페이지를 늘릴지 정하는 스위치. */
 export const ENLARGE_ID = 'reader-enlarge-to-fit'
 
+/** 넓은 페이지를 반씩 읽을지 정하는 스위치. */
+export const SPLIT_ID = 'reader-split-wide'
+
 /** 설정을 책마다 기억할지 정하는 스위치. */
 export const REMEMBER_ID = 'reader-remember-book-settings'
 

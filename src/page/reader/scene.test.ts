@@ -59,6 +59,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   pan: ORIGIN,
   gesture: Gesture.Idle(),
   entry: 'start',
+  half: 'first',
   isChromeVisible: true,
   isPointerOverChrome: false,
   activityToken: 0,
@@ -157,6 +158,27 @@ describe('the stage', () => {
       ...settleTurn(0),
       expect(selector('#reader-page')).toHaveClass('h-[100cqw]'),
       expect(selector('#reader-page')).toHaveClass('w-[100cqh]'),
+    )
+  })
+
+  test('a wide page shows one half at a time when the setting is on', () => {
+    // 이미지는 상자의 두 배 너비로 서고, 상자가 보고 있는 쪽만 남긴다.
+    const wide: Model = {
+      ...readingModel(3, { ...defaultSettings, splitWide: true }),
+      openState: OpenState.Ready({
+        title: 'Volume 1',
+        pageCount: 6,
+        ratios: Array.from({ length: 6 }, (_, page) => Option.some(page === 3 ? 1.4 : 0.7)),
+      }),
+      spread: SpreadState.Shown({ panels: [{ page: 3, url: 'blob:3' }] }),
+    }
+
+    scene(program, given(wide), expect(role('img', { name: 'Page 4' })).toHaveClass('w-[200%]'))
+
+    scene(
+      program,
+      given({ ...wide, settings: { ...wide.settings, splitWide: false } }),
+      expect(role('img', { name: 'Page 4' })).not.toHaveClass('w-[200%]'),
     )
   })
 
