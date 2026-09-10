@@ -558,6 +558,7 @@ describe('layout', () => {
             fit: 'width',
             coverAlone: false,
             singleThreshold: 0.8,
+            enlargeToFit: true,
           }),
           settings: { ...defaultSettings, rememberBookSettings: true },
         }),

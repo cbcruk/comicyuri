@@ -13,6 +13,9 @@ export const SLIDER_ID = 'reader-page-slider'
 /** 표지를 혼자 두는 스위치. 라벨과 설명이 이 id에서 갈라져 나온다. */
 export const COVER_ALONE_ID = 'reader-cover-alone'
 
+/** 작은 페이지를 늘릴지 정하는 스위치. */
+export const ENLARGE_ID = 'reader-enlarge-to-fit'
+
 /** 설정을 책마다 기억할지 정하는 스위치. */
 export const REMEMBER_ID = 'reader-remember-book-settings'
 

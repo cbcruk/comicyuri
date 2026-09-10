@@ -8,6 +8,7 @@ import clsx from 'clsx'
 import type { AtBookEnd, FitMode, Rotation, Settings } from '../../types.ts'
 import {
   COVER_ALONE_ID,
+  ENLARGE_ID,
   PAGE_ID,
   REMEMBER_ID,
   STAGE_ID,
@@ -35,13 +36,32 @@ const FIT_LABEL: Record<FitMode, string> = {
   original: '1:1',
 }
 
-/** 맞춤 모드에 따라 페이지를 화면에 어떻게 앉힐지. */
+/**
+ * 맞춤 모드에 따라 페이지를 화면에 어떻게 앉힐지.
+ *
+ * 통째로 맞춤은 최대 크기만 걸고 크기는 이미지에 맡긴다. 그래서 화면보다 작은
+ * 페이지는 원래 크기 그대로 선다 — 줄이기만 하고 늘리지는 않는다.
+ */
 const FIT_CLASS: Record<FitMode, string> = {
   contain: 'max-h-full max-w-full object-contain',
   width: 'w-full object-contain',
   height: 'h-full object-contain',
   original: 'max-w-none',
 }
+
+/**
+ * 늘리지 않기로 했을 때 채우는 맞춤에 함께 거는 상한. `max-content`가 그 이미지의
+ * 원래 크기이므로, 채우되 원본을 넘지는 않는다.
+ */
+const NO_ENLARGE_CLASS: Record<FitMode, string> = {
+  contain: '',
+  width: 'max-w-max',
+  height: 'max-h-max',
+  original: '',
+}
+
+const fitClassName = (fit: FitMode, enlargeToFit: boolean): string =>
+  clsx(FIT_CLASS[fit], { [NO_ENLARGE_CLASS[fit]]: !enlargeToFit && NO_ENLARGE_CLASS[fit] !== '' })
 
 const controlClassName =
   'cursor-pointer rounded-lg border border-edge bg-surface-2 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-accent/60 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
@@ -206,9 +226,14 @@ const toolbarView = (
     ],
   )
 
-const panelView = (panel: Panel, fit: FitMode, h: HtmlBuilder<Message>): Html =>
+const panelView = (
+  panel: Panel,
+  fit: FitMode,
+  enlargeToFit: boolean,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.keyed('img')(String(panel.page), [
-    h.Class(FIT_CLASS[fit]),
+    h.Class(fitClassName(fit, enlargeToFit)),
     h.Src(panel.url),
     h.Alt(`Page ${panel.page + 1}`),
     // 이미지는 기본으로 끌 수 있고, 끌기 시작하면 브라우저가 포인터 이벤트를 거두어
@@ -310,7 +335,8 @@ const stageView = (
         SpreadState.match(spread, {
           Loading: () => [h.p([h.Class('text-sm text-muted')], ['Loading…'])],
           Failed: ({ text }) => [h.p([h.Class('text-sm text-danger')], [text])],
-          Shown: ({ panels }) => Array.map(panels, (panel) => panelView(panel, settings.fit, h)),
+          Shown: ({ panels }) =>
+            Array.map(panels, (panel) => panelView(panel, settings.fit, settings.enlargeToFit, h)),
         }),
       ),
       SHOWS_TAP_FLASH
@@ -548,6 +574,15 @@ const settingsView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
             h,
           ),
           settingRow('A page wider than this stands alone', thresholdView(settings, h), h),
+          switchRow(
+            {
+              id: ENLARGE_ID,
+              label: 'Stretch small pages to fit',
+              isChecked: settings.enlargeToFit,
+              onToggle: (isChecked) => Message.ToggledEnlargeToFit({ isChecked }),
+            },
+            h,
+          ),
           switchRow(
             {
               id: REMEMBER_ID,

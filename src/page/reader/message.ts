@@ -76,6 +76,7 @@ export const Message = defineMessageUnion({
 
   ClickedToggleSettings: {},
   ToggledCoverAlone: { isChecked: Schema.Boolean },
+  ToggledEnlargeToFit: { isChecked: Schema.Boolean },
   ToggledRememberBookSettings: { isChecked: Schema.Boolean },
   SelectedAtBookEnd: { atBookEnd: AtBookEnd },
   ClickedNudgeThreshold: { by: Schema.Number },

@@ -19,6 +19,7 @@ const western: BookSettings = {
   fit: 'width',
   coverAlone: false,
   singleThreshold: 0.8,
+  enlargeToFit: false,
 }
 
 const progress: BookProgress = {

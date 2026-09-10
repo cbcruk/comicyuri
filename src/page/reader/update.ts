@@ -564,6 +564,9 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
     ToggledCoverAlone: ({ isChecked }) =>
       withSettings(model, evo(model.settings, { coverAlone: () => isChecked })),
 
+    ToggledEnlargeToFit: ({ isChecked }) =>
+      withSettings(model, evo(model.settings, { enlargeToFit: () => isChecked })),
+
     /**
      * 기억하기를 끄면 이 책이 정한 것을 놓고 전역 기본값으로 돌아간다. 그러지
      * 않으면 이 책의 배치가 그대로 전역 기본값이 되어 다음에 여는 책까지
