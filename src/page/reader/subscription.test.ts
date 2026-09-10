@@ -104,6 +104,7 @@ describe('what the chrome wait is gated on', () => {
     bookId: 'volume-1::42',
     page: 0,
     bookmarks: [],
+    marks: [],
     settings: defaultSettings,
   })
 
@@ -138,6 +139,7 @@ describe('a pointer resting on the chrome', () => {
     bookId: 'volume-1::42',
     page: 0,
     bookmarks: [],
+    marks: [],
     settings: defaultSettings,
   })
 

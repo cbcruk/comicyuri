@@ -3,7 +3,7 @@ import { defineTaggedUnion } from 'foldkit/schema'
 
 import { Slider, VirtualList } from '@foldkit/ui'
 
-import { Settings } from '../../types.ts'
+import { PageMark, Settings } from '../../types.ts'
 import { SLIDER_ID, THUMBS_ID, THUMB_ROW_HEIGHT } from './constant.ts'
 import { ORIGIN, Point, Side, ZOOM_MIN } from './gesture.ts'
 
@@ -103,6 +103,8 @@ export const Model = Schema.Struct({
   spread: SpreadState,
   page: Schema.Number,
   bookmarks: Schema.Array(Schema.Number),
+  /** 자동 묶기가 틀렸을 때 사람이 고쳐 둔 것. 책마다 저장된다. */
+  marks: Schema.Array(PageMark),
   settings: Settings,
 
   zoom: Schema.Number,
@@ -142,6 +144,8 @@ export type InitConfig = Readonly<{
   page: number
   /** 이미 북마크된 페이지들. */
   bookmarks: ReadonlyArray<number>
+  /** 이 책에 걸어 둔 묶기 교정. */
+  marks: ReadonlyArray<PageMark>
   /** 애플리케이션 설정. 리더가 고치고 위로 알린다. */
   settings: Settings
 }>
@@ -158,6 +162,7 @@ export const init = (config: InitConfig): Model => ({
   spread: SpreadState.Loading(),
   page: config.page,
   bookmarks: config.bookmarks,
+  marks: config.marks,
   settings: config.settings,
   zoom: ZOOM_MIN,
   pan: ORIGIN,

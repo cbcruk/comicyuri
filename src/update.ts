@@ -103,10 +103,10 @@ const foldReaderOutMessage = Reader.OutMessage.match<
       commands: [SaveSettings({ settings })],
     }),
   UpdatedProgress:
-    ({ bookId, page, bookmarks }) =>
+    ({ bookId, page, bookmarks, marks }) =>
     (model) => ({
       model,
-      commands: [SaveProgress({ bookId, page, bookmarks })],
+      commands: [SaveProgress({ bookId, page, bookmarks, marks })],
     }),
 })
 
@@ -159,7 +159,7 @@ export const update = (model: Model, message: Message) =>
       })
     },
 
-    CompletedLoadProgress: ({ bookId, page, bookmarks }) =>
+    CompletedLoadProgress: ({ bookId, page, bookmarks, marks }) =>
       // 이미 떠난 책에 대한 늦은 답은 버린다.
       AppRoute.match(model.route, {
         Reader: ({ id }) =>
@@ -172,6 +172,7 @@ export const update = (model: Model, message: Message) =>
                         bookId,
                         page,
                         bookmarks,
+                        marks,
                         settings: model.settings,
                       }),
                     ),

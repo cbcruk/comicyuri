@@ -32,7 +32,7 @@ const wideAt = (...pages: number[]): ReadonlyArray<Option.Option<number>> =>
   Array.from({ length: PAGE_COUNT }, (_, page) => Option.some(pages.includes(page) ? 1.4 : 0.7))
 
 const openingModel = (settings = defaultSettings): Model =>
-  init({ bookId: 'volume-1::42', page: 0, bookmarks: [], settings })
+  init({ bookId: 'volume-1::42', page: 0, bookmarks: [], marks: [], settings })
 
 const acknowledgePreload = Command.resolve(PreloadNeighbours, Message.CompletedPreloadNeighbours())
 
@@ -75,6 +75,7 @@ describe('opening', () => {
           bookId: 'volume-1::42',
           page: 0,
           bookmarks: [],
+          marks: [],
         }),
       ),
       model((model) => {
@@ -126,6 +127,7 @@ describe('turning pages', () => {
           bookId: 'volume-1::42',
           page: 1,
           bookmarks: [],
+          marks: [],
         }),
       ),
       model((model) => {
@@ -325,6 +327,99 @@ describe('layout', () => {
       ...opened(0),
       message(Message.ClickedNext()),
       Command.expectHas(LoadSpread({ page: 1, pages: [1, 2] })),
+      ...settle(1),
+    )
+  })
+
+  test('flipping the binding splits the spread being read, and saves it', () => {
+    story(
+      update,
+      given(openingModel({ ...defaultSettings, view: 'spread' })),
+      ...opened(0),
+      message(Message.ClickedNext()),
+      Command.expectHas(LoadSpread({ page: 1, pages: [1, 2] })),
+      ...settle(1),
+      message(Message.ClickedToggleBinding()),
+      Command.expectHas(LoadSpread({ page: 1, pages: [1] })),
+      expectOutMessage(
+        OutMessage.UpdatedProgress({
+          bookId: 'volume-1::42',
+          page: 1,
+          bookmarks: [],
+          marks: [{ page: 1, binding: 'alone' }],
+        }),
+      ),
+      ...settle(1),
+    )
+  })
+
+  test('flipping twice comes back to the spread it started from', () => {
+    story(
+      update,
+      given(openingModel({ ...defaultSettings, view: 'spread' })),
+      ...opened(0),
+      message(Message.ClickedNext()),
+      ...settle(1),
+      message(Message.ClickedToggleBinding()),
+      ...settle(1),
+      message(Message.ClickedToggleBinding()),
+      Command.expectHas(LoadSpread({ page: 1, pages: [1, 2] })),
+      model((model) => {
+        expect(model.marks).toStrictEqual([{ page: 1, binding: 'pair' }])
+      }),
+      ...settle(1),
+    )
+  })
+
+  test('flipping binds a wide page back to its neighbour', () => {
+    story(
+      update,
+      given(openingModel({ ...defaultSettings, view: 'spread' })),
+      ...opened(0, wideAt(3)),
+      message(Message.ClickedNext()),
+      ...settle(1),
+      message(Message.ClickedNext()),
+      Command.expectHas(LoadSpread({ page: 3, pages: [3] })),
+      ...settle(3),
+      // 손으로 건 표시가 자동 판정을 이긴다. 그러지 못하면 탈출구가 아니다.
+      message(Message.ClickedToggleBinding()),
+      Command.expectHas(LoadSpread({ page: 3, pages: [3, 4] })),
+      ...settle(3),
+    )
+  })
+
+  test('one-page mode has no binding to flip', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ClickedToggleBinding()),
+      expectNoOutMessage(),
+      model((model) => {
+        expect(model.marks).toStrictEqual([])
+      }),
+    )
+  })
+
+  test('a book opens with the bindings it was left with', () => {
+    story(
+      update,
+      given(
+        init({
+          bookId: 'volume-1::42',
+          page: 0,
+          bookmarks: [],
+          marks: [{ page: 1, binding: 'alone' }],
+          settings: { ...defaultSettings, view: 'spread' },
+        }),
+      ),
+      message(
+        Message.CompletedOpenBook({ title: 'Volume 1', pageCount: PAGE_COUNT, ratios: UNMEASURED }),
+      ),
+      Command.expectHas(LoadSpread({ page: 0, pages: [0] })),
+      ...settle(0),
+      message(Message.ClickedNext()),
+      Command.expectHas(LoadSpread({ page: 1, pages: [1] })),
       ...settle(1),
     )
   })
@@ -565,6 +660,7 @@ describe('using a control keeps the chrome up', () => {
     ['last', Message.ClickedLast()],
     ['direction', Message.ClickedToggleDirection()],
     ['one or two pages', Message.ClickedToggleView()],
+    ['spread binding', Message.ClickedToggleBinding()],
     ['fit', Message.ClickedCycleFit()],
     ['bookmark', Message.ClickedToggleBookmark()],
     ['every page', Message.ClickedToggleThumbs()],
@@ -888,6 +984,7 @@ describe('bookmarks', () => {
           bookId: 'volume-1::42',
           page: 0,
           bookmarks: [0],
+          marks: [],
         }),
       ),
       model((model) => {

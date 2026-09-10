@@ -78,11 +78,39 @@ export type Settings = typeof Settings.Type
  */
 export const defaultSettings: Settings = DEFAULTS
 
-/** 책마다 저장되는 읽기 상태. */
+/**
+ * 자동 판정을 덮어쓰는 묶기. 그 페이지가 혼자 서거나, 다음 장과 묶인다.
+ *
+ * `spreads.ts`의 `Binding`에서 `auto`를 뺀 것이다. 표시가 없다는 것 자체가
+ * `auto`라서, 저장할 값에는 그 자리가 없다.
+ */
+export const PageBinding = Schema.Literals(['alone', 'pair'])
+/** {@linkcode PageBinding} 스키마의 디코딩된 값. */
+export type PageBinding = typeof PageBinding.Type
+
+/**
+ * 페이지 하나에 손으로 걸어 둔 묶기.
+ *
+ * 자동 판정은 스캔본에서 곧잘 틀리고, 한 장이 어긋나면 그 뒤를 읽을 수 없다.
+ * 이 표시가 그때의 탈출구이며 자동 판정보다 먼저 읽힌다.
+ */
+export const PageMark = Schema.Struct({
+  page: Schema.Number,
+  binding: PageBinding,
+})
+/** {@linkcode PageMark} 스키마의 디코딩된 값. */
+export type PageMark = typeof PageMark.Type
+
+/** 책마다 저장되는 상태. 읽던 자리와 북마크, 그리고 손으로 고친 묶기. */
 export const BookProgress = Schema.Struct({
   page: Schema.Number,
   bookmarks: Schema.Array(Schema.Number),
   updatedAt: Schema.Number,
+  /**
+   * 디코딩 기본값을 지고 있다. 이 표시가 생기기 전에 저장된 책이 통째로
+   * 기본값으로 떨어지면, 읽던 자리와 북마크까지 함께 잃는다.
+   */
+  marks: Schema.Array(PageMark).pipe(Schema.withDecodingDefaultKey(Effect.succeed([]))),
 })
 /** {@linkcode BookProgress} 스키마의 디코딩된 값. */
 export type BookProgress = typeof BookProgress.Type

@@ -1,4 +1,4 @@
-/** S-121 · R-226 — 임포트할 때 잰 페이지 크기가 스프레드 묶기를 정하는지. */
+/** S-121 · R-226 · R-227 — 페이지 크기와 손으로 고친 묶기가 스프레드를 정하는지. */
 
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
@@ -60,4 +60,41 @@ test('S-121 · 잰 크기는 새로고침을 넘겨 남는다', async ({ page })
   await control.next(page).click()
   await expect(shownPages(page)).toHaveCount(1)
   await expect(shownPages(page)).toHaveAttribute('alt', 'Page 4')
+})
+
+test('R-227 · 자동 묶기를 손으로 뒤집고, 그것이 새로고침을 넘긴다', async ({ page }) => {
+  await readBook(page, withWideFourthPage)
+  await control.view(page).click()
+
+  await control.next(page).click()
+  await expect(shownPages(page)).toHaveCount(2)
+
+  // 자동으로 묶인 두 장을 갈라 놓는다.
+  await control.binding(page).click()
+  await expect(shownPages(page)).toHaveCount(1)
+  await expect(shownPages(page)).toHaveAttribute('alt', 'Page 2')
+
+  await page.reload()
+  await expect(shownPages(page)).toHaveCount(1)
+  await expect(shownPages(page)).toHaveAttribute('alt', 'Page 2')
+})
+
+test('R-227 · 넓다고 갈라 놓은 페이지를 손으로 다시 묶는다', async ({ page }) => {
+  await readBook(page, withWideFourthPage)
+  await control.view(page).click()
+
+  await control.next(page).click()
+  await control.next(page).click()
+  await expect(shownPages(page)).toHaveCount(1)
+  await expect(shownPages(page)).toHaveAttribute('alt', 'Page 4')
+
+  // 손으로 건 표시가 크기로 내린 판정을 이긴다.
+  await control.binding(page).click()
+  await expect(shownPages(page)).toHaveCount(2)
+  await expect(shownPages(page).first()).toHaveAttribute('alt', 'Page 4')
+})
+
+test('R-227 · 한 장 모드에는 뒤집을 묶기가 없다', async ({ page }) => {
+  await readBook(page, withWideFourthPage)
+  await expect(control.binding(page)).toHaveCount(0)
 })

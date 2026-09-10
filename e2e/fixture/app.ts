@@ -96,6 +96,7 @@ export const control = {
   fullscreen: (page: Page) => page.getByRole('button', { name: /fullscreen/i }),
   direction: (page: Page) => page.getByRole('button', { name: 'Toggle reading direction' }),
   view: (page: Page) => page.getByRole('button', { name: 'Toggle one or two pages' }),
+  binding: (page: Page) => page.getByRole('button', { name: 'Flip how this spread is paired' }),
   fit: (page: Page) => page.getByRole('button', { name: 'Change how pages are fitted' }),
   zoomOut: (page: Page) => page.getByRole('button', { name: 'Zoom out' }),
   zoomIn: (page: Page) => page.getByRole('button', { name: 'Zoom in' }),
