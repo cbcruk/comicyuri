@@ -314,17 +314,55 @@ e2e "R-233 · 확대해도 손가락 사이 지점이 제자리에 머문다"
 
 **R-236 · 배율이 1이 되면 위치가 원점으로 돌아온다**
 ✅ gesture "an unzoomed page has nothing to pan"
+📌 굴려서 옮긴 자리는 배율과 무관하다(`R-240`). 여기서 말하는 것은 확대를 풀 때다.
 
 **R-239 · 페이지를 넘기면 줌과 위치가 처음으로 돌아온다**
+어느 쪽이 그 페이지의 "처음"인지는 `R-247`이 정한다.
 팬 오프셋은 떠나는 페이지에 맞춰 잰 값이라 다음 장에서는 엉뚱한 곳을 가리킨다.
 설정만 바꿔 같은 페이지를 다시 그릴 때는 줌을 유지한다.
 ✅ reader/story "turning the page starts from an unzoomed, unpanned view",
 "a settings change keeps the zoom, because the page did not move"
 
-**R-240 · 확대된 상태에서는 휠·트랙패드 스크롤이 페이지를 움직인다**
-확대되지 않았을 때는 스크롤을 가로채지 않는다.
-✅ reader/story "a wheel scroll moves a zoomed page"
-❓ **브라우저 확인 필요**
+**R-240 · 휠·트랙패드로 굴리면 페이지가 그만큼 움직인다**
+확대해서 커진 페이지든, 너비에 맞춰 화면보다 길어진 페이지든 같다. 남은 거리보다
+더 가지는 않는다 — 페이지는 화면 밖으로 밀려나지 않는다.
+
+페이지가 어느 쪽으로 얼마나 더 갈 수 있는지는 CSS가 정한다. 맞춤 모드와 두 장
+배치와 배율이 모두 걸리므로 리더는 그것을 셈하지 않고, 휠 이벤트가 그때 재어 온다.
+✅ scroll "scrolling down moves the page up", "scrolling stops where the page ends",
+reader/story "a wheel scroll moves a zoomed page",
+e2e "R-240 · 굴리면 페이지가 그만큼 움직인다"
+
+**R-246 · 끝에 닿은 뒤 다시 굴리면 페이지가 넘어간다**
+아래로 굴려 페이지의 끝에 닿아 있으면 다음 장, 위로 굴려 처음에 닿아 있으면 앞
+장이다. 화면에 통째로 들어가는 페이지는 처음부터 양쪽 끝에 닿아 있으므로, 한 번
+굴리는 것이 곧 한 장 넘기는 것이다.
+
+넘어가는 것은 언제나 **새 굴림의 첫 이벤트**뿐이다. 끝에 닿기까지 굴린 그 이벤트로는
+넘어가지 않고, 트랙패드가 손을 뗀 뒤 흘리는 관성으로도 넘어가지 않는다 — 한 번
+멈췄다가 다시 굴려야 한다. 가로로 굴리는 것은 넘기지 않는다.
+✅ scroll "scrolling down at the bottom asks for the next page", "a page that fits is
+already at both of its edges", "the events of one flick belong together",
+reader/story "a page with nowhere left to go turns instead", "the flick that reaches the
+edge does not also turn the page", "the inertia of a flick does not turn a second page",
+e2e "R-246 · 끝에 닿은 뒤 다시 굴리면 페이지가 넘어간다", "R-246 · 화면에 통째로
+들어가는 페이지는 한 번 굴리면 넘어간다"
+
+**R-247 · 페이지는 들어선 쪽에서 시작한다**
+앞으로 넘겨 온 페이지는 첫 줄부터, 뒤로 넘겨 온 페이지는 끝에서 시작한다. 되돌아
+읽는 움직임과 맞는다. 화면에 통째로 들어가는 페이지에는 처음도 끝도 없으므로 어느
+쪽에서 들어서든 가운데다. 슬라이더나 격자로 건너뛴 것은 넘긴 것이 아니라 언제나
+처음이다.
+
+세우는 일은 CSS가 한다(`items-center-safe`, 그리고 뒤로 왔을 때 `flex-wrap-reverse`).
+재고 나서 옮기는 것이 아니라 처음부터 그 자리에 그려지므로, 긴 페이지가 가운데
+걸렸다가 튀는 일이 없다.
+✅ reader/story "scrolling back at the top enters the page before it at its end", "a page
+entered forwards starts at its start", "jumping is not turning, so a jump starts at the
+start",
+reader/scene "a page taller than the screen hangs off the end it was entered from",
+e2e "R-247 · 앞으로 넘겨 온 긴 페이지는 첫 줄부터 보인다", "R-247 · 뒤로 넘겨 온 긴
+페이지는 끝에서 시작한다"
 
 **R-237 · 가운데를 두 번 탭하면 2.5배, 다시 두 번 탭하면 원래대로**
 300ms 안의 두 탭이 한 쌍이고, 세 번째 탭은 방금 한 줌을 되돌리지 않고 새 쌍을
@@ -716,6 +754,7 @@ the app"
 - [x] S-142 라이트 테마 전체 배색
 - [x] R-224 맞춤 모드 네 가지 · 스테이지가 툴바·푸터를 뺀 높이를 다 쓰는지
 - [x] R-232 핀치 줌 · R-233 확대 시 손가락 아래 지점 · R-234 Ctrl+휠
+- [x] R-240 굴려서 페이지를 움직이는 것 · R-246 끝에서 넘어가는 것 · R-247 들어선 쪽
 - [x] R-241 탭 존 방향 · R-243 스와이프 방향 · R-244 탭 판정
 - [x] R-251 툴바 3초 자동 숨김과 포인터가 붙잡는 것
 - [x] R-272 썸네일 패널이 열리는 즉시 채워지는지
@@ -726,6 +765,7 @@ the app"
 
 - [ ] R-251 툴바가 사라지고 나타나는 페이드가 눈에 어떻게 보이는지
 - [ ] R-232 실기기에서 두 손가락의 감각
+- [ ] R-246 한 굴림이 끝났다고 보는 200ms가 마우스 휠에도 트랙패드에도 맞는지
 - [ ] R-244 창이 포커스를 잃어 `pointerup`이 오지 않는 경우 — 재현이 불안정하다
 
 **확인 완료**

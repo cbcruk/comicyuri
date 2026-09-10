@@ -30,6 +30,17 @@ export const OpenState = defineTaggedUnion({
 /** {@linkcode OpenState} 유니온의 디코딩된 값. */
 export type OpenState = typeof OpenState.Type
 
+/**
+ * 페이지에 들어선 쪽. 앞으로 넘기면 페이지의 처음이고, 뒤로 넘기면 끝이다.
+ *
+ * 화면에 통째로 들어가는 페이지에는 처음도 끝도 없다 — 그런 페이지는 어느 쪽에서
+ * 들어서든 가운데에 놓인다.
+ */
+export const PageEntry = Schema.Literals(['start', 'end'])
+
+/** {@linkcode PageEntry} 스키마의 디코딩된 값. */
+export type PageEntry = typeof PageEntry.Type
+
 /** 화면에 걸린 이미지 하나. */
 export const Panel = Schema.Struct({
   page: Schema.Number,
@@ -122,6 +133,13 @@ export const Model = Schema.Struct({
   zoom: Schema.Number,
   pan: Point,
   gesture: Gesture,
+  /**
+   * 이 페이지에 어느 쪽에서 들어섰는지. 뒤로 넘겨 온 페이지는 화면보다 길면
+   * 끝에서 시작한다 — 되돌아 읽는 움직임과 맞는다.
+   */
+  entry: PageEntry,
+  /** 마지막 휠 이벤트의 시각. 다음 이벤트가 새 굴림인지 알아보는 데 쓴다. */
+  lastScrollAt: Schema.Number,
 
   /** 툴바는 읽는 동안 스스로 숨고, 무슨 일이든 있으면 돌아온다. */
   isChromeVisible: Schema.Boolean,
@@ -186,6 +204,8 @@ export const init = (config: InitConfig): Model => ({
   zoom: ZOOM_MIN,
   pan: ORIGIN,
   gesture: Gesture.Idle(),
+  entry: 'start',
+  lastScrollAt: 0,
   isChromeVisible: true,
   isPointerOverChrome: false,
   activityToken: 0,

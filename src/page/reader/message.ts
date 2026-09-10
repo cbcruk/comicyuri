@@ -6,6 +6,7 @@ import { Slider, VirtualList } from '@foldkit/ui'
 import { AtBookEnd, PageMark, Settings } from '../../types.ts'
 import { Point } from './gesture.ts'
 import { Panel } from './model.ts'
+import { Room } from './scroll.ts'
 
 /**
  * 리더 안에서 일어날 수 있는 모든 일.
@@ -49,7 +50,11 @@ export const Message = defineMessageUnion({
   CancelledPointer: { pointerId: Schema.Number },
   AbandonedPointer: {},
   ScrolledToZoom: { delta: Schema.Number, at: Point },
-  ScrolledToPan: { delta: Point },
+  /**
+   * 휠이나 트랙패드로 굴렸다. 그때 페이지가 어느 쪽으로 얼마나 더 갈 수 있었는지를
+   * 함께 지고 온다 — 그 거리는 CSS가 정하므로 재는 자리는 브라우저뿐이다.
+   */
+  ScrolledStage: { delta: Point, room: Room, timeStamp: Schema.Number },
 
   ClickedZoomIn: {},
   ClickedZoomOut: {},

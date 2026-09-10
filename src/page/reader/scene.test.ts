@@ -57,6 +57,8 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   zoom: ZOOM_MIN,
   pan: ORIGIN,
   gesture: Gesture.Idle(),
+  entry: 'start',
+  lastScrollAt: 0,
   isChromeVisible: true,
   isPointerOverChrome: false,
   activityToken: 0,
@@ -141,6 +143,22 @@ describe('the stage', () => {
       program,
       given(readingModel()),
       expect(within(selector('#reader-stage'), selector('.h-full'))).toHaveClass('w-full'),
+    )
+  })
+
+  test('a page taller than the screen hangs off the end it was entered from', () => {
+    // 교차축의 시작을 뒤집는 것이 곧 넘치는 페이지가 붙는 자리를 뒤집는 것이다.
+    scene(
+      program,
+      given(readingModel()),
+      expect(selector('#reader-page')).toHaveClass('items-center-safe'),
+      expect(selector('#reader-page')).not.toHaveClass('flex-wrap-reverse'),
+    )
+
+    scene(
+      program,
+      given({ ...readingModel(), entry: 'end' as const }),
+      expect(selector('#reader-page')).toHaveClass('flex-wrap-reverse'),
     )
   })
 })

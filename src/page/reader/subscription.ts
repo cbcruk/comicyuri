@@ -3,12 +3,13 @@ import { Subscription } from 'foldkit'
 
 import { Slider, VirtualList } from '@foldkit/ui'
 
-import { STAGE_ID } from './constant.ts'
-import { ZOOM_MIN } from './gesture.ts'
+import { PAGE_ID, STAGE_ID } from './constant.ts'
 import { handlesKeysItself, isReaderKey } from './keys.ts'
 import type { Point } from './gesture.ts'
 import { Message } from './message.ts'
 import { Model } from './model.ts'
+import { NO_ROOM } from './scroll.ts'
+import type { Room } from './scroll.ts'
 
 /** 아무 일도 없을 때 툴바가 숨기까지 기다리는 시간. */
 const CHROME_IDLE = Duration.seconds(3)
@@ -25,6 +26,50 @@ const centreRelative = (event: PointerEvent): Point => ({
 /** 누름은 툴바가 아니라 페이지 위에 떨어졌을 때만 친다. */
 const isOnStage = (event: Event): boolean =>
   event.target instanceof Element && event.target.closest(`#${STAGE_ID}`) !== null
+
+/**
+ * 지금 걸려 있는 페이지가 화면 밖으로 나가 있는 몫. 굴림이 어디까지 갈 수 있는지가
+ * 곧 이 값이다.
+ *
+ * 재는 것은 페이지를 담은 상자가 아니라 그 안에 놓인 것들이다. 상자는 스테이지만
+ * 하게 잡혀 있고 (맞춤 모드가 퍼센트로 풀리려면 그래야 한다) 화면보다 큰 페이지는
+ * 그 상자 밖으로 넘쳐 나가므로, 상자를 재면 언제나 갈 곳이 없다고 나온다.
+ *
+ * `getBoundingClientRect`는 transform까지 적용된 자리를 주므로, 확대와 이동이
+ * 걸린 값이 그대로 나온다.
+ */
+const roomOnStage = (): Room => {
+  const stage = document.getElementById(STAGE_ID)
+  const page = document.getElementById(PAGE_ID)
+  if (stage === null || page === null) return NO_ROOM
+
+  const boxes = Array.from(page.children, (child) => child.getBoundingClientRect())
+  if (boxes.length === 0) return NO_ROOM
+
+  // 페이지가 갈 수 있는 자리는 스테이지의 상자가 아니라 그 안쪽, 여백을 뺀
+  // 자리다. 상자를 쓰면 다 굴린 페이지가 여백을 8px 덮고 선다. 담는 상자는
+  // 스테이지를 꽉 채우고 스테이지가 `relative`이므로, 그 offset 상자가 곧
+  // 여백을 뺀 자리다 — 그리고 transform이 걸리지 않는 값이라 굴리는 동안에도
+  // 움직이지 않는다.
+  const stageBox = stage.getBoundingClientRect()
+  const top = stageBox.top + page.offsetTop
+  const left = stageBox.left + page.offsetLeft
+  const view = {
+    top,
+    left,
+    bottom: top + page.offsetHeight,
+    right: left + page.offsetWidth,
+  }
+
+  const room = (edge: number): number => Math.max(0, edge)
+
+  return {
+    up: room(view.top - Math.min(...boxes.map((box) => box.top))),
+    down: room(Math.max(...boxes.map((box) => box.bottom)) - view.bottom),
+    left: room(view.left - Math.min(...boxes.map((box) => box.left))),
+    right: room(Math.max(...boxes.map((box) => box.right)) - view.right),
+  }
+}
 
 /** thumb을 잡은 뒤의 드래그는 슬라이더가 스스로 따라간다. */
 const sliderSubscriptions = Subscription.lift({
@@ -193,10 +238,10 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
 
   // 트랙패드 핀치와 마우스 줌은 둘 다 Ctrl+휠로 도착한다.
   wheel: entry(
-    { isZoomed: Schema.Boolean },
+    {},
     {
-      modelToDependencies: (model) => ({ isZoomed: model.zoom > ZOOM_MIN }),
-      dependenciesToStream: ({ isZoomed }) =>
+      modelToDependencies: () => ({}),
+      dependenciesToStream: () =>
         Subscription.fromEventFilterMap<WheelEvent, Message>({
           target: document,
           type: 'wheel',
@@ -204,27 +249,25 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
           toMessage: (event) => {
             if (!isOnStage(event)) return Option.none()
 
-            // 확대된 페이지는 화면보다 크므로 그냥 스크롤하면 페이지가 움직인다.
-            // 확대되지 않았다면 움직일 것이 없고, 여느 페이지처럼 스크롤되면
-            // 된다.
-            if (!event.ctrlKey) {
-              if (!isZoomed) return Option.none()
-              event.preventDefault()
+            event.preventDefault()
+
+            if (event.ctrlKey) {
               return Option.some(
-                Message.ScrolledToPan({
-                  delta: { x: event.deltaX, y: event.deltaY },
+                Message.ScrolledToZoom({
+                  delta: event.deltaY,
+                  at: {
+                    x: event.clientX - window.innerWidth / 2,
+                    y: event.clientY - window.innerHeight / 2,
+                  },
                 }),
               )
             }
 
-            event.preventDefault()
             return Option.some(
-              Message.ScrolledToZoom({
-                delta: event.deltaY,
-                at: {
-                  x: event.clientX - window.innerWidth / 2,
-                  y: event.clientY - window.innerHeight / 2,
-                },
+              Message.ScrolledStage({
+                delta: { x: event.deltaX, y: event.deltaY },
+                room: roomOnStage(),
+                timeStamp: event.timeStamp,
               }),
             )
           },

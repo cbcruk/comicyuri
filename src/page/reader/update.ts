@@ -29,7 +29,9 @@ import { Slider, VirtualList } from '@foldkit/ui'
 import { messageForKey } from './keys.ts'
 import { Message, OutMessage } from './message.ts'
 import { Gesture, Model, OpenState, SpreadState } from './model.ts'
+import type { PageEntry } from './model.ts'
 import type { OpenBookService } from './resource.ts'
+import { isNewFlick, pannedBy, turnFromEdge } from './scroll.ts'
 import { loadedPages, missingFrom, pagesInView, shownPages } from './thumbs.ts'
 import {
   flipBinding,
@@ -99,9 +101,15 @@ const showPage = (model: Model, page: number): UpdateReturn =>
  * 잰 값이라 그대로 가져가면 다음 페이지의 엉뚱한 곳에 앉는다 — 이것이 이 뷰어가
  * 대신한 예전 뷰어가 넘길 때와 건너뛸 때마다 초기화한 이유다. 설정을 바꾼 뒤 같은
  * 페이지를 다시 보여 줄 때는 배율을 지킨다.
+ *
+ * 뒤로 넘겨 온 페이지는 끝에서 시작한다. 슬라이더나 격자로 건너뛴 것은 넘긴 것이
+ * 아니므로 언제나 처음이다.
  */
-const goToPage = (model: Model, page: number): UpdateReturn =>
-  showPage(evo(model, { zoom: () => ZOOM_MIN, pan: () => ORIGIN }), page)
+const goToPage = (model: Model, page: number, entry: PageEntry = 'start'): UpdateReturn =>
+  showPage(evo(model, { zoom: () => ZOOM_MIN, pan: () => ORIGIN, entry: () => entry }), page)
+
+/** 이 걸음이 페이지의 어느 쪽으로 들어서는지. 뒤로 가는 걸음만 끝에서 시작한다. */
+const entryFor = (by: number): PageEntry => (by < 0 ? 'end' : 'start')
 
 /**
  * 책의 끝을 넘어서 넘기려 할 때. 원본 뷰어에서 다음 권을 여는 동작이 바로 이
@@ -121,7 +129,7 @@ const beyondBookEnd = (
     Match.when('wrap', (): UpdateReturn =>
       Option.match(pageAtEdge(spreads, by), {
         onNone: () => ({ model }),
-        onSome: (page) => goToPage(model, page),
+        onSome: (page) => goToPage(model, page, entryFor(by)),
       }),
     ),
     Match.when('next', (): UpdateReturn => ({
@@ -140,7 +148,7 @@ const step = (model: Model, by: number): UpdateReturn =>
 
       return Option.match(pageAfterStep(spreads, model.page, by), {
         onNone: () => beyondBookEnd(model, spreads, by),
-        onSome: (page) => goToPage(model, page),
+        onSome: (page) => goToPage(model, page, entryFor(by)),
       })
     },
   })
@@ -709,12 +717,28 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       model: zoomedTo(model, model.zoom * Math.exp(-delta / 300), at),
     }),
 
-    // 휠이나 트랙패드로 옮기기. 확대된 동안에만 필요한 일이다.
-    ScrolledToPan: ({ delta }) => ({
-      model: evo(withPress(model), {
-        pan: (pan) => ({ x: pan.x - delta.x, y: pan.y - delta.y }),
-      }),
-    }),
+    /**
+     * 휠이나 트랙패드로 굴렸다. 페이지가 아직 갈 곳이 있으면 그만큼 움직이고,
+     * 끝에 닿아 있으면 페이지를 넘긴다 — 화면에 통째로 들어가는 페이지는 처음부터
+     * 끝에 닿아 있으므로 한 번 굴리는 것이 곧 한 장 넘기는 것이다.
+     */
+    ScrolledStage: ({ delta, room, timeStamp }) => {
+      const scrolled = evo(withPress(model), { lastScrollAt: () => timeStamp })
+      const pan = pannedBy(model.pan, delta, room)
+
+      if (pan.x !== model.pan.x || pan.y !== model.pan.y) {
+        return { model: evo(scrolled, { pan: () => pan }) }
+      }
+
+      // 끝에 닿기까지 굴린 그 이벤트로는 넘어가지 않는다. 관성으로 이어지는
+      // 이벤트도 마찬가지다.
+      if (!isNewFlick(timeStamp, model.lastScrollAt)) return { model: scrolled }
+
+      return Option.match(turnFromEdge(delta, room), {
+        onNone: () => ({ model: scrolled }),
+        onSome: (by) => step(scrolled, by),
+      })
+    },
 
     ClickedZoomIn: () => ({
       model: zoomedTo(model, model.zoom * 1.25, ORIGIN),

@@ -1,6 +1,12 @@
 /** 포인터가 이 위에 있어야 그 제스처를 읽기로 친다. */
 export const STAGE_ID = 'reader-stage'
 
+/**
+ * 지금 걸린 페이지를 담은 상자. 확대와 이동이 걸리는 자리이자, 굴림이 어디까지 갈
+ * 수 있는지 재는 자리다.
+ */
+export const PAGE_ID = 'reader-page'
+
 /** 페이지 슬라이더. 부모가 드래그 구독을 lift 할 때 이 id로 부른다. */
 export const SLIDER_ID = 'reader-page-slider'
 

@@ -8,6 +8,7 @@ import clsx from 'clsx'
 import type { AtBookEnd, FitMode, Settings } from '../../types.ts'
 import {
   COVER_ALONE_ID,
+  PAGE_ID,
   REMEMBER_ID,
   STAGE_ID,
   THRESHOLD_MAX,
@@ -19,6 +20,7 @@ import { ZOOM_MIN } from './gesture.ts'
 import type { Point } from './gesture.ts'
 import { Message } from './message.ts'
 import { Model, OpenState, SpreadState } from './model.ts'
+import type { PageEntry } from './model.ts'
 import type { TapFlash } from './model.ts'
 import type { Panel } from './model.ts'
 import { indexOfPage, spreadsFor } from './spread.ts'
@@ -240,6 +242,7 @@ const stageView = (
   settings: Settings,
   zoom: number,
   pan: Point,
+  entry: PageEntry,
   maybeTapFlash: Option.Option<TapFlash>,
   h: HtmlBuilder<Message>,
 ): Html =>
@@ -253,16 +256,27 @@ const stageView = (
     [
       h.div(
         [
+          h.Id(PAGE_ID),
           h.Class(
             // 맞춤 모드는 페이지에 `h-full`·`w-full`·`max-h-full`을 건다. 퍼센트
             // 크기는 담는 상자가 크기를 정해 두어야 풀리는데, 이 상자는 스테이지의
             // flex 자식이라 내버려 두면 내용만큼만 커진다. 그러면 페이지가 자기
             // 크기를 기준으로 자기를 재는 꼴이라 어떤 맞춤 모드도 듣지 않는다.
-            clsx('flex h-full w-full items-center justify-center gap-1', {
+            //
+            // 세로로 세우는 것은 `items-center-safe`다. 화면에 들어가는 페이지는
+            // 가운데에 놓고, 넘치는 페이지는 잘리는 쪽 대신 시작하는 쪽에 붙인다.
+            // 그냥 `items-center`면 긴 페이지가 위아래로 똑같이 잘려서 첫 줄부터
+            // 볼 수 없다.
+            //
+            // 뒤로 넘겨 온 페이지는 끝에서 시작한다(`R-247`). `flex-wrap-reverse`가
+            // 교차축의 시작을 아래로 뒤집으므로, 넘치는 쪽에 붙는 자리도 함께
+            // 뒤집힌다 — 화면에 들어가는 페이지는 그대로 가운데다.
+            clsx('flex h-full w-full items-center-safe justify-center gap-1', {
               'flex-row-reverse': settings.direction === 'rtl',
+              'flex-wrap-reverse': entry === 'end',
               // 확대를 풀고 제자리로 돌아가는 것은 애니메이션할 값이 있지만,
-              // 끌고 있는 중은 아니다.
-              'transition-transform': zoom === ZOOM_MIN,
+              // 끌고 있는 중도, 굴려서 페이지를 움직이는 중도 아니다.
+              'transition-transform': zoom === ZOOM_MIN && pan.x === 0 && pan.y === 0,
             }),
           ),
           h.Style({
@@ -654,7 +668,15 @@ export const view = defineView<Model, Message>((model, h): Html =>
             model.isChromeVisible,
             h,
           ),
-          stageView(model.spread, model.settings, model.zoom, model.pan, model.maybeTapFlash, h),
+          stageView(
+            model.spread,
+            model.settings,
+            model.zoom,
+            model.pan,
+            model.entry,
+            model.maybeTapFlash,
+            h,
+          ),
           turnView(model, model.isChromeVisible, h),
           model.isThumbsOpen ? thumbsView(model, pageCount, h) : h.empty,
           model.isSettingsOpen ? settingsView(model.settings, h) : h.empty,
