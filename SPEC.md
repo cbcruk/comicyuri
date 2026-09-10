@@ -479,8 +479,29 @@ reader/story "picking a thumbnail jumps there and closes the grid"
 **R-283 · 북마크는 읽던 위치와 같이 저장된다**
 ✅ reader/story "bookmarking a page reports the new set, and unbookmarking removes it"
 
-⚠️ 북마크 목록을 보거나 사이를 이동하는 UI가 없다. 썸네일 그리드에서 테두리로만
-보인다.
+**R-284 · 그리드를 북마크만으로 좁힌 것이 북마크 목록이다**
+그리드 머리의 "Bookmarks" 버튼이 늘어놓을 페이지를 북마크된 것으로 바꾼다. 목록을
+따로 만들지 않고 이미 있는 격자를 좁힌다 — 썸네일도 창(window) 처리도 그대로 쓴다.
+아무것도 북마크하지 않은 책은 빈 격자 대신 그렇다고 말한다.
+✅ thumbs "filtered to bookmarks, only those pages", "a filtered grid windows over the
+bookmarks, not over the page numbers",
+reader/scene "the grid can be narrowed to what is bookmarked", "a book with nothing
+bookmarked says so instead of showing an empty grid",
+e2e "R-284 · 그리드를 북마크만으로 좁힌다"
+
+**R-285 · `[`/`]`가 앞뒤 북마크로 건너뛴다**
+`]`는 지금 페이지 뒤의 첫 북마크로, `[`는 앞의 마지막 북마크로 간다. 읽는 방향과
+무관하다 — 여기서 "다음"은 언제나 책의 뒤쪽이다. 그쪽에 북마크가 더 없으면 제자리에
+머문다. 책의 끝(`R-212`)과 달리 감아 돌지 않는다 — 감아 돌면 어디까지 봤는지 알 수
+없게 된다.
+✅ bookmark "a step forward lands on the first bookmark after this page", "standing on a
+bookmark steps past it rather than staying", "past the last bookmark there is nowhere
+forward to go",
+reader/story "the bracket keys step from one bookmark to the next and back", "with no
+bookmark left that way the page stays where it is",
+e2e "R-285 · `[`/`]`가 앞뒤 북마크로 건너뛴다"
+
+⚠️ 목록에서 북마크를 지울 수는 없다. 지우려면 그 페이지로 가서 ★를 끈다.
 
 ### 2.10 전체화면
 
@@ -545,6 +566,7 @@ e2e "R-2B3 · 책마다 기억하기를 켜면 방향이 그 책에만 남는다
 ✅ reader/story "in right-to-left reading the left key advances",
 "in left-to-right reading the same key goes back"
 📌 슬라이더에 포커스가 있을 때는 R-265에 따라 리더가 물러난다.
+📌 `[`/`]`는 앞뒤 북마크로 건너뛴다 (R-285).
 
 **R-2A2 · 토글**
 `d` 방향 · `v` 한/두 장 · `s` 묶기 뒤집기 · `t` 썸네일 · `,` 설정 · `b` 북마크 ·
@@ -670,7 +692,6 @@ the app"
 | ID    | 내용                                                                                                                                            |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | L-601 | 썸네일 그리드가 반응형이 아니다 (한 행 4개, 180px 고정)                                                                                         |
-| L-603 | 북마크 목록·이동 UI가 없다                                                                                                                      |
 | L-604 | 삭제에 확인 절차가 없다                                                                                                                         |
 | L-605 | `Shift`+`Space`가 없다                                                                                                                          |
 | L-606 | 부팅 시 라이트 테마 사용자에게 어두운 첫 프레임이 보일 수 있다                                                                                  |

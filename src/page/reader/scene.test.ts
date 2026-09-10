@@ -66,6 +66,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   isFullscreen: false,
   isSettingsOpen: false,
   isThumbsOpen: false,
+  showsBookmarksOnly: false,
   thumbs: VirtualList.init({ id: THUMBS_ID, rowHeightPx: THUMB_ROW_HEIGHT }),
   thumbPanels: [],
 })
@@ -206,6 +207,39 @@ describe('layout controls', () => {
       program,
       given(readingModel(0, { ...defaultSettings, view: 'spread' })),
       expect(flip).toExist(),
+    )
+  })
+})
+
+describe('the bookmark list', () => {
+  const bookmarksOnly = (model: Model): Model => ({ ...model, showsBookmarksOnly: true })
+
+  test('the grid can be narrowed to what is bookmarked', () => {
+    scene(
+      program,
+      given(measuredThumbs({ ...readingModel(), bookmarks: [1, 3] })),
+      expect(role('button', { name: 'Go to page 2' })).toExist(),
+      expect(role('button', { name: 'Go to page 5' })).toExist(),
+      click(role('button', { name: 'Show bookmarks only' })),
+      Command.resolve(
+        LoadThumbs,
+        Message.CompletedLoadThumbs({
+          panels: [
+            { page: 1, url: 'blob:t1' },
+            { page: 3, url: 'blob:t3' },
+          ],
+        }),
+      ),
+      expect(role('button', { name: 'Go to page 2' })).toExist(),
+      expect(role('button', { name: 'Go to page 5' })).not.toExist(),
+    )
+  })
+
+  test('a book with nothing bookmarked says so instead of showing an empty grid', () => {
+    scene(
+      program,
+      given(bookmarksOnly(measuredThumbs(readingModel()))),
+      expect(text('Nothing is bookmarked in this book yet')).toExist(),
     )
   })
 })

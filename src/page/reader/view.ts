@@ -23,7 +23,7 @@ import type { TapFlash } from './model.ts'
 import type { Panel } from './model.ts'
 import { indexOfPage, spreadsFor } from './spread.ts'
 import { sliderPage } from './update.ts'
-import { rowsFor, urlFor } from './thumbs.ts'
+import { rowsFor, shownPages, urlFor } from './thumbs.ts'
 
 const FIT_LABEL: Record<FitMode, string> = {
   contain: 'Fit',
@@ -539,27 +539,50 @@ const settingsView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
  * 모든 페이지를 한눈에. 리스트가 창을 내주므로 500페이지짜리 책이 격자 하나
  * 그리자고 이미지 500장을 뽑는 일은 없다.
  */
-const thumbsView = (model: Model, pageCount: number, h: HtmlBuilder<Message>): Html =>
-  h.div(
+const thumbsView = (model: Model, pageCount: number, h: HtmlBuilder<Message>): Html => {
+  const pages = shownPages(pageCount, model.bookmarks, model.showsBookmarksOnly)
+
+  return h.div(
     [
       h.Class('absolute inset-0 z-10 flex flex-col bg-bg/95 backdrop-blur-sm'),
       h.Role('dialog'),
-      h.AriaLabel('Every page'),
+      h.AriaLabel(model.showsBookmarksOnly ? 'Bookmarks' : 'Every page'),
     ],
     [
       h.div(
         [h.Class('flex items-center gap-2 border-b border-edge px-4 py-2')],
         [
-          h.span([h.Class('mr-auto text-sm text-muted')], ['Every page']),
+          h.span(
+            [h.Class('mr-auto text-sm text-muted')],
+            [model.showsBookmarksOnly ? 'Bookmarks' : 'Every page'],
+          ),
+          controlView(
+            {
+              label: model.showsBookmarksOnly ? 'Every page' : 'Bookmarks',
+              message: Message.ClickedToggleBookmarksOnly(),
+              // 툴바의 "Show every page"와 이름이 겹치지 않아야 한다. 격자가
+              // 열려 있는 동안에는 둘 다 화면에 있다.
+              attributes: [
+                h.AriaLabel(model.showsBookmarksOnly ? 'Show all pages' : 'Show bookmarks only'),
+              ],
+            },
+            h,
+          ),
           controlView({ label: 'Close', message: Message.ClickedToggleThumbs() }, h),
         ],
       ),
+      model.showsBookmarksOnly && pages.length === 0
+        ? h.p(
+            [h.Class('flex-1 p-6 text-center text-sm text-muted')],
+            ['Nothing is bookmarked in this book yet'],
+          )
+        : h.empty,
       h.submodel({
         slotId: model.thumbs.id,
         model: model.thumbs,
         view: VirtualList.view<ReadonlyArray<number>>(),
         viewInputs: {
-          items: rowsFor(pageCount),
+          items: rowsFor(pages),
           itemToKey: (_row, index) => String(index),
           containerClassName: 'flex-1 overflow-y-auto p-4',
           itemToView: (row) =>
@@ -572,6 +595,7 @@ const thumbsView = (model: Model, pageCount: number, h: HtmlBuilder<Message>): H
       }),
     ],
   )
+}
 
 const turnView = (model: Model, isVisible: boolean, h: HtmlBuilder<Message>): Html =>
   h.footer(
