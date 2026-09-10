@@ -52,6 +52,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   page,
   bookmarks: [],
   marks: [],
+  rotation: 0,
   settings,
   globalSettings: settings,
   zoom: ZOOM_MIN,
@@ -142,6 +143,20 @@ describe('the stage', () => {
       program,
       given(readingModel()),
       expect(within(selector('#reader-stage'), selector('.h-full'))).toHaveClass('w-full'),
+    )
+  })
+
+  test('turning the page upright lays the box it sits in on its side', () => {
+    // 세운 페이지에 맞춤 모드가 화면 크기대로 걸리려면 담는 상자의 가로세로가
+    // 함께 바뀌어야 한다.
+    scene(
+      program,
+      given(readingModel()),
+      expect(selector('#reader-page')).toHaveClass('h-full'),
+      click(role('button', { name: 'Turn the page a quarter clockwise' })),
+      ...settleTurn(0),
+      expect(selector('#reader-page')).toHaveClass('h-[100cqw]'),
+      expect(selector('#reader-page')).toHaveClass('w-[100cqh]'),
     )
   })
 
@@ -366,6 +381,7 @@ describe('page slider', () => {
           page: 1,
           bookmarks: [],
           marks: [],
+          rotation: 0,
         }),
       ),
       ...settleTurn(1),
@@ -386,6 +402,7 @@ describe('page slider', () => {
           page: 1,
           bookmarks: [],
           marks: [],
+          rotation: 0,
         }),
       ),
       ...settleTurn(1),
@@ -458,6 +475,7 @@ describe('page slider', () => {
           page: 1,
           bookmarks: [],
           marks: [],
+          rotation: 0,
         }),
       ),
       ...settleTurn(1),
@@ -481,6 +499,7 @@ describe('bookmarks', () => {
           page: 0,
           bookmarks: [0],
           marks: [],
+          rotation: 0,
         }),
       ),
       expect(role('button', { name: 'Remove bookmark from this page' })).toHaveAttr(

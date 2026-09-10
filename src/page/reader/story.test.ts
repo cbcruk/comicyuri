@@ -43,6 +43,7 @@ const openingModel = (settings = defaultSettings): Model =>
     page: 0,
     bookmarks: [],
     marks: [],
+    rotation: 0,
     maybeBookSettings: Option.none(),
     settings,
   })
@@ -89,6 +90,7 @@ describe('opening', () => {
           page: 0,
           bookmarks: [],
           marks: [],
+          rotation: 0,
         }),
       ),
       model((model) => {
@@ -141,6 +143,7 @@ describe('turning pages', () => {
           page: 1,
           bookmarks: [],
           marks: [],
+          rotation: 0,
         }),
       ),
       model((model) => {
@@ -393,6 +396,7 @@ describe('layout', () => {
           page: 1,
           bookmarks: [],
           marks: [{ page: 1, binding: 'alone' }],
+          rotation: 0,
         }),
       ),
       ...settle(1),
@@ -456,6 +460,7 @@ describe('layout', () => {
           page: 0,
           bookmarks: [],
           marks: [{ page: 1, binding: 'alone' }],
+          rotation: 0,
           maybeBookSettings: Option.none(),
           settings: { ...defaultSettings, view: 'spread' },
         }),
@@ -546,6 +551,7 @@ describe('layout', () => {
           page: 0,
           bookmarks: [],
           marks: [],
+          rotation: 0,
           maybeBookSettings: Option.some({
             direction: 'ltr',
             view: 'spread',
@@ -1229,6 +1235,7 @@ describe('bookmarks', () => {
           page: 0,
           bookmarks: [0],
           marks: [],
+          rotation: 0,
         }),
       ),
       model((model) => {
@@ -1285,6 +1292,65 @@ describe('bookmarks', () => {
       expectNoOutMessage(),
       model((model) => {
         expect(model.page).toBe(0)
+      }),
+    )
+  })
+})
+
+describe('turning the page upright', () => {
+  test('rotating reports the new angle with the position', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ClickedRotate()),
+      expectOutMessage(
+        OutMessage.UpdatedProgress({
+          bookId: 'volume-1::42',
+          page: 0,
+          bookmarks: [],
+          marks: [],
+          rotation: 90,
+        }),
+      ),
+      model((model) => {
+        expect(model.rotation).toBe(90)
+      }),
+      ...settle(0),
+    )
+  })
+
+  test('rotating leaves the page and the zoom where they were', () => {
+    story(
+      update,
+      given({ ...openingModel(), page: 2, zoom: 3 }),
+      ...opened(2),
+      message(Message.ClickedRotate()),
+      model((model) => {
+        expect(model.page).toBe(2)
+        expect(model.zoom).toBe(3)
+      }),
+      ...settle(2),
+    )
+  })
+
+  test('a book opens at the angle it was left at', () => {
+    story(
+      update,
+      given(
+        init({
+          bookId: 'volume-1::42',
+          page: 0,
+          bookmarks: [],
+          marks: [],
+          rotation: 270,
+          maybeBookSettings: Option.none(),
+          settings: defaultSettings,
+        }),
+      ),
+      ...opened(0),
+      model((model) => {
+        expect(model.rotation).toBe(270)
       }),
     )
   })

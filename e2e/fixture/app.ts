@@ -118,6 +118,7 @@ export const control = {
   direction: (page: Page) => page.getByRole('button', { name: 'Toggle reading direction' }),
   view: (page: Page) => page.getByRole('button', { name: 'Toggle one or two pages' }),
   binding: (page: Page) => page.getByRole('button', { name: 'Flip how this spread is paired' }),
+  rotate: (page: Page) => page.getByRole('button', { name: 'Turn the page a quarter clockwise' }),
   settings: (page: Page) => page.getByRole('button', { name: 'Reading settings' }),
   fit: (page: Page) => page.getByRole('button', { name: 'Change how pages are fitted' }),
   zoomOut: (page: Page) => page.getByRole('button', { name: 'Zoom out' }),

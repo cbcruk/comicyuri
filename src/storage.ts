@@ -19,6 +19,7 @@ const emptyProgress: BookProgress = {
   page: 0,
   bookmarks: [],
   marks: [],
+  rotation: 0,
   settings: null,
   updatedAt: 0,
 }

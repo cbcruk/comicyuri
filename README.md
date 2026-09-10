@@ -13,6 +13,8 @@ Everything runs client-side — your files never leave the browser.
 - **One or two pages** — single-page or two-page spread, with an optional
   standalone cover so spreads line up like a printed book.
 - **Fit modes** — fit to screen, fit width, fit height, or original size.
+- **Rotation** — turn a sideways scan upright; the angle is remembered per book
+  and fit modes follow it.
 - **Zoom & pan** — pinch, `Ctrl`+wheel, the toolbar buttons, or double-tap;
   drag to pan when zoomed in.
 - **Navigation** — tap zones (left / centre / right), swipe, keyboard, the wheel,
@@ -36,6 +38,7 @@ Everything runs client-side — your files never leave the browser.
 | `v`                              | Toggle one / two pages                         |
 | `t`                              | Thumbnail grid                                 |
 | `b`                              | Bookmark current page                          |
+| `r`                              | Turn the page a quarter clockwise              |
 | `[` / `]`                        | Previous / next bookmark                       |
 | `f`                              | Fullscreen                                     |
 | `+` / `-`                        | Zoom in / out                                  |

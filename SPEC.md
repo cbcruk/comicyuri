@@ -280,6 +280,29 @@ reader/scene "the binding control is only there when there is a binding to flip"
 e2e "R-227 · 자동 묶기를 손으로 뒤집고, 그것이 새로고침을 넘긴다", "R-227 · 넓다고
 갈라 놓은 페이지를 손으로 다시 묶는다", "R-227 · 한 장 모드에는 뒤집을 묶기가 없다"
 
+**R-228 · `⟳` 버튼과 `r` 키가 페이지를 시계 방향으로 세운다**
+한 번에 90도씩, 네 번이면 제자리다. 눕혀 스캔된 책을 바로 세우는 자리다.
+
+세운 페이지에도 맞춤 모드가 화면 크기대로 걸린다. 페이지를 담은 상자가 함께 눕기
+때문이다 — 90도나 270도로 돌린 상자는 화면의 높이만큼 넓고 화면의 너비만큼 높다
+(`100cqh`·`100cqw`). 상자를 그대로 둔 채 돌리기만 하면 세운 페이지가 화면의 절반도
+쓰지 못한다.
+
+각도는 읽는 사람의 습관이 아니라 그 책이 어떻게 스캔되었는지를 적는 것이다. 그래서
+설정이 아니라 묶기 교정과 같이 책마다 저장된다(`P-302`). 기억하기 스위치(`R-2B3`)와
+무관하게 언제나 남는다.
+✅ rotation "four turns come back around", "a quarter turn swaps the sides of the box, a
+half turn does not",
+reader/story "rotating reports the new angle with the position", "rotating leaves the
+page and the zoom where they were", "a book opens at the angle it was left at",
+reader/scene "turning the page upright lays the box it sits in on its side",
+e2e "R-228 · 세운 페이지는 눕힌 상자에 맞춰진다", "R-228 · 네 번 세우면 제자리로
+돌아온다", "R-228 · 세워 둔 각도는 그 책에 남는다"
+
+⚠️ 썸네일 격자는 세워지지 않는다. 눕혀 스캔된 책은 격자에서 계속 누워 있다.
+⚠️ 세운 채로 너비 맞춤을 하면 넘치는 방향이 화면의 가로가 된다. 굴려서 읽는
+것(`R-240`)은 화면의 세로를 따라가므로, 그 자리에서는 휠이 페이지를 넘긴다.
+
 ### 2.4 줌과 팬
 
 **R-231 · 줌 범위는 1배에서 6배**
@@ -618,8 +641,8 @@ e2e "R-2B3 · 책마다 기억하기를 켜면 방향이 그 책에만 남는다
 📌 `[`/`]`는 앞뒤 북마크로 건너뛴다 (R-285).
 
 **R-2A2 · 토글**
-`d` 방향 · `v` 한/두 장 · `s` 묶기 뒤집기 · `t` 썸네일 · `,` 설정 · `b` 북마크 ·
-`f` 전체화면 · `+`/`-` 줌.
+`d` 방향 · `v` 한/두 장 · `s` 묶기 뒤집기 · `r` 세우기 · `t` 썸네일 · `,` 설정 ·
+`b` 북마크 · `f` 전체화면 · `+`/`-` 줌.
 📖
 
 **R-2A3 · Escape는 한 겹씩 벗긴다**
@@ -646,13 +669,13 @@ subscription "a key held with a modifier belongs to the browser",
 원본 바이트 그대로. 새로고침해도 책장이 그대로다.
 ✅ e2e "P-301 · 책은 새로고침을 넘겨 책장에 남는다"
 
-**P-302 · 책마다 남는 것은 읽던 위치·북마크·묶기 교정, 그리고 그 책의 설정이다**
+**P-302 · 책마다 남는 것은 읽던 위치·북마크·묶기 교정·세운 각도, 그리고 그 책의 설정이다**
 키는 `comicyuri:progress:<book id>`. 나중에 붙은 항목들은 모두 디코딩 기본값을 지고
 있어서, 그것들이 생기기 전에 저장된 책도 읽던 자리와 북마크를 잃지 않는다.
 
 그 책의 설정은 `Option`이 아니라 `null`로 저장한다. `Schema.Option`이 인코딩하는
 모양은 JSON을 거쳐 그대로 디코딩되지 않는다.
-✅ storage "position, bookmarks and bindings survive the round trip", "settings of
+✅ storage "position, bookmarks, bindings and rotation survive the round trip", "settings of
 its own survive the round trip", "saving settings keeps the position and bookmarks
 already stored", "a record written before books could remember anything still reads",
 e2e "P-302 · 읽던 위치와 북마크가 남는다"

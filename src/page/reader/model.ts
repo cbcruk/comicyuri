@@ -4,7 +4,7 @@ import { defineTaggedUnion } from 'foldkit/schema'
 import { Slider, VirtualList } from '@foldkit/ui'
 
 import { Reading } from '../../domain/index.ts'
-import { PageMark, Settings } from '../../types.ts'
+import { PageMark, Rotation, Settings } from '../../types.ts'
 import type { BookSettings } from '../../types.ts'
 import { SLIDER_ID, THUMBS_ID, THUMB_ROW_HEIGHT } from './constant.ts'
 import { ORIGIN, Point, Side, ZOOM_MIN } from './gesture.ts'
@@ -118,6 +118,8 @@ export const Model = Schema.Struct({
   bookmarks: Schema.Array(Schema.Number),
   /** 자동 묶기가 틀렸을 때 사람이 고쳐 둔 것. 책마다 저장된다. */
   marks: Schema.Array(PageMark),
+  /** 이 책을 세워 둔 각도. 묶기 교정과 같이 책마다 저장된다. */
+  rotation: Rotation,
   /**
    * 지금 이 책에 걸려 있는 설정. 전역 기본값과 이 책의 것을 합친 결과다.
    */
@@ -178,6 +180,8 @@ export type InitConfig = Readonly<{
   bookmarks: ReadonlyArray<number>
   /** 이 책에 걸어 둔 묶기 교정. */
   marks: ReadonlyArray<PageMark>
+  /** 이 책을 세워 둔 각도. */
+  rotation: Rotation
   /** 이 책에만 걸린 설정. 기억하기가 꺼져 있으면 쓰이지 않는다. */
   maybeBookSettings: Option.Option<BookSettings>
   /** 전역 기본값. 리더가 고치고 위로 알린다. */
@@ -197,6 +201,7 @@ export const init = (config: InitConfig): Model => ({
   page: config.page,
   bookmarks: config.bookmarks,
   marks: config.marks,
+  rotation: config.rotation,
   settings: Reading.forBook(config.settings, config.maybeBookSettings),
   globalSettings: config.settings,
   zoom: ZOOM_MIN,

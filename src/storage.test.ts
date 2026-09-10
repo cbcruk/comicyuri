@@ -25,6 +25,7 @@ const progress: BookProgress = {
   page: 12,
   bookmarks: [3, 7],
   marks: [{ page: 4, binding: 'alone' }],
+  rotation: 90,
   settings: null,
   updatedAt: 0,
 }
@@ -59,13 +60,14 @@ describe('settings', () => {
 })
 
 describe('what a book remembers', () => {
-  test('position, bookmarks and bindings survive the round trip', () => {
+  test('position, bookmarks, bindings and rotation survive the round trip', () => {
     run(saveProgress('volume-1::42', progress))
     const read = run(loadProgress('volume-1::42'))
 
     expect(read.page).toBe(progress.page)
     expect(read.bookmarks).toStrictEqual(progress.bookmarks)
     expect(read.marks).toStrictEqual(progress.marks)
+    expect(read.rotation).toBe(progress.rotation)
   })
 
   test('a book nobody has opened reads as page zero with nothing of its own', () => {
@@ -74,6 +76,7 @@ describe('what a book remembers', () => {
     expect(read.page).toBe(0)
     expect(read.bookmarks).toStrictEqual([])
     expect(read.marks).toStrictEqual([])
+    expect(read.rotation).toBe(0)
     expect(read.settings).toBeNull()
   })
 
@@ -104,6 +107,7 @@ describe('what a book remembers', () => {
     expect(read.page).toBe(5)
     expect(read.bookmarks).toStrictEqual([1])
     expect(read.marks).toStrictEqual([])
+    expect(read.rotation).toBe(0)
     expect(read.settings).toBeNull()
   })
 

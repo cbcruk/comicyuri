@@ -31,6 +31,7 @@ import { Message, OutMessage } from './message.ts'
 import { Gesture, Model, OpenState, SpreadState } from './model.ts'
 import type { PageEntry } from './model.ts'
 import type { OpenBookService } from './resource.ts'
+import { rotatedRight } from './rotation.ts'
 import { pannedBy, turnFromEdge } from './scroll.ts'
 import { loadedPages, missingFrom, pagesInView, shownPages } from './thumbs.ts'
 import {
@@ -91,6 +92,7 @@ const showPage = (model: Model, page: number): UpdateReturn =>
           page,
           bookmarks: model.bookmarks,
           marks: model.marks,
+          rotation: model.rotation,
         }),
       }
     },
@@ -547,6 +549,14 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
 
     ClickedToggleBinding: () => flipBindingHere(model),
 
+    /**
+     * 페이지를 시계 방향으로 한 번 더 세운다. 자리는 그대로 두고 세우는 각도만
+     * 바꾸므로 `showPage`다 — 배율을 되돌릴 이유가 없고, 같은 길로 나가야 새 각도가
+     * 읽던 자리와 함께 저장된다.
+     */
+    ClickedRotate: () =>
+      showPage(evo(model, { rotation: (rotation) => rotatedRight(rotation) }), model.page),
+
     ClickedToggleSettings: () => ({
       model: evo(model, { isSettingsOpen: (open) => !open }),
     }),
@@ -594,6 +604,7 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
           page: model.page,
           bookmarks,
           marks: model.marks,
+          rotation: model.rotation,
         }),
       }
     },

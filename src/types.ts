@@ -143,7 +143,17 @@ export const PageMark = Schema.Struct({
 /** {@linkcode PageMark} 스키마의 디코딩된 값. */
 export type PageMark = typeof PageMark.Type
 
-/** 책마다 저장되는 상태. 읽던 자리와 북마크, 그리고 손으로 고친 묶기. */
+/**
+ * 페이지를 화면에 세우는 각도. 시계 방향이다.
+ *
+ * 눕혀 스캔된 책을 바로 세우는 데 쓴다. 읽는 사람의 습관이 아니라 그 책이 어떻게
+ * 스캔되었는지를 적는 것이므로, 설정이 아니라 묶기 교정과 같은 자리에 산다.
+ */
+export const Rotation = Schema.Literals([0, 90, 180, 270])
+/** {@linkcode Rotation} 스키마의 디코딩된 값. */
+export type Rotation = typeof Rotation.Type
+
+/** 책마다 저장되는 상태. 읽던 자리와 북마크, 손으로 고친 묶기, 세운 각도. */
 export const BookProgress = Schema.Struct({
   page: Schema.Number,
   bookmarks: Schema.Array(Schema.Number),
@@ -153,6 +163,8 @@ export const BookProgress = Schema.Struct({
    * 기본값으로 떨어지면, 읽던 자리와 북마크까지 함께 잃는다.
    */
   marks: Schema.Array(PageMark).pipe(Schema.withDecodingDefaultKey(Effect.succeed([]))),
+  /** 이 책을 세워 둔 각도. 같은 이유로 디코딩 기본값을 지고 있다. */
+  rotation: Rotation.pipe(Schema.withDecodingDefaultKey(Effect.succeed(0 as const))),
   /**
    * 이 책에만 걸린 설정. `rememberBookSettings`가 켜져 있는 동안 쓰인다.
    *
