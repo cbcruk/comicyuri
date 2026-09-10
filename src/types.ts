@@ -54,6 +54,7 @@ const DEFAULTS = {
   coverAlone: true,
   singleThreshold: 0.74,
   atBookEnd: 'next',
+  rememberBookSettings: false,
 } as const
 
 /**
@@ -84,15 +85,40 @@ export const Settings = Schema.Struct({
    * 자리이며, 그쪽에서 다음 권을 여는 동작도 이것이었다.
    */
   atBookEnd: AtBookEnd.pipe(Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.atBookEnd))),
+  /**
+   * 책마다 다른 설정을 기억할지. 켜 두면 읽는 동안 바꾼 배치가 전역 기본값이
+   * 아니라 그 책에 남는다. 원본 뷰어의 "Remember chenged book setting of all
+   * books"와 같은 자리다.
+   */
+  rememberBookSettings: Schema.Boolean.pipe(
+    Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.rememberBookSettings)),
+  ),
 })
 /** {@linkcode Settings} 스키마의 디코딩된 값. */
 export type Settings = typeof Settings.Type
 
 /**
  * 아무것도 바꾼 적 없는 사람이 받는 설정. 만화 순서, 한 번에 한 장, 통째로
- * 맞춤, 어두운 테마, 표지는 혼자, 그리고 책 끝에서 다음 권으로.
+ * 맞춤, 어두운 테마, 표지는 혼자, 책 끝에서 다음 권으로, 설정은 모든 책이 함께.
  */
 export const defaultSettings: Settings = DEFAULTS
+
+/**
+ * 책마다 달라질 수 있는 설정.
+ *
+ * 여기 있는 것은 책의 생김새를 따라가는 것들이다 — 만화인지 서양 코믹스인지,
+ * 양면으로 스캔되었는지, 페이지가 얼마나 넓은지. 테마와 책 끝 동작, 그리고 이
+ * 기억 자체를 켜고 끄는 스위치는 읽는 사람의 습관이라 전역에 남는다.
+ */
+export const BookSettings = Schema.Struct({
+  direction: ReadingDirection,
+  view: ViewMode,
+  fit: FitMode,
+  coverAlone: Schema.Boolean,
+  singleThreshold: Schema.Number,
+})
+/** {@linkcode BookSettings} 스키마의 디코딩된 값. */
+export type BookSettings = typeof BookSettings.Type
 
 /**
  * 자동 판정을 덮어쓰는 묶기. 그 페이지가 혼자 서거나, 다음 장과 묶인다.
@@ -127,6 +153,17 @@ export const BookProgress = Schema.Struct({
    * 기본값으로 떨어지면, 읽던 자리와 북마크까지 함께 잃는다.
    */
   marks: Schema.Array(PageMark).pipe(Schema.withDecodingDefaultKey(Effect.succeed([]))),
+  /**
+   * 이 책에만 걸린 설정. `rememberBookSettings`가 켜져 있는 동안 쓰인다.
+   *
+   * 스위치를 켜는 것은 지금 보고 있는 배치를 이 책의 것으로 삼는다는 뜻이고,
+   * 끄면 전역 기본값으로 돌아간다. 꺼져 있는 동안 여기 남은 값은 쓰이지 않는다.
+   *
+   * `Option`이 아니라 `null`인 이유는 이것이 JSON으로 나갔다 들어오기
+   * 때문이다. `Schema.Option`이 인코딩하는 모양은 그대로 디코딩되지 않는다.
+   * Option은 이 값을 읽어 들이는 자리에서 씌운다.
+   */
+  settings: Schema.NullOr(BookSettings).pipe(Schema.withDecodingDefaultKey(Effect.succeed(null))),
 })
 /** {@linkcode BookProgress} 스키마의 디코딩된 값. */
 export type BookProgress = typeof BookProgress.Type

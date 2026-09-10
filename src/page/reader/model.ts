@@ -3,7 +3,9 @@ import { defineTaggedUnion } from 'foldkit/schema'
 
 import { Slider, VirtualList } from '@foldkit/ui'
 
+import { Reading } from '../../domain/index.ts'
 import { PageMark, Settings } from '../../types.ts'
+import type { BookSettings } from '../../types.ts'
 import { SLIDER_ID, THUMBS_ID, THUMB_ROW_HEIGHT } from './constant.ts'
 import { ORIGIN, Point, Side, ZOOM_MIN } from './gesture.ts'
 
@@ -105,7 +107,17 @@ export const Model = Schema.Struct({
   bookmarks: Schema.Array(Schema.Number),
   /** 자동 묶기가 틀렸을 때 사람이 고쳐 둔 것. 책마다 저장된다. */
   marks: Schema.Array(PageMark),
+  /**
+   * 지금 이 책에 걸려 있는 설정. 전역 기본값과 이 책의 것을 합친 결과다.
+   */
   settings: Settings,
+  /**
+   * 합치기 전의 전역 기본값.
+   *
+   * 책마다 기억하기를 껐을 때 무엇으로 돌아갈지 아는 데 필요하다. 그 순간
+   * 리더가 쥔 것은 이 책의 설정이고, 앱에 물어볼 길은 없다.
+   */
+  globalSettings: Settings,
 
   zoom: Schema.Number,
   pan: Point,
@@ -148,7 +160,9 @@ export type InitConfig = Readonly<{
   bookmarks: ReadonlyArray<number>
   /** 이 책에 걸어 둔 묶기 교정. */
   marks: ReadonlyArray<PageMark>
-  /** 애플리케이션 설정. 리더가 고치고 위로 알린다. */
+  /** 이 책에만 걸린 설정. 기억하기가 꺼져 있으면 쓰이지 않는다. */
+  maybeBookSettings: Option.Option<BookSettings>
+  /** 전역 기본값. 리더가 고치고 위로 알린다. */
   settings: Settings
 }>
 
@@ -165,7 +179,8 @@ export const init = (config: InitConfig): Model => ({
   page: config.page,
   bookmarks: config.bookmarks,
   marks: config.marks,
-  settings: config.settings,
+  settings: Reading.forBook(config.settings, config.maybeBookSettings),
+  globalSettings: config.settings,
   zoom: ZOOM_MIN,
   pan: ORIGIN,
   gesture: Gesture.Idle(),

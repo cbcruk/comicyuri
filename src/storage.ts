@@ -8,13 +8,20 @@
 
 import { Effect, Schema } from 'effect'
 import { BookProgress, defaultSettings, Settings } from './types.ts'
+import type { BookSettings } from './types.ts'
 
 export { defaultSettings }
 
 const SETTINGS_KEY = 'comicyuri:settings'
 const PROGRESS_PREFIX = 'comicyuri:progress:'
 
-const emptyProgress: BookProgress = { page: 0, bookmarks: [], marks: [], updatedAt: 0 }
+const emptyProgress: BookProgress = {
+  page: 0,
+  bookmarks: [],
+  marks: [],
+  settings: null,
+  updatedAt: 0,
+}
 
 const SettingsJson = Schema.fromJsonString(Settings)
 const decodeSettings = Schema.decodeUnknownSync(SettingsJson)
@@ -56,3 +63,17 @@ export const saveProgress = (bookId: string, progress: BookProgress): Effect.Eff
       encodeProgress({ ...progress, updatedAt: Date.now() }),
     ),
   ).pipe(Effect.ignore)
+
+/**
+ * 이 책에만 걸린 설정을 저장한다.
+ *
+ * 읽던 자리와 북마크는 건드리지 않는다. 설정을 바꾸는 것과 페이지를 넘기는 것은
+ * 서로 다른 때에 일어나므로, 먼저 읽어서 나머지를 지고 다시 쓴다.
+ */
+export const saveBookSettings = (
+  bookId: string,
+  settings: BookSettings | null,
+): Effect.Effect<void> =>
+  Effect.flatMap(loadProgress(bookId), (progress) =>
+    saveProgress(bookId, { ...progress, settings }),
+  )

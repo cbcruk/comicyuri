@@ -105,6 +105,7 @@ describe('what the chrome wait is gated on', () => {
     page: 0,
     bookmarks: [],
     marks: [],
+    maybeBookSettings: Option.none(),
     settings: defaultSettings,
   })
 
@@ -140,6 +141,7 @@ describe('a pointer resting on the chrome', () => {
     page: 0,
     bookmarks: [],
     marks: [],
+    maybeBookSettings: Option.none(),
     settings: defaultSettings,
   })
 

@@ -8,6 +8,7 @@ import clsx from 'clsx'
 import type { AtBookEnd, FitMode, Settings } from '../../types.ts'
 import {
   COVER_ALONE_ID,
+  REMEMBER_ID,
   STAGE_ID,
   THRESHOLD_MAX,
   THRESHOLD_MIN,
@@ -412,31 +413,6 @@ const choiceView = <A extends string>(
     ),
   )
 
-/**
- * 스위치는 이름을 자기 라벨 요소에서 가져간다. 그래서 이 줄만은 설정 이름까지
- * 스위치가 그린다 — 라벨을 밖에 두면 스위치에 이름이 없다.
- */
-const coverAloneRow = (settings: Settings, h: HtmlBuilder<Message>): Html =>
-  Switch.view(
-    {
-      id: COVER_ALONE_ID,
-      isChecked: settings.coverAlone,
-      onToggle: (isChecked) => Message.ToggledCoverAlone({ isChecked }),
-      toView: (attributes) =>
-        h.div(
-          [h.Class(settingRowClassName)],
-          [
-            h.span([...attributes.label, h.Class('text-sm text-ink')], ['Cover on its own']),
-            h.button(
-              [...attributes.button, h.Class(controlClassName)],
-              [settings.coverAlone ? 'On' : 'Off'],
-            ),
-          ],
-        ),
-    },
-    h,
-  )
-
 const thresholdView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
   h.div(
     [h.Class('flex items-center gap-2')],
@@ -470,6 +446,36 @@ const thresholdView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
     ],
   )
 
+/** 스위치 한 줄. 이름을 자기 라벨에서 가져가므로 줄 전체를 스위치가 그린다. */
+const switchRow = (
+  config: Readonly<{
+    id: string
+    label: string
+    isChecked: boolean
+    onToggle: (isChecked: boolean) => Message
+  }>,
+  h: HtmlBuilder<Message>,
+): Html =>
+  Switch.view(
+    {
+      id: config.id,
+      isChecked: config.isChecked,
+      onToggle: config.onToggle,
+      toView: (attributes) =>
+        h.div(
+          [h.Class(settingRowClassName)],
+          [
+            h.span([...attributes.label, h.Class('text-sm text-ink')], [config.label]),
+            h.button(
+              [...attributes.button, h.Class(controlClassName)],
+              [config.isChecked ? 'On' : 'Off'],
+            ),
+          ],
+        ),
+    },
+    h,
+  )
+
 /**
  * 읽는 규칙을 한 번 정해 두는 자리.
  *
@@ -494,8 +500,25 @@ const settingsView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
       h.div(
         [h.Class('flex-1 overflow-y-auto px-4')],
         [
-          coverAloneRow(settings, h),
+          switchRow(
+            {
+              id: COVER_ALONE_ID,
+              label: 'Cover on its own',
+              isChecked: settings.coverAlone,
+              onToggle: (isChecked) => Message.ToggledCoverAlone({ isChecked }),
+            },
+            h,
+          ),
           settingRow('A page wider than this stands alone', thresholdView(settings, h), h),
+          switchRow(
+            {
+              id: REMEMBER_ID,
+              label: 'Remember these for each book',
+              isChecked: settings.rememberBookSettings,
+              onToggle: (isChecked) => Message.ToggledRememberBookSettings({ isChecked }),
+            },
+            h,
+          ),
           settingRow(
             'At the end of a book',
             choiceView(

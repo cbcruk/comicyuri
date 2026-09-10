@@ -331,6 +331,7 @@ describe('routing', () => {
           page: 7,
           bookmarks: [2],
           marks: [],
+          maybeSettings: Option.none(),
         }),
       ),
       model((model) => {

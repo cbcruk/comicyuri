@@ -67,6 +67,7 @@ export const Message = defineMessageUnion({
 
   ClickedToggleSettings: {},
   ToggledCoverAlone: { isChecked: Schema.Boolean },
+  ToggledRememberBookSettings: { isChecked: Schema.Boolean },
   SelectedAtBookEnd: { atBookEnd: AtBookEnd },
   ClickedNudgeThreshold: { by: Schema.Number },
 
@@ -84,7 +85,7 @@ export const OutMessage = defineMessageUnion({
   RequestedExit: {},
   /** 책장 순서에서 이웃한 책을 열어 달라는 것. 앞으로 한 칸이면 `1`. */
   RequestedNeighbourBook: { bookId: Schema.String, step: Schema.Number },
-  ChangedSettings: { settings: Settings },
+  ChangedSettings: { bookId: Schema.String, settings: Settings },
   UpdatedProgress: {
     bookId: Schema.String,
     page: Schema.Number,

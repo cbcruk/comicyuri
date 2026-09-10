@@ -7,6 +7,9 @@ export const SLIDER_ID = 'reader-page-slider'
 /** 표지를 혼자 두는 스위치. 라벨과 설명이 이 id에서 갈라져 나온다. */
 export const COVER_ALONE_ID = 'reader-cover-alone'
 
+/** 설정을 책마다 기억할지 정하는 스위치. */
+export const REMEMBER_ID = 'reader-remember-book-settings'
+
 /** 넓은 페이지 문턱이 한 번 누를 때 움직이는 폭. */
 export const THRESHOLD_STEP = 0.02
 /** 문턱의 아래쪽 끝. 이보다 낮으면 세로로 긴 페이지까지 혼자 서기 시작한다. */

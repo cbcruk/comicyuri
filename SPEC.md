@@ -34,7 +34,7 @@ Chromium에서 앱을 몰아 봅니다 — 레이아웃과 계산된 색, 두 �
 ManagedResource·라우팅이 맞물리는지도 여기서만 드러납니다. 테스트 이름은 이 문서의
 항목 번호로 시작합니다.
 
-기준 커밋: `62621436` · 단위 테스트 194개, 브라우저 테스트 37개 통과
+기준 커밋: `cb8b7608` · 단위 테스트 216개, 브라우저 테스트 39개 통과
 
 ---
 
@@ -517,6 +517,26 @@ e2e "R-2B1 · ⚙ 버튼이 패널을 열고 닫는다", "R-2B1 · 표지를 혼
 ✅ reader/story "the threshold stops at the ends of its range",
 reader/scene "nudging the threshold moves it one step, not to a long decimal"
 
+**R-2B3 · 설정을 책마다 기억할 수 있다**
+패널의 "Remember these for each book"를 켜면, 그 뒤로 바꾸는 배치가 전역 기본값이
+아니라 그 책에 남는다. 책마다 남는 것은 방향·한 장/두 장·맞춤·표지 규칙·넓은 페이지
+문턱이다. 테마와 책 끝 동작, 그리고 이 스위치 자신은 읽는 습관이라 전역에 남는다.
+
+스위치를 켜는 것은 지금 보고 있는 배치를 이 책의 것으로 삼는다는 뜻이다. 끄면 이
+책이 정한 것을 놓고 전역 기본값으로 돌아간다 — 그러지 않으면 이 책의 배치가 그대로
+전역 기본값이 되어 다음에 여는 책까지 따라간다.
+
+묶기 교정(`R-227`)은 이 스위치와 무관하게 언제나 책마다 남는다. 그것은 취향이
+아니라 그 책에 대한 사실이다.
+✅ reading "flipping the direction in one book does not follow the reader to the
+next", "what a book saved is what it opens with again", "with the switch off, what a
+book remembers is not used",
+reader/story "remembering for each book keeps the global defaults where they were",
+"turning remembering off puts the global defaults back", "a book opens on what it
+remembered, not on the global defaults",
+e2e "R-2B3 · 책마다 기억하기를 켜면 방향이 그 책에만 남는다", "R-2B3 · 스위치를
+끄면 전역 기본값으로 돌아간다"
+
 ### 2.12 키보드
 
 **R-2A1 · 페이지 넘기기**
@@ -555,11 +575,16 @@ subscription "a key held with a modifier belongs to the browser",
 원본 바이트 그대로. 새로고침해도 책장이 그대로다.
 ✅ e2e "P-301 · 책은 새로고침을 넘겨 책장에 남는다"
 
-**P-302 · 읽던 위치와 북마크, 묶기 교정은 책마다 localStorage에 남는다**
-키는 `comicyuri:progress:<book id>`. 묶기 교정(`R-227`)은 디코딩 기본값을 지고
-있어서, 이 항목이 생기기 전에 저장된 책도 읽던 자리와 북마크를 잃지 않는다.
-✅ e2e "P-302 · 읽던 위치와 북마크가 남는다",
-"R-227 · 자동 묶기를 손으로 뒤집고, 그것이 새로고침을 넘긴다"
+**P-302 · 책마다 남는 것은 읽던 위치·북마크·묶기 교정, 그리고 그 책의 설정이다**
+키는 `comicyuri:progress:<book id>`. 나중에 붙은 항목들은 모두 디코딩 기본값을 지고
+있어서, 그것들이 생기기 전에 저장된 책도 읽던 자리와 북마크를 잃지 않는다.
+
+그 책의 설정은 `Option`이 아니라 `null`로 저장한다. `Schema.Option`이 인코딩하는
+모양은 JSON을 거쳐 그대로 디코딩되지 않는다.
+✅ storage "position, bookmarks and bindings survive the round trip", "settings of
+its own survive the round trip", "saving settings keeps the position and bookmarks
+already stored", "a record written before books could remember anything still reads",
+e2e "P-302 · 읽던 위치와 북마크가 남는다"
 
 **P-303 · 설정은 localStorage에 남는다**
 키는 `comicyuri:settings`. 방향·한두장·맞춤·테마·책 끝 동작.
@@ -567,12 +592,12 @@ subscription "a key held with a modifier belongs to the browser",
 
 **P-304 · 저장된 값이 깨져 있으면 기본값으로 떨어진다**
 스키마로 디코딩하므로, 손상되거나 오래된 항목이 UI에 도달하지 않는다.
-📖 ⚠️ `src/storage.ts`를 직접 겨냥한 테스트가 저장소에 없다. 이식 중 임시
-스크립트로만 확인했고 그 스크립트는 남기지 않았다 — **테스트 공백**
+✅ storage "a settings blob that no longer decodes falls back rather than reaching
+the app"
 
 **P-305 · 오래된 설정 blob은 빠진 항목만 기본값으로 채워진다**
 필드마다 디코딩 기본값을 들고 있다.
-📖
+✅ storage "a blob written by an older build gains the fields it never had"
 
 **P-306 · 저장이 불가능해도 읽기는 계속된다**
 시크릿 모드처럼 localStorage를 쓸 수 없어도 조용히 넘어간다.
@@ -651,7 +676,7 @@ subscription "a key held with a modifier belongs to the browser",
 | L-606 | 부팅 시 라이트 테마 사용자에게 어두운 첫 프레임이 보일 수 있다                                                                                  |
 | L-607 | 책장을 다시 읽을 때마다 모든 표지의 object URL을 새로 만든다 — 한 권을 임포트해도 나머지 표지가 다시 그려진다                                   |
 | L-608 | 페이지 이미지에 로딩 표시가 없다. 큰 페이지는 "Loading…" 뒤에 갑자기 나타난다                                                                   |
-| L-609 | `src/storage.ts`·`src/db.ts`·`src/zip.ts`를 직접 겨냥한 테스트가 없다. 이 계층은 update를 통해서만 간접 검증된다                                |
+| L-609 | `src/db.ts`·`src/zip.ts`를 직접 겨냥한 테스트가 없다. 이 계층은 update를 통해서만 간접 검증된다                                                 |
 | L-610 | Runtime 전체를 부팅하는 테스트가 불가능하다 — vitest + happy-dom에서 `Runtime.run`이 아무것도 렌더링하지 않는다 (최소 Foldkit 앱으로 대조 확인) |
 | L-611 | 프로덕션 배포 시 `/book/:id` 직접 접근에는 SPA 폴백 설정이 필요하다                                                                             |
 | L-612 | 설정 패널이 리더 안에만 있다. 책장에서는 테마 말고 아무것도 바꿀 수 없다                                                                        |
