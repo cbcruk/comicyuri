@@ -10,9 +10,9 @@ import { describe } from './errors.ts'
 import type { AppError } from './errors.ts'
 import { bookFromStored, measurePages, storedBooksFromFiles } from './loader.ts'
 import { Message } from './message.ts'
-import { loadProgress, saveProgress, saveSettings } from './storage.ts'
+import { loadProgress, saveBookSettings, saveProgress, saveSettings } from './storage.ts'
 import { makeCover } from './thumbnail.ts'
-import { PageMark, Settings, Theme } from './types.ts'
+import { BookSettings, PageMark, Settings, Theme } from './types.ts'
 
 /** 실패가 상태 줄에 머무르다 스스로 사라지기까지의 시간. */
 const NOTICE_LINGER = Duration.seconds(4)
@@ -198,6 +198,7 @@ export const LoadProgress = Command.define('LoadProgress', {
         page: progress.page,
         bookmarks: progress.bookmarks,
         marks: progress.marks,
+        maybeSettings: Option.fromNullishOr(progress.settings),
       }),
     ),
 })
@@ -212,8 +213,32 @@ export const SaveProgress = Command.define('SaveProgress', {
   },
   messages: [Message.CompletedSaveProgress],
   execute: ({ bookId, page, bookmarks, marks }) =>
-    saveProgress(bookId, { page, bookmarks, marks, updatedAt: 0 }).pipe(
-      Effect.as(Message.CompletedSaveProgress()),
+    loadProgress(bookId)
+      .pipe(
+        Effect.flatMap((stored) =>
+          // 이 책의 설정은 다른 Command가 쓰므로, 여기서 통째로 덮어써 지우지 않는다.
+          saveProgress(bookId, {
+            page,
+            bookmarks,
+            marks,
+            settings: stored.settings,
+            updatedAt: 0,
+          }),
+        ),
+      )
+      .pipe(Effect.as(Message.CompletedSaveProgress())),
+})
+
+/**
+ * 이 책에만 걸린 설정을 남긴다. 읽던 자리와 북마크는 그대로 두므로, 페이지를
+ * 넘기는 것과 설정을 바꾸는 것이 서로를 지우지 않는다.
+ */
+export const SaveBookSettings = Command.define('SaveBookSettings', {
+  args: { bookId: Schema.String, maybeSettings: Schema.Option(BookSettings) },
+  messages: [Message.CompletedSaveBookSettings],
+  execute: ({ bookId, maybeSettings }) =>
+    saveBookSettings(bookId, Option.getOrNull(maybeSettings)).pipe(
+      Effect.as(Message.CompletedSaveBookSettings()),
     ),
 })
 

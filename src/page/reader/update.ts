@@ -1,4 +1,5 @@
 import { Array, Match, Option, Order } from 'effect'
+import { Reading } from '../../domain/index.ts'
 import { Update } from 'foldkit'
 import { evo } from 'foldkit/struct'
 
@@ -143,13 +144,24 @@ const step = (model: Model, by: number): UpdateReturn =>
     },
   })
 
-/** 리더가 가진 설정이 바뀌었다. 다시 배치하고 애플리케이션에 알린다. */
+/**
+ * 리더가 가진 설정이 바뀌었다. 다시 배치하고 애플리케이션에 알린다.
+ *
+ * 전역 사본도 앱이 저장할 것과 똑같이 움직인다. 두 곳이 같은 함수로 가르므로,
+ * 기억하기를 껐을 때 리더가 돌아가는 자리와 앱에 저장된 기본값이 어긋날 수 없다.
+ */
 const withSettings = (model: Model, settings: Model['settings']): UpdateReturn => {
-  const next = showPage(evo(model, { settings: () => settings }), model.page)
+  const next = showPage(
+    evo(model, {
+      settings: () => settings,
+      globalSettings: (global) => Reading.split(global, settings).global,
+    }),
+    model.page,
+  )
 
   return {
     ...next,
-    outMessage: OutMessage.ChangedSettings({ settings }),
+    outMessage: OutMessage.ChangedSettings({ bookId: model.bookId, settings }),
   }
 }
 
@@ -531,6 +543,23 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
 
     ToggledCoverAlone: ({ isChecked }) =>
       withSettings(model, evo(model.settings, { coverAlone: () => isChecked })),
+
+    /**
+     * 기억하기를 끄면 이 책이 정한 것을 놓고 전역 기본값으로 돌아간다. 그러지
+     * 않으면 이 책의 배치가 그대로 전역 기본값이 되어 다음에 여는 책까지
+     * 따라간다.
+     */
+    ToggledRememberBookSettings: ({ isChecked }) =>
+      withSettings(
+        model,
+        isChecked
+          ? evo(model.settings, { rememberBookSettings: () => true })
+          : {
+              ...model.settings,
+              ...Reading.bookPartOf(model.globalSettings),
+              rememberBookSettings: false,
+            },
+      ),
 
     SelectedAtBookEnd: ({ atBookEnd }) =>
       withSettings(model, evo(model.settings, { atBookEnd: () => atBookEnd })),

@@ -53,6 +53,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   bookmarks: [],
   marks: [],
   settings,
+  globalSettings: settings,
   zoom: ZOOM_MIN,
   pan: ORIGIN,
   gesture: Gesture.Idle(),
@@ -171,6 +172,7 @@ describe('layout controls', () => {
       click(role('button', { name: 'Toggle reading direction' })),
       expectOutMessage(
         OutMessage.ChangedSettings({
+          bookId: 'volume-1::42',
           settings: { ...defaultSettings, direction: 'ltr' },
         }),
       ),
@@ -187,6 +189,7 @@ describe('layout controls', () => {
       click(role('button', { name: 'Change how pages are fitted' })),
       expectOutMessage(
         OutMessage.ChangedSettings({
+          bookId: 'volume-1::42',
           settings: { ...defaultSettings, fit: 'width' },
         }),
       ),
@@ -238,7 +241,10 @@ describe('the settings panel', () => {
       given({ ...readingModel(), isSettingsOpen: true }),
       click(role('switch', { name: 'Cover on its own' })),
       expectOutMessage(
-        OutMessage.ChangedSettings({ settings: { ...defaultSettings, coverAlone: false } }),
+        OutMessage.ChangedSettings({
+          bookId: 'volume-1::42',
+          settings: { ...defaultSettings, coverAlone: false },
+        }),
       ),
       ...settleTurn(0),
     )
@@ -250,7 +256,10 @@ describe('the settings panel', () => {
       given({ ...readingModel(), isSettingsOpen: true }),
       click(role('button', { name: 'Stay put' })),
       expectOutMessage(
-        OutMessage.ChangedSettings({ settings: { ...defaultSettings, atBookEnd: 'stop' } }),
+        OutMessage.ChangedSettings({
+          bookId: 'volume-1::42',
+          settings: { ...defaultSettings, atBookEnd: 'stop' },
+        }),
       ),
       ...settleTurn(0),
     )
@@ -262,7 +271,10 @@ describe('the settings panel', () => {
       given({ ...readingModel(), isSettingsOpen: true }),
       click(role('button', { name: 'Pair fewer pages' })),
       expectOutMessage(
-        OutMessage.ChangedSettings({ settings: { ...defaultSettings, singleThreshold: 0.76 } }),
+        OutMessage.ChangedSettings({
+          bookId: 'volume-1::42',
+          settings: { ...defaultSettings, singleThreshold: 0.76 },
+        }),
       ),
       ...settleTurn(0),
       expect(text('0.76')).toExist(),

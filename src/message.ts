@@ -7,7 +7,7 @@ import { Url } from 'foldkit/url'
 import { FileDrop } from '@foldkit/ui'
 
 import { BookSummary } from './domain/book.ts'
-import { PageMark } from './types.ts'
+import { BookSettings, PageMark } from './types.ts'
 import { Reader } from './page/index.ts'
 
 /**
@@ -51,8 +51,10 @@ export const Message = defineMessageUnion({
     page: Schema.Number,
     bookmarks: Schema.Array(Schema.Number),
     marks: Schema.Array(PageMark),
+    maybeSettings: Schema.Option(BookSettings),
   },
   CompletedSaveProgress: {},
+  CompletedSaveBookSettings: {},
 })
 
 /** {@linkcode Message} 유니온의 디코딩된 값. */

@@ -35,7 +35,14 @@ const wideAt = (...pages: number[]): ReadonlyArray<Option.Option<number>> =>
   Array.from({ length: PAGE_COUNT }, (_, page) => Option.some(pages.includes(page) ? 1.4 : 0.7))
 
 const openingModel = (settings = defaultSettings): Model =>
-  init({ bookId: 'volume-1::42', page: 0, bookmarks: [], marks: [], settings })
+  init({
+    bookId: 'volume-1::42',
+    page: 0,
+    bookmarks: [],
+    marks: [],
+    maybeBookSettings: Option.none(),
+    settings,
+  })
 
 const acknowledgePreload = Command.resolve(PreloadNeighbours, Message.CompletedPreloadNeighbours())
 
@@ -304,6 +311,7 @@ describe('layout', () => {
       message(Message.ClickedToggleView()),
       expectOutMessage(
         OutMessage.ChangedSettings({
+          bookId: 'volume-1::42',
           settings: { ...defaultSettings, view: 'spread' },
         }),
       ),
@@ -445,6 +453,7 @@ describe('layout', () => {
           page: 0,
           bookmarks: [],
           marks: [{ page: 1, binding: 'alone' }],
+          maybeBookSettings: Option.none(),
           settings: { ...defaultSettings, view: 'spread' },
         }),
       ),
@@ -468,7 +477,10 @@ describe('layout', () => {
       ...settle(0),
       message(Message.ClickedNudgeThreshold({ by: 0.02 })),
       expectOutMessage(
-        OutMessage.ChangedSettings({ settings: { ...defaultSettings, singleThreshold: 1 } }),
+        OutMessage.ChangedSettings({
+          bookId: 'volume-1::42',
+          settings: { ...defaultSettings, singleThreshold: 1 },
+        }),
       ),
       ...settle(0),
       model((model) => {
@@ -486,6 +498,66 @@ describe('layout', () => {
       message(Message.ToggledCoverAlone({ isChecked: false })),
       Command.expectHas(LoadSpread({ page: 0, pages: [0, 1] })),
       ...settle(0),
+    )
+  })
+
+  test('remembering for each book keeps the global defaults where they were', () => {
+    story(
+      update,
+      given(openingModel({ ...defaultSettings, rememberBookSettings: true })),
+      ...opened(0),
+      message(Message.ClickedToggleDirection()),
+      model((model) => {
+        expect(model.settings.direction).toBe('ltr')
+        // 이 책이 뒤집은 방향이 전역 기본값까지 뒤집어서는 안 된다.
+        expect(model.globalSettings.direction).toBe('rtl')
+      }),
+      ...settle(0),
+    )
+  })
+
+  test('turning remembering off puts the global defaults back', () => {
+    story(
+      update,
+      given(openingModel({ ...defaultSettings, rememberBookSettings: true })),
+      ...opened(0),
+      message(Message.ClickedToggleDirection()),
+      ...settle(0),
+      message(Message.ToggledRememberBookSettings({ isChecked: false })),
+      expectOutMessage(
+        OutMessage.ChangedSettings({
+          bookId: 'volume-1::42',
+          settings: { ...defaultSettings, rememberBookSettings: false },
+        }),
+      ),
+      ...settle(0),
+    )
+  })
+
+  test('a book opens on what it remembered, not on the global defaults', () => {
+    story(
+      update,
+      given(
+        init({
+          bookId: 'volume-1::42',
+          page: 0,
+          bookmarks: [],
+          marks: [],
+          maybeBookSettings: Option.some({
+            direction: 'ltr',
+            view: 'spread',
+            fit: 'width',
+            coverAlone: false,
+            singleThreshold: 0.8,
+          }),
+          settings: { ...defaultSettings, rememberBookSettings: true },
+        }),
+      ),
+      model((model) => {
+        expect(model.settings.direction).toBe('ltr')
+        expect(model.settings.view).toBe('spread')
+        expect(model.globalSettings.direction).toBe('rtl')
+      }),
     )
   })
 
