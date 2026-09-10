@@ -242,10 +242,14 @@ Fit → Width → Height → 1:1 → Fit.
 Fit은 화면 안에 통째로, Width는 너비를, Height는 높이를 채우고, 1:1은 원래 픽셀
 크기다. 세로로 긴 페이지에서는 Fit과 Height가 같은 그림이 된다 — 정의상 Fit은 먼저
 닿는 쪽을 따른다.
+
+Fit과 1:1은 줄이기만 하고 늘리지 않는다. 화면보다 작은 페이지는 원래 크기 그대로
+선다. 채우는 두 모드(Width·Height)만 늘리고, 그것을 멈추는 것이 `R-2B4`다.
 ✅ reader/story "cycling the fit mode walks the four modes and comes back",
 reader/scene "the fit control names the mode it is in",
 e2e "R-224 · Fit은 페이지를 화면 안에 통째로 넣는다", "R-224 · Width는 너비를
-채운다", "R-224 · Height는 높이를 채운다", "R-224 · 1:1은 원래 픽셀 크기로 둔다"
+채운다", "R-224 · Height는 높이를 채운다", "R-224 · 1:1은 원래 픽셀 크기로 둔다",
+"R-224 · 통째로 맞춤은 켜 두어도 작은 페이지를 늘리지 않는다"
 
 **R-225 · 바꾼 설정은 저장되고 다음 책에도 적용된다**
 📖
@@ -589,16 +593,17 @@ e2e "R-292 · 브라우저 쪽에서 나가도 상태가 맞는다"
 ### 2.11 설정 패널
 
 **R-2B1 · ⚙ 버튼과 `,` 키가 읽기 설정 패널을 연다**
-툴바에 버튼이 없던 설정 셋이 여기 있다 — 표지를 혼자 둘지(`coverAlone`), 넓은
-페이지를 가르는 문턱(`singleThreshold`), 책의 끝에서 무엇을 할지(`atBookEnd`).
+툴바에 버튼이 없던 설정 넷이 여기 있다 — 표지를 혼자 둘지(`coverAlone`), 넓은
+페이지를 가르는 문턱(`singleThreshold`), 작은 페이지를 늘릴지(`enlargeToFit`), 책의
+끝에서 무엇을 할지(`atBookEnd`).
 
 방향·한 장/두 장·맞춤은 여기 없다. 그것들은 읽는 동안 손이 가는 것이라 툴바에
 남고, 여기 있는 셋은 책을 열기 전에 한 번 정하는 것이다.
 
 패널에서 바꾼 것은 곧바로 배치에 반영되고 다른 설정과 같이 저장된다(`P-303`).
 ✅ reader/scene "the settings that have no toolbar button live here",
-"turning the cover rule off reports the new settings", "picking what happens at the
-end of a book reports it",
+"turning the cover rule off reports the new settings", "turning off stretching caps the
+page at its own size", "picking what happens at the end of a book reports it",
 reader/story "a setting picked in the panel lays the book out again at once",
 e2e "R-2B1 · ⚙ 버튼이 패널을 열고 닫는다", "R-2B1 · 표지를 혼자 두지 않기로 하면
 배치가 바로 바뀌고 새로고침을 넘긴다", "R-2B1 · 책 끝 동작을 고르면 그대로 남는다"
@@ -613,7 +618,7 @@ reader/scene "nudging the threshold moves it one step, not to a long decimal"
 **R-2B3 · 설정을 책마다 기억할 수 있다**
 패널의 "Remember these for each book"를 켜면, 그 뒤로 바꾸는 배치가 전역 기본값이
 아니라 그 책에 남는다. 책마다 남는 것은 방향·한 장/두 장·맞춤·표지 규칙·넓은 페이지
-문턱이다. 테마와 책 끝 동작, 그리고 이 스위치 자신은 읽는 습관이라 전역에 남는다.
+문턱·늘리기다. 테마와 책 끝 동작, 그리고 이 스위치 자신은 읽는 습관이라 전역에 남는다.
 
 스위치를 켜는 것은 지금 보고 있는 배치를 이 책의 것으로 삼는다는 뜻이다. 끄면 이
 책이 정한 것을 놓고 전역 기본값으로 돌아간다 — 그러지 않으면 이 책의 배치가 그대로
@@ -629,6 +634,18 @@ reader/story "remembering for each book keeps the global defaults where they wer
 remembered, not on the global defaults",
 e2e "R-2B3 · 책마다 기억하기를 켜면 방향이 그 책에만 남는다", "R-2B3 · 스위치를
 끄면 전역 기본값으로 돌아간다"
+
+**R-2B4 · 작은 페이지를 화면에 맞춰 늘릴지 정한다**
+패널의 "Stretch small pages to fit". 켜 두는 것이 기본이고, 끄면 채우는 맞춤
+(Width·Height)이 원본 크기를 넘지 않는다. 저해상도 스캔본에서 갈린다 — 늘리면 화면을
+채우는 대신 뭉개지고, 끄면 선명한 대신 작게 선다.
+
+상한은 그 이미지의 원래 크기(`max-content`)다. 원본 뷰어는 배수를 골랐지만
+(`Max enlargement:`), 여기서는 켜고 끄는 것 하나로 줄였다 — 늘리지 않기로 하면
+보간 방식을 고를 이유도 함께 사라진다.
+✅ reader/scene "turning off stretching caps the page at its own size",
+e2e "R-2B4 · 켜 두면 작은 페이지가 너비를 채운다", "R-2B4 · 끄면 원래 크기를 넘지
+않는다", "R-2B4 · 끈 것은 새로고침을 넘긴다"
 
 ### 2.12 키보드
 

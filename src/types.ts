@@ -53,6 +53,7 @@ const DEFAULTS = {
   theme: 'dark',
   coverAlone: true,
   singleThreshold: 0.74,
+  enlargeToFit: true,
   atBookEnd: 'next',
   rememberBookSettings: false,
 } as const
@@ -79,6 +80,18 @@ export const Settings = Schema.Struct({
    */
   singleThreshold: Schema.Number.pipe(
     Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.singleThreshold)),
+  ),
+  /**
+   * 너비·높이 맞춤이 원본보다 작은 페이지를 화면에 맞춰 늘릴지.
+   *
+   * 저해상도 스캔본에서 갈린다. 늘리면 화면을 채우는 대신 뭉개지고, 늘리지 않으면
+   * 선명한 대신 화면 한가운데에 작게 선다. 원본 뷰어의 "Max enlargement:"와 같은
+   * 자리인데, 그쪽의 배수 대신 켜고 끄는 것 하나로 줄였다.
+   *
+   * 통째로 맞춤(`contain`)과 1:1은 애초에 늘리지 않으므로 이 값과 무관하다.
+   */
+  enlargeToFit: Schema.Boolean.pipe(
+    Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.enlargeToFit)),
   ),
   /**
    * 한 권을 다 읽고 계속 넘길 때 무엇을 할지. 원본 뷰어의 "Loop :"와 같은
@@ -116,6 +129,7 @@ export const BookSettings = Schema.Struct({
   fit: FitMode,
   coverAlone: Schema.Boolean,
   singleThreshold: Schema.Number,
+  enlargeToFit: Schema.Boolean.pipe(Schema.withDecodingDefaultKey(Effect.succeed(true))),
 })
 /** {@linkcode BookSettings} 스키마의 디코딩된 값. */
 export type BookSettings = typeof BookSettings.Type

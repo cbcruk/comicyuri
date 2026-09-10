@@ -296,6 +296,7 @@ describe('the settings panel', () => {
       expect(panel).toExist(),
       expect(role('switch', { name: 'Cover on its own' })).toBeChecked(),
       expect(text('0.74')).toExist(),
+      expect(role('switch', { name: 'Stretch small pages to fit' })).toBeChecked(),
       expect(role('button', { name: 'Next book' })).toHaveAttr('aria-pressed', 'true'),
       expect(role('button', { name: 'Stay put' })).toHaveAttr('aria-pressed', 'false'),
     )
@@ -313,6 +314,24 @@ describe('the settings panel', () => {
         }),
       ),
       ...settleTurn(0),
+    )
+  })
+
+  test('turning off stretching caps the page at its own size', () => {
+    scene(
+      program,
+      given({ ...readingModel(0, { ...defaultSettings, fit: 'width' }), isSettingsOpen: true }),
+      // 채우는 맞춤만 늘린다. 상한은 그 이미지의 원래 크기다.
+      expect(role('img', { name: 'Page 1' })).not.toHaveClass('max-w-max'),
+      click(role('switch', { name: 'Stretch small pages to fit' })),
+      expectOutMessage(
+        OutMessage.ChangedSettings({
+          bookId: 'volume-1::42',
+          settings: { ...defaultSettings, fit: 'width', enlargeToFit: false },
+        }),
+      ),
+      ...settleTurn(0),
+      expect(role('img', { name: 'Page 1' })).toHaveClass('max-w-max'),
     )
   })
 
