@@ -77,6 +77,8 @@ export type Message = typeof Message.Type
 /** 리더가 애플리케이션에 올려 보내는 것. */
 export const OutMessage = defineMessageUnion({
   RequestedExit: {},
+  /** 책장 순서에서 이웃한 책을 열어 달라는 것. 앞으로 한 칸이면 `1`. */
+  RequestedNeighbourBook: { bookId: Schema.String, step: Schema.Number },
   ChangedSettings: { settings: Settings },
   UpdatedProgress: {
     bookId: Schema.String,

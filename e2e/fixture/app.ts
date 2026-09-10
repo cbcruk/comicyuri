@@ -33,27 +33,48 @@ export const openShelf = async (page: Page): Promise<void> => {
   await expect(page.getByRole('button', { name: 'Open files' })).toBeVisible()
 }
 
+const titleOf = (book: Book): string => book.fileName.replace(/\.[^.]+$/, '')
+
 /**
- * 헤더의 "Open files"로 아카이브 한 권을 들여오고, 카드가 책장에 설 때까지 기다린다.
+ * 헤더의 "Open files"로 아카이브 여러 권을 한 번에 들여오고, 카드가 모두 책장에 설
+ * 때까지 기다린다.
  *
- * @returns 책 제목. 카드와 리더를 찾을 때 쓴다.
+ * 한 번에 고르는 것이 중요하다. 한 권씩 들여오면 들여온 시각이 갈라져 책장이 나중
+ * 것을 앞에 놓으므로, 책장 순서가 권 순서와 뒤집힌다.
+ *
+ * @returns 책 제목들, 넘겨준 순서대로.
  */
-export const importBook = async (page: Page, book: Book = DEFAULT_BOOK): Promise<string> => {
+export const importBooks = async (
+  page: Page,
+  books: ReadonlyArray<Book>,
+): Promise<ReadonlyArray<string>> => {
   const chooser = page.waitForEvent('filechooser')
   await page.getByRole('button', { name: 'Open files' }).click()
   await (
     await chooser
-  ).setFiles([
-    {
+  ).setFiles(
+    books.map((book) => ({
       name: book.fileName,
       mimeType: 'application/vnd.comicbook+zip',
       buffer: cbz(book.pageCount, book.size),
-    },
-  ])
+    })),
+  )
 
-  const title = book.fileName.replace(/\.[^.]+$/, '')
-  await expect(page.getByRole('link', { name: title })).toBeVisible()
-  return title
+  const titles = books.map(titleOf)
+  for (const title of titles) {
+    await expect(page.getByRole('link', { name: title })).toBeVisible()
+  }
+  return titles
+}
+
+/**
+ * 아카이브 한 권을 들여오고, 카드가 책장에 설 때까지 기다린다.
+ *
+ * @returns 책 제목. 카드와 리더를 찾을 때 쓴다.
+ */
+export const importBook = async (page: Page, book: Book = DEFAULT_BOOK): Promise<string> => {
+  await importBooks(page, [book])
+  return titleOf(book)
 }
 
 /**
