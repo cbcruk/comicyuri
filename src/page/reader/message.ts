@@ -3,7 +3,7 @@ import { defineMessageUnion } from 'foldkit/message'
 
 import { Slider, VirtualList } from '@foldkit/ui'
 
-import { AtBookEnd, PageMark, Settings } from '../../types.ts'
+import { AtBookEnd, PageMark, Rotation, Settings } from '../../types.ts'
 import { Point } from './gesture.ts'
 import { Panel } from './model.ts'
 import { Room, ScrollDevice } from './scroll.ts'
@@ -64,6 +64,8 @@ export const Message = defineMessageUnion({
 
   GotSliderMessage: { message: Slider.Message },
 
+  ClickedRotate: {},
+
   ClickedToggleBookmark: {},
   ClickedStepBookmark: { step: Schema.Number },
   ClickedToggleBookmarksOnly: {},
@@ -98,6 +100,7 @@ export const OutMessage = defineMessageUnion({
     page: Schema.Number,
     bookmarks: Schema.Array(Schema.Number),
     marks: Schema.Array(PageMark),
+    rotation: Rotation,
   },
 })
 

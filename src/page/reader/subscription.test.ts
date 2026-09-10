@@ -50,6 +50,7 @@ describe('which keys belong to the reader', () => {
       'f',
       't',
       'b',
+      'r',
       '[',
       ']',
       '+',
@@ -67,7 +68,7 @@ describe('which keys belong to the reader', () => {
   })
 
   test('everything else falls through to the browser', () => {
-    for (const key of ['r', 'F5', 'Tab', 'a', 'Enter', '/']) {
+    for (const key of ['F5', 'Tab', 'a', 'Enter', '/']) {
       expect(isReaderKey(key, NO_MODIFIERS)).toBe(false)
     }
   })
@@ -107,6 +108,7 @@ describe('what the chrome wait is gated on', () => {
     page: 0,
     bookmarks: [],
     marks: [],
+    rotation: 0,
     maybeBookSettings: Option.none(),
     settings: defaultSettings,
   })
@@ -143,6 +145,7 @@ describe('a pointer resting on the chrome', () => {
     page: 0,
     bookmarks: [],
     marks: [],
+    rotation: 0,
     maybeBookSettings: Option.none(),
     settings: defaultSettings,
   })

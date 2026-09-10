@@ -12,7 +12,7 @@ import { bookFromStored, measurePages, storedBooksFromFiles } from './loader.ts'
 import { Message } from './message.ts'
 import { loadProgress, saveBookSettings, saveProgress, saveSettings } from './storage.ts'
 import { makeCover } from './thumbnail.ts'
-import { BookSettings, PageMark, Settings, Theme } from './types.ts'
+import { BookSettings, PageMark, Rotation, Settings, Theme } from './types.ts'
 
 /** 실패가 상태 줄에 머무르다 스스로 사라지기까지의 시간. */
 const NOTICE_LINGER = Duration.seconds(4)
@@ -198,6 +198,7 @@ export const LoadProgress = Command.define('LoadProgress', {
         page: progress.page,
         bookmarks: progress.bookmarks,
         marks: progress.marks,
+        rotation: progress.rotation,
         maybeSettings: Option.fromNullishOr(progress.settings),
       }),
     ),
@@ -210,9 +211,10 @@ export const SaveProgress = Command.define('SaveProgress', {
     page: Schema.Number,
     bookmarks: Schema.Array(Schema.Number),
     marks: Schema.Array(PageMark),
+    rotation: Rotation,
   },
   messages: [Message.CompletedSaveProgress],
-  execute: ({ bookId, page, bookmarks, marks }) =>
+  execute: ({ bookId, page, bookmarks, marks, rotation }) =>
     loadProgress(bookId)
       .pipe(
         Effect.flatMap((stored) =>
@@ -221,6 +223,7 @@ export const SaveProgress = Command.define('SaveProgress', {
             page,
             bookmarks,
             marks,
+            rotation,
             settings: stored.settings,
             updatedAt: 0,
           }),

@@ -7,7 +7,7 @@ import { Url } from 'foldkit/url'
 import { FileDrop } from '@foldkit/ui'
 
 import { BookSummary } from './domain/book.ts'
-import { BookSettings, PageMark } from './types.ts'
+import { BookSettings, PageMark, Rotation } from './types.ts'
 import { Reader } from './page/index.ts'
 
 /**
@@ -51,6 +51,7 @@ export const Message = defineMessageUnion({
     page: Schema.Number,
     bookmarks: Schema.Array(Schema.Number),
     marks: Schema.Array(PageMark),
+    rotation: Rotation,
     maybeSettings: Schema.Option(BookSettings),
   },
   CompletedSaveProgress: {},

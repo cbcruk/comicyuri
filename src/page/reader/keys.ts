@@ -20,6 +20,7 @@ const COMMAND_KEYS: Readonly<Record<string, () => Message>> = {
   t: Message.ClickedToggleThumbs,
   ',': Message.ClickedToggleSettings,
   b: Message.ClickedToggleBookmark,
+  r: Message.ClickedRotate,
   ']': () => Message.ClickedStepBookmark({ step: 1 }),
   '[': () => Message.ClickedStepBookmark({ step: -1 }),
   '+': Message.ClickedZoomIn,

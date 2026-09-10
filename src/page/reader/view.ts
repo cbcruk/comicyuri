@@ -5,7 +5,7 @@ import { defineView } from 'foldkit/submodel'
 import { Button, Slider, Switch, VirtualList } from '@foldkit/ui'
 import clsx from 'clsx'
 
-import type { AtBookEnd, FitMode, Settings } from '../../types.ts'
+import type { AtBookEnd, FitMode, Rotation, Settings } from '../../types.ts'
 import {
   COVER_ALONE_ID,
   PAGE_ID,
@@ -23,6 +23,7 @@ import { Model, OpenState, SpreadState } from './model.ts'
 import type { PageEntry } from './model.ts'
 import type { TapFlash } from './model.ts'
 import type { Panel } from './model.ts'
+import { swapsSides } from './rotation.ts'
 import { indexOfPage, spreadsFor } from './spread.ts'
 import { sliderPage } from './update.ts'
 import { rowsFor, shownPages, urlFor } from './thumbs.ts'
@@ -167,6 +168,14 @@ const toolbarView = (
         },
         h,
       ),
+      controlView(
+        {
+          label: '⟳',
+          message: Message.ClickedRotate(),
+          attributes: [h.AriaLabel('Turn the page a quarter clockwise')],
+        },
+        h,
+      ),
       // 한 장 모드에는 뒤집을 묶기가 없으므로 자리도 두지 않는다.
       model.settings.view === 'spread'
         ? controlView(
@@ -244,14 +253,17 @@ const stageView = (
   pan: Point,
   entry: PageEntry,
   page: number,
+  rotation: Rotation,
   maybeTapFlash: Option.Option<TapFlash>,
   h: HtmlBuilder<Message>,
 ): Html =>
   h.div(
     [
       h.Id(STAGE_ID),
+      // 세운 페이지를 담을 상자는 화면의 높이만큼 넓어야 한다. `cqh`·`cqw`가 그
+      // 두 값을 주고, 그러려면 스테이지가 크기를 재는 컨테이너여야 한다.
       h.Class(
-        'relative flex flex-1 touch-none items-center justify-center overflow-hidden bg-black/20 p-2',
+        'relative flex flex-1 touch-none items-center justify-center overflow-hidden bg-black/20 p-2 [container-type:size]',
       ),
     ],
     [
@@ -277,7 +289,11 @@ const stageView = (
             // 뒤로 넘겨 온 페이지는 끝에서 시작한다(`R-247`). `flex-wrap-reverse`가
             // 교차축의 시작을 아래로 뒤집으므로, 넘치는 쪽에 붙는 자리도 함께
             // 뒤집힌다 — 화면에 들어가는 페이지는 그대로 가운데다.
-            clsx('flex h-full w-full items-center-safe justify-center gap-1', {
+            clsx('flex items-center-safe justify-center gap-1', {
+              // 눕힌 상자는 가로와 세로가 맞바뀐다. 그래야 세운 페이지에 맞춤
+              // 모드가 화면 크기대로 걸린다.
+              'h-full w-full': !swapsSides(rotation),
+              'h-[100cqw] w-[100cqh]': swapsSides(rotation),
               'flex-row-reverse': settings.direction === 'rtl',
               'flex-wrap-reverse': entry === 'end',
               // 확대를 풀고 제자리로 돌아가는 것은 애니메이션할 값이 있지만,
@@ -285,8 +301,10 @@ const stageView = (
               'transition-transform': zoom === ZOOM_MIN && pan.x === 0 && pan.y === 0,
             }),
           ),
+          // 세우는 것이 맨 오른쪽이라 먼저 걸린다. 그래서 확대와 이동은 세운 뒤에도
+          // 화면 좌표 그대로다 — 제스처가 재는 좌표와 같은 뜻으로 남는다.
           h.Style({
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg)`,
           }),
         ],
         SpreadState.match(spread, {
@@ -681,6 +699,7 @@ export const view = defineView<Model, Message>((model, h): Html =>
             model.pan,
             model.entry,
             model.page,
+            model.rotation,
             model.maybeTapFlash,
             h,
           ),
