@@ -459,6 +459,36 @@ describe('layout', () => {
     )
   })
 
+  test('the threshold stops at the ends of its range', () => {
+    story(
+      update,
+      given(openingModel({ ...defaultSettings, singleThreshold: 0.98 })),
+      ...opened(0),
+      message(Message.ClickedNudgeThreshold({ by: 0.02 })),
+      ...settle(0),
+      message(Message.ClickedNudgeThreshold({ by: 0.02 })),
+      expectOutMessage(
+        OutMessage.ChangedSettings({ settings: { ...defaultSettings, singleThreshold: 1 } }),
+      ),
+      ...settle(0),
+      model((model) => {
+        expect(model.settings.singleThreshold).toBe(1)
+      }),
+    )
+  })
+
+  test('a setting picked in the panel lays the book out again at once', () => {
+    story(
+      update,
+      given(openingModel({ ...defaultSettings, view: 'spread' })),
+      ...opened(0),
+      // 표지를 혼자 두지 않기로 하면 첫 화면부터 두 장이 된다.
+      message(Message.ToggledCoverAlone({ isChecked: false })),
+      Command.expectHas(LoadSpread({ page: 0, pages: [0, 1] })),
+      ...settle(0),
+    )
+  })
+
   test('cycling the fit mode walks the four modes and comes back', () => {
     story(
       update,
@@ -698,6 +728,7 @@ describe('using a control keeps the chrome up', () => {
     ['fit', Message.ClickedCycleFit()],
     ['bookmark', Message.ClickedToggleBookmark()],
     ['every page', Message.ClickedToggleThumbs()],
+    ['settings', Message.ClickedToggleSettings()],
     ['fullscreen', Message.ClickedToggleFullscreen()],
     ['zoom in', Message.ClickedZoomIn()],
     ['zoom out', Message.ClickedZoomOut()],
@@ -1146,6 +1177,21 @@ describe('escape', () => {
       expectNoOutMessage(),
       model((model) => {
         expect(model.isThumbsOpen).toBe(false)
+        expect(model.isFullscreen).toBe(true)
+      }),
+    )
+  })
+
+  test('escape closes the settings panel before anything else', () => {
+    story(
+      update,
+      given({ ...openingModel(), isSettingsOpen: true, isThumbsOpen: true, isFullscreen: true }),
+      ...opened(0),
+      message(Message.PressedKey({ key: 'Escape' })),
+      expectNoOutMessage(),
+      model((model) => {
+        expect(model.isSettingsOpen).toBe(false)
+        expect(model.isThumbsOpen).toBe(true)
         expect(model.isFullscreen).toBe(true)
       }),
     )

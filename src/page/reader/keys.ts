@@ -18,6 +18,7 @@ const COMMAND_KEYS: Readonly<Record<string, () => Message>> = {
   s: Message.ClickedToggleBinding,
   f: Message.ClickedToggleFullscreen,
   t: Message.ClickedToggleThumbs,
+  ',': Message.ClickedToggleSettings,
   b: Message.ClickedToggleBookmark,
   '+': Message.ClickedZoomIn,
   '-': Message.ClickedZoomOut,
@@ -61,6 +62,7 @@ export const isReaderKey = (key: string, modifiers: Modifiers): boolean => {
 export const messageForKey = (model: Model, key: string): Option.Option<Message> => {
   // Escape는 늘 책을 떠나는 대신 한 겹씩 벗긴다.
   if (key === 'Escape') {
+    if (model.isSettingsOpen) return Option.some(Message.ClickedToggleSettings())
     if (model.isThumbsOpen) return Option.some(Message.ClickedToggleThumbs())
     if (model.isFullscreen) return Option.some(Message.ClickedToggleFullscreen())
     return Option.some(Message.ClickedExit())

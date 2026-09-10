@@ -2,11 +2,18 @@ import { Array, Option } from 'effect'
 import type { Attribute, Html, HtmlBuilder } from 'foldkit/html'
 import { defineView } from 'foldkit/submodel'
 
-import { Button, Slider, VirtualList } from '@foldkit/ui'
+import { Button, Slider, Switch, VirtualList } from '@foldkit/ui'
 import clsx from 'clsx'
 
-import type { FitMode, Settings } from '../../types.ts'
-import { STAGE_ID, THUMB_ROW_HEIGHT } from './constant.ts'
+import type { AtBookEnd, FitMode, Settings } from '../../types.ts'
+import {
+  COVER_ALONE_ID,
+  STAGE_ID,
+  THRESHOLD_MAX,
+  THRESHOLD_MIN,
+  THRESHOLD_STEP,
+  THUMB_ROW_HEIGHT,
+} from './constant.ts'
 import { ZOOM_MIN } from './gesture.ts'
 import type { Point } from './gesture.ts'
 import { Message } from './message.ts'
@@ -114,6 +121,14 @@ const toolbarView = (
           label: 'Pages',
           message: Message.ClickedToggleThumbs(),
           attributes: [h.AriaLabel('Show every page'), h.AriaExpanded(model.isThumbsOpen)],
+        },
+        h,
+      ),
+      controlView(
+        {
+          label: '⚙',
+          message: Message.ClickedToggleSettings(),
+          attributes: [h.AriaLabel('Reading settings'), h.AriaExpanded(model.isSettingsOpen)],
         },
         h,
       ),
@@ -351,6 +366,152 @@ const thumbView = (model: Model, page: number, h: HtmlBuilder<Message>): Html =>
     ],
   )
 
+const AT_BOOK_END_LABEL: Record<AtBookEnd, string> = {
+  next: 'Next book',
+  wrap: 'Back to start',
+  stop: 'Stay put',
+}
+
+const AT_BOOK_END_ORDER: ReadonlyArray<AtBookEnd> = ['next', 'wrap', 'stop']
+
+const settingRowClassName =
+  'flex flex-wrap items-center justify-between gap-3 border-b border-edge py-3'
+
+/** 설정 한 줄. 왼쪽에 무엇을 정하는지, 오른쪽에 그것을 정하는 것. */
+const settingRow = (label: string, control: Html, h: HtmlBuilder<Message>): Html =>
+  h.div([h.Class(settingRowClassName)], [h.span([h.Class('text-sm text-ink')], [label]), control])
+
+/**
+ * 여럿 중 하나를 고르는 줄. 고른 것이 `aria-pressed`로 드러나므로, 어느 것이
+ * 켜져 있는지 보이지 않고도 읽힌다.
+ */
+const choiceView = <A extends string>(
+  options: ReadonlyArray<A>,
+  chosen: A,
+  label: (option: A) => string,
+  toMessage: (option: A) => Message,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.div(
+    [h.Class('flex flex-wrap gap-2')],
+    Array.map(options, (option) =>
+      h.keyed('span')(
+        option,
+        [h.Class('contents')],
+        [
+          controlView(
+            {
+              label: label(option),
+              message: toMessage(option),
+              attributes: [h.AriaPressed(option === chosen ? 'true' : 'false')],
+            },
+            h,
+          ),
+        ],
+      ),
+    ),
+  )
+
+/**
+ * 스위치는 이름을 자기 라벨 요소에서 가져간다. 그래서 이 줄만은 설정 이름까지
+ * 스위치가 그린다 — 라벨을 밖에 두면 스위치에 이름이 없다.
+ */
+const coverAloneRow = (settings: Settings, h: HtmlBuilder<Message>): Html =>
+  Switch.view(
+    {
+      id: COVER_ALONE_ID,
+      isChecked: settings.coverAlone,
+      onToggle: (isChecked) => Message.ToggledCoverAlone({ isChecked }),
+      toView: (attributes) =>
+        h.div(
+          [h.Class(settingRowClassName)],
+          [
+            h.span([...attributes.label, h.Class('text-sm text-ink')], ['Cover on its own']),
+            h.button(
+              [...attributes.button, h.Class(controlClassName)],
+              [settings.coverAlone ? 'On' : 'Off'],
+            ),
+          ],
+        ),
+    },
+    h,
+  )
+
+const thresholdView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
+  h.div(
+    [h.Class('flex items-center gap-2')],
+    [
+      controlView(
+        {
+          label: '−',
+          message: Message.ClickedNudgeThreshold({ by: -THRESHOLD_STEP }),
+          attributes: [
+            h.AriaLabel('Pair more pages'),
+            h.AriaDisabled(settings.singleThreshold <= THRESHOLD_MIN),
+          ],
+        },
+        h,
+      ),
+      h.span(
+        [h.Class('w-12 text-center text-sm tabular-nums text-muted')],
+        [settings.singleThreshold.toFixed(2)],
+      ),
+      controlView(
+        {
+          label: '+',
+          message: Message.ClickedNudgeThreshold({ by: THRESHOLD_STEP }),
+          attributes: [
+            h.AriaLabel('Pair fewer pages'),
+            h.AriaDisabled(settings.singleThreshold >= THRESHOLD_MAX),
+          ],
+        },
+        h,
+      ),
+    ],
+  )
+
+/**
+ * 읽는 규칙을 한 번 정해 두는 자리.
+ *
+ * 툴바에 이미 버튼이 있는 것들 — 방향, 한 장/두 장, 맞춤 — 은 여기 없다. 그것들은
+ * 읽는 동안 손이 가는 것이고, 여기 있는 셋은 책을 열기 전에 한 번 정하는 것이다.
+ */
+const settingsView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
+  h.div(
+    [
+      h.Class('absolute inset-0 z-10 flex flex-col bg-bg/95 backdrop-blur-sm'),
+      h.Role('dialog'),
+      h.AriaLabel('Reading settings'),
+    ],
+    [
+      h.div(
+        [h.Class('flex items-center gap-2 border-b border-edge px-4 py-2')],
+        [
+          h.span([h.Class('mr-auto text-sm text-muted')], ['Reading settings']),
+          controlView({ label: 'Close', message: Message.ClickedToggleSettings() }, h),
+        ],
+      ),
+      h.div(
+        [h.Class('flex-1 overflow-y-auto px-4')],
+        [
+          coverAloneRow(settings, h),
+          settingRow('A page wider than this stands alone', thresholdView(settings, h), h),
+          settingRow(
+            'At the end of a book',
+            choiceView(
+              AT_BOOK_END_ORDER,
+              settings.atBookEnd,
+              (option) => AT_BOOK_END_LABEL[option],
+              (atBookEnd) => Message.SelectedAtBookEnd({ atBookEnd }),
+              h,
+            ),
+            h,
+          ),
+        ],
+      ),
+    ],
+  )
+
 /**
  * 모든 페이지를 한눈에. 리스트가 창을 내주므로 500페이지짜리 책이 격자 하나
  * 그리자고 이미지 500장을 뽑는 일은 없다.
@@ -449,6 +610,7 @@ export const view = defineView<Model, Message>((model, h): Html =>
           stageView(model.spread, model.settings, model.zoom, model.pan, model.maybeTapFlash, h),
           turnView(model, model.isChromeVisible, h),
           model.isThumbsOpen ? thumbsView(model, pageCount, h) : h.empty,
+          model.isSettingsOpen ? settingsView(model.settings, h) : h.empty,
         ],
       )
     },
