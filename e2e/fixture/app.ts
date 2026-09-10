@@ -10,6 +10,7 @@ import { expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
 import { cbz } from './archive.ts'
+import type { Sizing } from './archive.ts'
 
 /** 들여올 책 한 권의 명세. */
 export type Book = Readonly<{
@@ -17,8 +18,11 @@ export type Book = Readonly<{
   fileName: string
   /** 페이지 수. */
   pageCount: number
-  /** 페이지 한 장의 픽셀 크기. 맞춤 모드처럼 비율에 기대는 시험에 쓴다. */
-  size?: Readonly<{ width: number; height: number }>
+  /**
+   * 페이지 크기. 맞춤 모드처럼 비율에 기대는 시험에 쓰고, 번호로 정하면 책
+   * 중간에 넓은 페이지가 섞인 책이 된다.
+   */
+  size?: Sizing
 }>
 
 const DEFAULT_BOOK: Book = { fileName: 'volume-1.cbz', pageCount: 6 }

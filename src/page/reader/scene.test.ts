@@ -40,9 +40,14 @@ const measuredThumbs = (model: Model): Model => ({
   },
 })
 
+/** 크기를 재기 전에 들여온 책. 묶기는 페이지 수만 따른다. */
+const UNMEASURED: ReadonlyArray<Option.Option<number>> = Array.from({ length: 6 }, () =>
+  Option.none(),
+)
+
 const readingModel = (page = 0, settings = defaultSettings): Model => ({
   bookId: 'volume-1::42',
-  openState: OpenState.Ready({ title: 'Volume 1', pageCount: 6 }),
+  openState: OpenState.Ready({ title: 'Volume 1', pageCount: 6, ratios: UNMEASURED }),
   spread: SpreadState.Shown({ panels: [{ page, url: `blob:${page}` }] }),
   page,
   bookmarks: [],

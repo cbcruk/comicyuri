@@ -15,7 +15,11 @@ import { Panel } from './model.ts'
  * 튄 것으로 착각해서는 안 된다.
  */
 export const Message = defineMessageUnion({
-  CompletedOpenBook: { title: Schema.String, pageCount: Schema.Number },
+  CompletedOpenBook: {
+    title: Schema.String,
+    pageCount: Schema.Number,
+    ratios: Schema.Array(Schema.Option(Schema.Number)),
+  },
   FailedOpenBook: { text: Schema.String },
   CompletedReleaseBook: {},
 
