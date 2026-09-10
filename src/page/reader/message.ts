@@ -60,6 +60,8 @@ export const Message = defineMessageUnion({
   GotSliderMessage: { message: Slider.Message },
 
   ClickedToggleBookmark: {},
+  ClickedStepBookmark: { step: Schema.Number },
+  ClickedToggleBookmarksOnly: {},
 
   ClickedToggleFullscreen: {},
   CompletedToggleFullscreen: {},

@@ -17,8 +17,9 @@ Everything runs client-side — your files never leave the browser.
   drag to pan when zoomed in.
 - **Navigation** — tap zones (left / centre / right), swipe, keyboard, or the
   page slider. A thumbnail grid lets you jump anywhere.
-- **Bookmarks**, **fullscreen**, an auto-hiding immersive UI, and a
-  light / dark theme.
+- **Bookmarks** — mark any page, jump between marks with `[` / `]`, or narrow
+  the thumbnail grid to the marked pages.
+- **Fullscreen**, an auto-hiding immersive UI, and a light / dark theme.
 
 ## Keyboard shortcuts
 
@@ -32,6 +33,7 @@ Everything runs client-side — your files never leave the browser.
 | `v`                              | Toggle one / two pages                         |
 | `t`                              | Thumbnail grid                                 |
 | `b`                              | Bookmark current page                          |
+| `[` / `]`                        | Previous / next bookmark                       |
 | `f`                              | Fullscreen                                     |
 | `+` / `-`                        | Zoom in / out                                  |
 | `Esc`                            | Close the grid, then fullscreen, then the book |

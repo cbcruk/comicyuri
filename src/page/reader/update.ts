@@ -4,6 +4,7 @@ import { Update } from 'foldkit'
 import { evo } from 'foldkit/struct'
 
 import type { FitMode } from '../../types.ts'
+import { bookmarkFrom } from './bookmark.ts'
 import { LoadSpread, LoadThumbs, PreloadNeighbours, ToggleFullscreen } from './command.ts'
 import { THRESHOLD_MAX, THRESHOLD_MIN } from './constant.ts'
 import {
@@ -29,7 +30,7 @@ import { messageForKey } from './keys.ts'
 import { Message, OutMessage } from './message.ts'
 import { Gesture, Model, OpenState, SpreadState } from './model.ts'
 import type { OpenBookService } from './resource.ts'
-import { loadedPages, missingFrom, pagesInView } from './thumbs.ts'
+import { loadedPages, missingFrom, pagesInView, shownPages } from './thumbs.ts'
 import {
   flipBinding,
   indexOfPage,
@@ -426,7 +427,8 @@ const fillThumbs = (model: Model): UpdateReturn => {
     Ready: ({ pageCount }) => pageCount,
   })
 
-  const missing = missingFrom(model.thumbPanels, pagesInView(model.thumbs, pageCount))
+  const pages = shownPages(pageCount, model.bookmarks, model.showsBookmarksOnly)
+  const missing = missingFrom(model.thumbPanels, pagesInView(model.thumbs, pages))
 
   return Array.match(missing, {
     onEmpty: () => ({ model }),
@@ -634,6 +636,20 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
         thumbPanels: (existing) => Array.appendAll(existing, panels),
       }),
     }),
+
+    /** 북마크를 목록으로 보는 것과 책 전체를 보는 것 사이를 오간다. */
+    ClickedToggleBookmarksOnly: () =>
+      fillThumbs(evo(model, { showsBookmarksOnly: (only) => !only })),
+
+    /**
+     * 앞뒤 북마크로 건너뛴다. 그쪽에 더 남은 북마크가 없으면 제자리에 머문다 —
+     * 책의 끝과 달리 여기서 감아 돌면 어디까지 봤는지 알 수 없게 된다.
+     */
+    ClickedStepBookmark: ({ step }) =>
+      Option.match(bookmarkFrom(model.bookmarks, model.page, step), {
+        onNone: () => ({ model }),
+        onSome: (page) => goToPage(model, page),
+      }),
 
     SelectedThumb: ({ page }) => {
       const jumped = goToPage(evo(model, { isThumbsOpen: () => false }), page)

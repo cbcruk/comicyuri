@@ -1144,6 +1144,42 @@ describe('bookmarks', () => {
       }),
     )
   })
+
+  test('the bracket keys step from one bookmark to the next and back', () => {
+    story(
+      update,
+      given({ ...openingModel(), bookmarks: [1, 4] }),
+      ...opened(0),
+      message(Message.PressedKey({ key: ']' })),
+      model((model) => {
+        expect(model.page).toBe(1)
+      }),
+      ...settle(1),
+      message(Message.PressedKey({ key: ']' })),
+      model((model) => {
+        expect(model.page).toBe(4)
+      }),
+      ...settle(4),
+      message(Message.PressedKey({ key: '[' })),
+      model((model) => {
+        expect(model.page).toBe(1)
+      }),
+      ...settle(1),
+    )
+  })
+
+  test('with no bookmark left that way the page stays where it is', () => {
+    story(
+      update,
+      given({ ...openingModel(), bookmarks: [1] }),
+      ...opened(0),
+      message(Message.PressedKey({ key: '[' })),
+      expectNoOutMessage(),
+      model((model) => {
+        expect(model.page).toBe(0)
+      }),
+    )
+  })
 })
 
 describe('fullscreen', () => {

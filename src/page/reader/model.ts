@@ -139,6 +139,8 @@ export const Model = Schema.Struct({
   /** 읽는 규칙을 한 번 정해 두는 패널. 툴바와 달리 읽는 동안 쓰는 것이 아니다. */
   isSettingsOpen: Schema.Boolean,
   isThumbsOpen: Schema.Boolean,
+  /** 격자가 북마크한 페이지만 늘어놓고 있는지. 그것이 곧 북마크 목록이다. */
+  showsBookmarksOnly: Schema.Boolean,
   thumbs: VirtualList.Model,
   /** 지금까지 뽑아 둔 썸네일. 격자는 보여 줄 수 있는 것만 요청한다. */
   thumbPanels: Schema.Array(Panel),
@@ -194,6 +196,7 @@ export const init = (config: InitConfig): Model => ({
   isFullscreen: false,
   isSettingsOpen: false,
   isThumbsOpen: false,
+  showsBookmarksOnly: false,
   thumbs: VirtualList.init({
     id: THUMBS_ID,
     rowHeightPx: THUMB_ROW_HEIGHT,
