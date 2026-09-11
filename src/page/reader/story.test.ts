@@ -12,6 +12,7 @@ import { describe, expect, test } from 'vite-plus/test'
 
 import { defaultSettings } from '../../types.ts'
 import { LoadSpread, LoadThumbs, PreloadNeighbours, ToggleFullscreen } from './command.ts'
+import { SKIP_PAGES } from './constant.ts'
 import { Message, OutMessage } from './message.ts'
 import { DOUBLE_TAP_ZOOM, ORIGIN, ZOOM_MIN } from './gesture.ts'
 import type { Point } from './gesture.ts'
@@ -235,12 +236,31 @@ describe('turning pages', () => {
 })
 
 describe('keyboard', () => {
+  /** 건너뛰기가 끝에 닿지 않을 만큼 긴 책. */
+  const LONG_PAGE_COUNT = 30
+
+  const openedLongBook = (page: number) => [
+    message(
+      Message.CompletedOpenBook({
+        title: 'Volume 1',
+        pageCount: LONG_PAGE_COUNT,
+        ratios: Array.from({ length: LONG_PAGE_COUNT }, () => Option.none<number>()),
+      }),
+    ),
+    Command.expectHas(LoadSpread({ page, pages: [page] })),
+    Command.resolve(
+      LoadSpread,
+      Message.CompletedLoadSpread({ page, panels: [{ page, url: `blob:${page}` }] }),
+    ),
+    acknowledgePreload,
+  ]
+
   test('in right-to-left reading the left key advances', () => {
     story(
       update,
       given(openingModel()),
       ...opened(0),
-      message(Message.PressedKey({ key: 'ArrowLeft' })),
+      message(Message.PressedKey({ key: 'ArrowLeft', withShift: false })),
       model((model) => {
         expect(model.page).toBe(1)
       }),
@@ -269,7 +289,7 @@ describe('keyboard', () => {
         }),
       ),
       acknowledgePreload,
-      message(Message.PressedKey({ key: 'ArrowLeft' })),
+      message(Message.PressedKey({ key: 'ArrowLeft', withShift: false })),
       model((model) => {
         expect(model.page).toBe(0)
       }),
@@ -284,12 +304,65 @@ describe('keyboard', () => {
     )
   })
 
+  test('shift and a turn key skips a stretch of pages', () => {
+    story(
+      update,
+      given(openingModel()),
+      // 오른쪽에서 왼쪽으로 읽으므로 왼쪽이 앞이다.
+      ...openedLongBook(0),
+      message(Message.PressedKey({ key: 'ArrowLeft', withShift: true })),
+      model((model) => {
+        expect(model.page).toBe(SKIP_PAGES)
+      }),
+      ...settle(SKIP_PAGES),
+      message(Message.PressedKey({ key: 'ArrowRight', withShift: true })),
+      model((model) => {
+        expect(model.page).toBe(0)
+      }),
+      ...settle(0),
+    )
+  })
+
+  test('a skip stops at the ends of the book instead of leaving it', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...openedLongBook(0),
+      // 앞쪽으로는 갈 곳이 없다. 책 끝 동작은 넘김의 것이지 건너뛰기의 것이 아니다.
+      message(Message.PressedKey({ key: 'ArrowRight', withShift: true })),
+      expectNoOutMessage(),
+      model((model) => {
+        expect(model.page).toBe(0)
+      }),
+      message(Message.PressedKey({ key: 'End', withShift: false })),
+      ...settle(LONG_PAGE_COUNT - 1),
+      message(Message.PressedKey({ key: 'ArrowLeft', withShift: true })),
+      expectNoOutMessage(),
+      model((model) => {
+        expect(model.page).toBe(LONG_PAGE_COUNT - 1)
+      }),
+    )
+  })
+
+  test('shift and space goes back, the way it always has', () => {
+    story(
+      update,
+      given({ ...openingModel(), page: 3 }),
+      ...opened(3),
+      message(Message.PressedKey({ key: ' ', withShift: true })),
+      model((model) => {
+        expect(model.page).toBe(2)
+      }),
+      ...settle(2),
+    )
+  })
+
   test('escape asks the application to leave', () => {
     story(
       update,
       given(openingModel()),
       ...opened(0),
-      message(Message.PressedKey({ key: 'Escape' })),
+      message(Message.PressedKey({ key: 'Escape', withShift: false })),
       expectOutMessage(OutMessage.RequestedExit()),
     )
   })
@@ -299,7 +372,7 @@ describe('keyboard', () => {
       update,
       given(openingModel()),
       ...opened(0),
-      message(Message.PressedKey({ key: 'q' })),
+      message(Message.PressedKey({ key: 'q', withShift: false })),
       expectNoOutMessage(),
       model((model) => {
         expect(model.page).toBe(0)
@@ -776,7 +849,7 @@ describe('chrome', () => {
       update,
       given({ ...openingModel(), isChromeVisible: false }),
       ...opened(0),
-      message(Message.PressedKey({ key: 'ArrowLeft' })),
+      message(Message.PressedKey({ key: 'ArrowLeft', withShift: false })),
       model((model) => {
         expect(model.isChromeVisible).toBe(true)
       }),
@@ -1267,17 +1340,17 @@ describe('bookmarks', () => {
       update,
       given({ ...openingModel(), bookmarks: [1, 4] }),
       ...opened(0),
-      message(Message.PressedKey({ key: ']' })),
+      message(Message.PressedKey({ key: ']', withShift: false })),
       model((model) => {
         expect(model.page).toBe(1)
       }),
       ...settle(1),
-      message(Message.PressedKey({ key: ']' })),
+      message(Message.PressedKey({ key: ']', withShift: false })),
       model((model) => {
         expect(model.page).toBe(4)
       }),
       ...settle(4),
-      message(Message.PressedKey({ key: '[' })),
+      message(Message.PressedKey({ key: '[', withShift: false })),
       model((model) => {
         expect(model.page).toBe(1)
       }),
@@ -1290,7 +1363,7 @@ describe('bookmarks', () => {
       update,
       given({ ...openingModel(), bookmarks: [1] }),
       ...opened(0),
-      message(Message.PressedKey({ key: '[' })),
+      message(Message.PressedKey({ key: '[', withShift: false })),
       expectNoOutMessage(),
       model((model) => {
         expect(model.page).toBe(0)
@@ -1528,7 +1601,7 @@ describe('escape', () => {
       update,
       given({ ...openingModel(), isThumbsOpen: true, isFullscreen: true }),
       ...opened(0),
-      message(Message.PressedKey({ key: 'Escape' })),
+      message(Message.PressedKey({ key: 'Escape', withShift: false })),
       expectNoOutMessage(),
       model((model) => {
         expect(model.isThumbsOpen).toBe(false)
@@ -1542,7 +1615,7 @@ describe('escape', () => {
       update,
       given({ ...openingModel(), isSettingsOpen: true, isThumbsOpen: true, isFullscreen: true }),
       ...opened(0),
-      message(Message.PressedKey({ key: 'Escape' })),
+      message(Message.PressedKey({ key: 'Escape', withShift: false })),
       expectNoOutMessage(),
       model((model) => {
         expect(model.isSettingsOpen).toBe(false)
@@ -1557,7 +1630,7 @@ describe('escape', () => {
       update,
       given({ ...openingModel(), isFullscreen: true }),
       ...opened(0),
-      message(Message.PressedKey({ key: 'Escape' })),
+      message(Message.PressedKey({ key: 'Escape', withShift: false })),
       expectNoOutMessage(),
       Command.expectExact(ToggleFullscreen({ wantFullscreen: false })),
       Command.resolve(ToggleFullscreen, Message.CompletedToggleFullscreen()),
@@ -1569,7 +1642,7 @@ describe('escape', () => {
       update,
       given(openingModel()),
       ...opened(0),
-      message(Message.PressedKey({ key: 'Escape' })),
+      message(Message.PressedKey({ key: 'Escape', withShift: false })),
       expectOutMessage(OutMessage.RequestedExit()),
     )
   })

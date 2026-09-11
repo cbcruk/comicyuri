@@ -697,13 +697,27 @@ e2e "R-2B4 · 켜 두면 작은 페이지가 너비를 채운다", "R-2B4 · 끄
 "escape with nothing left open goes back to the shelf"
 
 **R-2A4 · 매핑되지 않은 키는 브라우저로 넘어간다**
-리더가 쓰는 키만 가져가고 나머지는 건드리지 않는다. 수정키가 눌린 조합
-(Ctrl+R, Cmd+F 등)은 언제나 브라우저 것이다.
+리더가 쓰는 키만 가져가고 나머지는 건드리지 않는다. Ctrl·Cmd·Alt가 눌린 조합
+(Ctrl+R, Cmd+F 등)은 언제나 브라우저 것이다. Shift는 예외로, 리더가 자기 것으로
+쓰는 유일한 수정키다(`R-2A5`).
 ✅ reader/story "an unbound key changes nothing",
 subscription "a key held with a modifier belongs to the browser",
 "everything else falls through to the browser"
 
-⚠️ `Shift`+`Space`(이전)는 구현되지 않았다. 구독이 수정키를 전달하지 않는다.
+**R-2A5 · Shift는 넘김 키를 크게 만든다**
+넘김 키와 함께 누르면 한 장이 아니라 열 장을 건너뛴다. 방향은 그대로 눈에 보이는
+쪽을 따른다(`R-2A1`). 건너뛰기는 책의 양 끝에서 멈춘다 — 책을 벗어나는 것은 넘김의
+일이지(`R-212`) 건너뛰기의 일이 아니다.
+
+`Space`만은 예외로, `Shift`와 함께라면 뒤로 간다. 오래된 관례이고, 한 손으로 읽을
+때 되돌아갈 길이 된다.
+
+건너뛰는 장수는 열 장으로 고정이다. 원본 뷰어는 이 값을 고르게 했지만, 크게 움직이는
+다른 길이 이미 둘 있다 — 슬라이더(`R-261`)와 썸네일 격자(`R-271`).
+✅ reader/story "shift and a turn key skips a stretch of pages", "a skip stops at the ends
+of the book instead of leaving it", "shift and space goes back, the way it always has",
+e2e "R-2A5 · Shift와 함께 누른 넘김 키가 열 장을 건너뛴다", "R-2A5 · 건너뛰기는 책의
+끝에서 멈춘다", "R-2A5 · Shift+Space는 뒤로 간다"
 
 ---
 
@@ -809,7 +823,6 @@ the app"
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | L-601 | 썸네일 그리드가 반응형이 아니다 (한 행 4개, 180px 고정)                                                                                         |
 | L-604 | 삭제에 확인 절차가 없다                                                                                                                         |
-| L-605 | `Shift`+`Space`가 없다                                                                                                                          |
 | L-606 | 부팅 시 라이트 테마 사용자에게 어두운 첫 프레임이 보일 수 있다                                                                                  |
 | L-607 | 책장을 다시 읽을 때마다 모든 표지의 object URL을 새로 만든다 — 한 권을 임포트해도 나머지 표지가 다시 그려진다                                   |
 | L-608 | 페이지 이미지에 로딩 표시가 없다. 큰 페이지는 "Loading…" 뒤에 갑자기 나타난다                                                                   |

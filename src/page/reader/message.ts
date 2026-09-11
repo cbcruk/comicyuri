@@ -37,7 +37,9 @@ export const Message = defineMessageUnion({
   ClickedToggleView: {},
   ClickedToggleBinding: {},
   ClickedCycleFit: {},
-  PressedKey: { key: Schema.String },
+  ClickedSkip: { pages: Schema.Number },
+  /** 키가 눌렸다. Shift는 리더가 쓰는 유일한 수정키라 함께 지고 온다. */
+  PressedKey: { key: Schema.String, withShift: Schema.Boolean },
 
   PressedPointer: { pointerId: Schema.Number, at: Point },
   MovedPointer: { pointerId: Schema.Number, at: Point },
