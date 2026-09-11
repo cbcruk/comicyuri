@@ -194,25 +194,30 @@ export const update = (model: Model, message: Message) =>
     CompletedLoadProgress: ({ bookId, page, bookmarks, marks, rotation, maybeSettings }) =>
       // 이미 떠난 책에 대한 늦은 답은 버린다.
       AppRoute.match(model.route, {
-        Reader: ({ id }) =>
-          id === bookId
-            ? {
-                model: evo(model, {
-                  maybeReader: () =>
-                    Option.some(
-                      Reader.init({
-                        bookId,
-                        page,
-                        bookmarks,
-                        marks,
-                        rotation,
-                        maybeBookSettings: maybeSettings,
-                        settings: model.settings,
-                      }),
-                    ),
-                }),
-              }
-            : { model },
+        Reader: ({ id }) => {
+          if (id !== bookId) return { model }
+
+          // 저장된 자리로 곧장 갈지, 처음부터 볼지, 물어볼지는 설정이 정한다.
+          const opening = Reading.opening(model.settings, page)
+
+          return {
+            model: evo(model, {
+              maybeReader: () =>
+                Option.some(
+                  Reader.init({
+                    bookId,
+                    page: opening.page,
+                    maybeResumePage: opening.maybeOffer,
+                    bookmarks,
+                    marks,
+                    rotation,
+                    maybeBookSettings: maybeSettings,
+                    settings: model.settings,
+                  }),
+                ),
+            }),
+          }
+        },
         Shelf: () => ({ model }),
         NotFound: () => ({ model }),
       }),

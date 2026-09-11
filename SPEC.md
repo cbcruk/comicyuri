@@ -637,7 +637,16 @@ reader/story "the bracket keys step from one bookmark to the next and back", "wi
 bookmark left that way the page stays where it is",
 e2e "R-285 · `[`/`]`가 앞뒤 북마크로 건너뛴다"
 
-⚠️ 목록에서 북마크를 지울 수는 없다. 지우려면 그 페이지로 가서 ★를 끈다.
+**R-286 · 목록에서 북마크를 바로 지운다**
+북마크 목록의 칸마다 ✕가 하나 붙는다. 이름은 "Remove the bookmark on page 3"이고,
+누르면 그 북마크만 빠진다 — 그 페이지로 가지 않으므로 읽던 자리는 그대로다. 책
+전체를 보는 중에는 이 버튼이 없다. 대부분의 칸에 지울 것이 없어서, 있는 칸에만
+붙이면 격자가 들쭉날쭉해진다.
+✅ reader/story "a bookmark can be dropped from the list without going to its page",
+"dropping the bookmark on the page being read leaves the reader there",
+reader/scene "each entry in the list carries its own way to drop it", "the whole book
+carries no such control, where most pages have nothing to drop",
+e2e "R-286 · 목록에서 북마크를 바로 지우고, 그것이 새로고침을 넘긴다"
 
 ### 2.10 전체화면
 
@@ -707,6 +716,34 @@ e2e "R-2B3 · 책마다 기억하기를 켜면 방향이 그 책에만 남는다
 ✅ reader/scene "turning off stretching caps the page at its own size",
 e2e "R-2B4 · 켜 두면 작은 페이지가 너비를 채운다", "R-2B4 · 끄면 원래 크기를 넘지
 않는다", "R-2B4 · 끈 것은 새로고침을 넘긴다"
+
+**R-2B5 · 읽던 자리가 있는 책을 다시 열 때 무엇을 할지 정한다**
+패널의 "Opening a book you were part way through". 셋 중 하나다.
+
+| 고른 것      | 무엇이 일어나는가                                     |
+| ------------ | ----------------------------------------------------- |
+| `Go there`   | 조용히 읽던 자리로 간다. 기본값이다                   |
+| `Ask`        | 첫 장을 열어 두고 그리로 갈지 묻는다                  |
+| `Start over` | 언제나 첫 장이다. 읽던 자리는 무시할 뿐 지우지 않는다 |
+
+묻는 줄은 답을 받기 전까지 사라지지 않는다. 툴바와 함께 숨으면 답할 기회가
+없어지고, 첫 장부터 읽기 시작했다고 해서 그 자리가 사라지지도 않는다. 거절하면 첫
+장에 머물되 읽던 자리는 남으므로, 다음에 열면 또 묻는다.
+
+첫 장에 멈춰 있던 책은 물을 것이 없다. 이미 그 자리이므로 `Ask`여도 묻지 않는다.
+
+읽는 사람의 습관이라 전역에만 남는다. 원본 뷰어의 `goToLastPageMode`와 같은 자리다.
+✅ reading "by default the saved position is taken without asking", "set to start over,
+the saved position is ignored rather than forgotten", "set to ask, the book opens at the
+start and offers the saved position", "a book left on its first page has nothing to ask
+about",
+story "set to start over, a saved position does not decide where the reader opens", "set
+to ask, the reader opens at the start carrying the question",
+reader/story "taking the offer goes there and the question is done", "turning it down
+leaves the reader where it opened", "reading on does not take the question away",
+reader/scene "the offer names the page and gives both answers", "a book opened without an
+offer says nothing", "staying takes the offer off the screen",
+e2e "R-2B5 · 기본값은 조용히 읽던 자리로 간다" 외 5개
 
 ### 2.12 키보드
 
@@ -784,6 +821,10 @@ e2e "R-2C1 · 슬라이드쇼가 스스로 페이지를 넘긴다"
 키는 `comicyuri:progress:<book id>`. 나중에 붙은 항목들은 모두 디코딩 기본값을 지고
 있어서, 그것들이 생기기 전에 저장된 책도 읽던 자리와 북마크를 잃지 않는다.
 
+읽던 위치는 리더가 **스스로 옮긴** 자리다. 책을 열면서 받아 든 자리는 적지 않는다 —
+되받아 적으면 그것이 저장된 자리를 덮어써서, 물어보는 중에는 물음이 스스로를 지우고
+(`R-2B5`) 처음부터 보기로 한 사람은 책을 열었다 나가는 것만으로 읽던 자리를 잃는다.
+
 그 책의 설정은 `Option`이 아니라 `null`로 저장한다. `Schema.Option`이 인코딩하는
 모양은 JSON을 거쳐 그대로 디코딩되지 않는다.
 ✅ storage "position, bookmarks, bindings and rotation survive the round trip", "settings of
@@ -792,7 +833,8 @@ already stored", "a record written before books could remember anything still re
 e2e "P-302 · 읽던 위치와 북마크가 남는다"
 
 **P-303 · 설정은 localStorage에 남는다**
-키는 `comicyuri:settings`. 방향·한두장·맞춤·테마·책 끝 동작·슬라이드쇼 간격.
+키는 `comicyuri:settings`. 방향·한두장·맞춤·테마·책 끝 동작·슬라이드쇼 간격·이어 읽기
+방식.
 ✅ e2e "P-303 · 설정은 남고 다음 책에도 적용된다"
 
 **P-304 · 저장된 값이 깨져 있으면 기본값으로 떨어진다**
@@ -819,6 +861,8 @@ the app"
 📖 ❓
 
 **N-403 · 새로고침해도 읽던 책으로 돌아온다**
+URL이 어느 책인지 말하고, 어느 자리에서 열지는 `R-2B5`가 정한다. 기본값은 읽던
+자리다.
 📖 ❓
 
 **N-404 · 링크 클릭은 페이지를 다시 읽지 않는다**

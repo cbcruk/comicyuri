@@ -5,7 +5,7 @@ import { defineView } from 'foldkit/submodel'
 import { Button, Input, Slider, Switch, VirtualList } from '@foldkit/ui'
 import clsx from 'clsx'
 
-import type { AtBookEnd, FitMode, Settings } from '../../types.ts'
+import type { AtBookEnd, FitMode, Resume, Settings } from '../../types.ts'
 import {
   COVER_ALONE_ID,
   ENLARGE_ID,
@@ -519,29 +519,54 @@ const sliderView = (model: Model, h: HtmlBuilder<Message>): Html => {
   })
 }
 
+/**
+ * 격자의 한 칸. 누르면 그 페이지로 간다.
+ *
+ * 북마크 목록에서만 지우는 버튼이 하나 더 붙는다. 책 전체를 보는 중에는 대부분의
+ * 칸에 지울 것이 없어서, 있는 칸에만 붙이면 격자가 들쭉날쭉해진다. 버튼은 가는
+ * 버튼 안이 아니라 형제로 둔다 — 버튼 안의 버튼은 설 수 없고, 칸의 접근 가능한
+ * 이름도 "Go to page 3"으로 남아야 한다.
+ */
 const thumbView = (model: Model, page: number, h: HtmlBuilder<Message>): Html =>
-  h.keyed('button')(
+  h.keyed('div')(
     String(page),
+    [h.Class('relative flex flex-1')],
     [
-      h.Class(
-        clsx(
-          'flex flex-1 flex-col items-center gap-1 rounded-lg border p-1 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
-          model.bookmarks.includes(page)
-            ? 'border-accent text-accent'
-            : 'border-transparent text-muted hover:border-edge',
-        ),
+      h.button(
+        [
+          h.Class(
+            clsx(
+              'flex w-full flex-col items-center gap-1 rounded-lg border p-1 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+              model.bookmarks.includes(page)
+                ? 'border-accent text-accent'
+                : 'border-transparent text-muted hover:border-edge',
+            ),
+          ),
+          h.Style({ height: `${THUMB_ROW_HEIGHT - 24}px` }),
+          h.OnClick(Message.SelectedThumb({ page })),
+          h.AriaLabel(`Go to page ${page + 1}`),
+        ],
+        [
+          Option.match(urlFor(model.thumbPanels, page), {
+            onNone: () => h.div([h.Class('w-full flex-1 rounded bg-surface-2')]),
+            onSome: (url) =>
+              h.img([h.Class('min-h-0 flex-1 rounded object-contain'), h.Src(url), h.Alt('')]),
+          }),
+          h.span([], [String(page + 1)]),
+        ],
       ),
-      h.Style({ height: `${THUMB_ROW_HEIGHT - 24}px` }),
-      h.OnClick(Message.SelectedThumb({ page })),
-      h.AriaLabel(`Go to page ${page + 1}`),
-    ],
-    [
-      Option.match(urlFor(model.thumbPanels, page), {
-        onNone: () => h.div([h.Class('w-full flex-1 rounded bg-surface-2')]),
-        onSome: (url) =>
-          h.img([h.Class('min-h-0 flex-1 rounded object-contain'), h.Src(url), h.Alt('')]),
-      }),
-      h.span([], [String(page + 1)]),
+      model.showsBookmarksOnly
+        ? h.button(
+            [
+              h.Class(
+                'absolute top-1 right-1 cursor-pointer rounded-md bg-bg/80 px-1.5 py-0.5 text-xs text-muted transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-accent',
+              ),
+              h.OnClick(Message.ClickedRemoveBookmark({ page })),
+              h.AriaLabel(`Remove the bookmark on page ${page + 1}`),
+            ],
+            ['✕'],
+          )
+        : h.empty,
     ],
   )
 
@@ -552,6 +577,14 @@ const AT_BOOK_END_LABEL: Record<AtBookEnd, string> = {
 }
 
 const AT_BOOK_END_ORDER: ReadonlyArray<AtBookEnd> = ['next', 'wrap', 'stop']
+
+const RESUME_LABEL: Record<Resume, string> = {
+  continue: 'Go there',
+  ask: 'Ask',
+  restart: 'Start over',
+}
+
+const RESUME_ORDER: ReadonlyArray<Resume> = ['continue', 'ask', 'restart']
 
 const settingRowClassName =
   'flex flex-wrap items-center justify-between gap-3 border-b border-edge py-3'
@@ -760,6 +793,17 @@ const settingsView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
             ),
             h,
           ),
+          settingRow(
+            'Opening a book you were part way through',
+            choiceView(
+              RESUME_ORDER,
+              settings.resume,
+              (option) => RESUME_LABEL[option],
+              (resume) => Message.SelectedResume({ resume }),
+              h,
+            ),
+            h,
+          ),
         ],
       ),
     ],
@@ -878,6 +922,35 @@ const turnView = (model: Model, isVisible: boolean, h: HtmlBuilder<Message>): Ht
     ],
   )
 
+/**
+ * 저장된 자리로 갈지 묻는 줄.
+ *
+ * 답을 받기 전까지 사라지지 않는다. 툴바와 함께 숨으면 답할 기회가 없어지고,
+ * 첫 장부터 읽기 시작했다고 해서 물음이 상해 있지도 않다 — 그 자리는 여전히
+ * 거기 있다.
+ */
+const resumeView = (page: number, h: HtmlBuilder<Message>): Html =>
+  h.div(
+    [
+      h.Class(
+        'flex flex-wrap items-center gap-2 border-b border-edge bg-surface-2 px-4 py-2 text-sm',
+      ),
+      h.Role('status'),
+    ],
+    [
+      h.span([h.Class('mr-auto text-muted')], [`You left this book on page ${page + 1}`]),
+      controlView({ label: 'Go there', message: Message.ClickedResume({ page }) }, h),
+      controlView(
+        {
+          label: 'Stay',
+          message: Message.ClickedDismissResume(),
+          attributes: [h.AriaLabel('Stay on the first page')],
+        },
+        h,
+      ),
+    ],
+  )
+
 const openingView = (text: string, h: HtmlBuilder<Message>): Html =>
   h.main(
     [h.Class('flex h-full flex-col items-center justify-center gap-3 p-6')],
@@ -916,6 +989,10 @@ export const view = defineView<Model, Message>((model, h): Html =>
             model.isChromeVisible,
             h,
           ),
+          Option.match(model.maybeResumePage, {
+            onNone: () => h.empty,
+            onSome: (page) => resumeView(page, h),
+          }),
           stageView(model, maybeHalf, h),
           turnView(model, model.isChromeVisible, h),
           model.isThumbsOpen ? thumbsView(model, pageCount, h) : h.empty,

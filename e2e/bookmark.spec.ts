@@ -50,3 +50,32 @@ test('R-285 · `[`/`]`가 앞뒤 북마크로 건너뛴다', async ({ page }) =>
   await page.keyboard.press('[')
   await expect(counter(page)).toHaveText('1 / 6')
 })
+
+test('R-286 · 목록에서 북마크를 바로 지우고, 그것이 새로고침을 넘긴다', async ({ page }) => {
+  await readBook(page)
+
+  await control.bookmark(page).click()
+  await control.next(page).click()
+  await control.next(page).click()
+  await expect(counter(page)).toHaveText('3 / 6')
+  await control.bookmark(page).click()
+
+  await control.everyPage(page).click()
+  await page.getByRole('button', { name: 'Show bookmarks only' }).click()
+  const bookmarks = page.getByRole('dialog', { name: 'Bookmarks' })
+  await expect(bookmarks.getByRole('button', { name: 'Go to page 1' })).toBeVisible()
+
+  await bookmarks.getByRole('button', { name: 'Remove the bookmark on page 1' }).click()
+
+  // 지운 것만 목록에서 빠지고, 리더는 보고 있던 페이지에 그대로 있다.
+  await expect(bookmarks.getByRole('button', { name: 'Go to page 1' })).toHaveCount(0)
+  await expect(bookmarks.getByRole('button', { name: 'Go to page 3' })).toBeVisible()
+  await bookmarks.getByRole('button', { name: 'Close' }).click()
+  await expect(counter(page)).toHaveText('3 / 6')
+
+  await page.reload()
+  await control.everyPage(page).click()
+  await page.getByRole('button', { name: 'Show bookmarks only' }).click()
+  await expect(bookmarks.getByRole('button', { name: 'Go to page 3' })).toBeVisible()
+  await expect(bookmarks.getByRole('button', { name: 'Go to page 1' })).toHaveCount(0)
+})

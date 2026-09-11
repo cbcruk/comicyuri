@@ -11,6 +11,28 @@ import { Option } from 'effect'
 
 import type { BookSettings, Settings } from '../types.ts'
 
+/** 책을 열 때 어디에 걸고, 저장된 자리를 권할지. */
+export type Opening = Readonly<{
+  /** 리더가 처음 걸 페이지. */
+  page: number
+  /** 이리로 갈지 물어볼 페이지. 묻지 않기로 했으면 없음이다. */
+  maybeOffer: Option.Option<number>
+}>
+
+/**
+ * 저장된 자리를 가진 책을 어디에 걸지 정한다.
+ *
+ * 첫 장에 멈춰 있던 책은 물을 것이 없다 — 이미 그 자리이므로, `ask`여도 묻지
+ * 않고 조용히 연다.
+ *
+ * @param saved 이 책에 저장되어 있는 페이지.
+ */
+export const opening = (settings: Settings, saved: number): Opening => {
+  if (settings.resume === 'continue') return { page: saved, maybeOffer: Option.none() }
+  if (settings.resume === 'restart') return { page: 0, maybeOffer: Option.none() }
+  return { page: 0, maybeOffer: saved > 0 ? Option.some(saved) : Option.none() }
+}
+
 /** 합쳐진 설정에서 책에 남길 몫만 떼어 낸다. */
 export const bookPartOf = (settings: Settings): BookSettings => ({
   direction: settings.direction,
