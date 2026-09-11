@@ -1404,6 +1404,83 @@ describe('bookmarks', () => {
   })
 })
 
+describe('going to a page by number', () => {
+  test('a number in the book goes there', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.SubmittedGoToPage({ text: '4' })),
+      model((model) => {
+        expect(model.page).toBe(3)
+      }),
+      ...settle(3),
+    )
+  })
+
+  test('a number outside the book, or no number at all, changes nothing', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.SubmittedGoToPage({ text: '99' })),
+      message(Message.SubmittedGoToPage({ text: '0' })),
+      message(Message.SubmittedGoToPage({ text: 'seven' })),
+      message(Message.SubmittedGoToPage({ text: '' })),
+      expectNoOutMessage(),
+      model((model) => {
+        expect(model.page).toBe(0)
+      }),
+    )
+  })
+})
+
+describe('the slideshow', () => {
+  test('each turn of the wait moves a page on', () => {
+    story(
+      update,
+      given({ ...openingModel(), isPlaying: true }),
+      ...opened(0),
+      message(Message.ElapsedSlide()),
+      model((model) => {
+        expect(model.page).toBe(1)
+        expect(model.isPlaying).toBe(true)
+      }),
+      ...settle(1),
+    )
+  })
+
+  test('it stops itself where it can go no further', () => {
+    story(
+      update,
+      given({
+        ...openingModel(STOPS_AT_THE_END),
+        page: PAGE_COUNT - 1,
+        isPlaying: true,
+      }),
+      ...opened(PAGE_COUNT - 1),
+      message(Message.ElapsedSlide()),
+      model((model) => {
+        expect(model.page).toBe(PAGE_COUNT - 1)
+        expect(model.isPlaying).toBe(false)
+      }),
+    )
+  })
+
+  test('escape stops it before it leaves anything else', () => {
+    story(
+      update,
+      given({ ...openingModel(), isPlaying: true, isFullscreen: true }),
+      ...opened(0),
+      message(Message.PressedKey({ key: 'Escape', withShift: false })),
+      model((model) => {
+        expect(model.isPlaying).toBe(false)
+        expect(model.isFullscreen).toBe(true)
+      }),
+    )
+  })
+})
+
 describe('reading a wide page in halves', () => {
   const SPLITTING = { ...defaultSettings, splitWide: true }
 

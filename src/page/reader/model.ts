@@ -152,6 +152,8 @@ export const Model = Schema.Struct({
   /** 나뉜 페이지에서 보고 있는 반쪽. 나뉘지 않는 페이지에서는 쓰이지 않는다. */
   half: Half,
 
+  /** 슬라이드쇼가 돌고 있는지. 돌면 정해 둔 시간마다 스스로 넘어간다. */
+  isPlaying: Schema.Boolean,
   /** 툴바는 읽는 동안 스스로 숨고, 무슨 일이든 있으면 돌아온다. */
   isChromeVisible: Schema.Boolean,
   /** 포인터가 툴바 위에 머무는 동안에는 시간이 흐르지 않는다. */
@@ -220,6 +222,7 @@ export const init = (config: InitConfig): Model => ({
   gesture: Gesture.Idle(),
   entry: 'start',
   half: 'first',
+  isPlaying: false,
   isChromeVisible: true,
   isPointerOverChrome: false,
   activityToken: 0,

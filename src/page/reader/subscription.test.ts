@@ -51,6 +51,7 @@ describe('which keys belong to the reader', () => {
       't',
       'b',
       'r',
+      'p',
       '[',
       ']',
       '+',

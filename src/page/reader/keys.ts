@@ -22,6 +22,7 @@ const COMMAND_KEYS: Readonly<Record<string, () => Message>> = {
   ',': Message.ClickedToggleSettings,
   b: Message.ClickedToggleBookmark,
   r: Message.ClickedRotate,
+  p: Message.ClickedToggleSlideshow,
   ']': () => Message.ClickedStepBookmark({ step: 1 }),
   '[': () => Message.ClickedStepBookmark({ step: -1 }),
   '+': Message.ClickedZoomIn,
@@ -33,9 +34,12 @@ const COMMAND_KEYS: Readonly<Record<string, () => Message>> = {
  * Home·End, 페이지 키를 가져가고 리더의 리스너는 document에 걸려 있어서, 이것이
  * 없으면 한 번 누른 키에 둘 다 반응한다 — 같은 방향으로 두 페이지가 넘어가거나,
  * 오른쪽에서 왼쪽으로 읽는 중이라면 서로 밀어낸다.
+ *
+ * 입력란도 마찬가지다. 번호를 적는 동안 화살표와 Space는 글자를 옮기는 키이지
+ * 페이지를 넘기는 키가 아니다.
  */
 export const handlesKeysItself = (target: EventTarget | null): boolean =>
-  target instanceof Element && target.closest('[role="slider"]') !== null
+  target instanceof Element && target.closest('input, [role="slider"]') !== null
 
 /** 키를 누를 때 함께 눌려 있던 수정키. */
 export type Modifiers = Readonly<{
@@ -75,6 +79,7 @@ export const messageForKey = (
   if (key === 'Escape') {
     if (model.isSettingsOpen) return Option.some(Message.ClickedToggleSettings())
     if (model.isThumbsOpen) return Option.some(Message.ClickedToggleThumbs())
+    if (model.isPlaying) return Option.some(Message.ClickedToggleSlideshow())
     if (model.isFullscreen) return Option.some(Message.ClickedToggleFullscreen())
     return Option.some(Message.ClickedExit())
   }

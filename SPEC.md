@@ -560,6 +560,23 @@ anything inside it", "everything else leaves the key to the reader"
 🔍 2026-09-09 · 슬라이더에 포커스를 준 뒤 화살표가 한 번에 한 페이지만 넘기는 것을
 확인함
 
+**R-266 · 번호를 적어 그 페이지로 간다**
+슬라이더 옆의 입력란. Enter를 누르거나 입력란을 떠나면 그 번호로 간다. 책 밖의
+번호나 숫자가 아닌 것은 아무 일도 일으키지 않는다 — 잘못 적은 것을 되돌릴 자리가
+입력란 자신이다.
+
+적은 값을 Model에 두지 않는다. 적는 동안 리더가 그것을 고쳐 쓰면 손가락과 싸우게
+되고, 필요한 것은 다 적은 뒤의 한 번뿐이다. 지금 어디인지는 자리표시자가 말해 준다.
+
+적는 동안에는 리더가 키를 양보한다(`R-265`와 같은 이유). 화살표와 Space는 글자를
+옮기는 키이지 페이지를 넘기는 키가 아니다.
+✅ reader/story "a number in the book goes there", "a number outside the book, or no
+number at all, changes nothing",
+e2e "R-266 · 번호를 적고 Enter를 누르면 그 페이지로 간다", "R-266 · 번호를 적는 동안
+화살표는 페이지를 넘기지 않는다"
+
+⚠️ 퍼센트로 가는 길은 없다. 슬라이더가 이미 비율로 잡는 자리다.
+
 ### 2.8 모든 페이지 (썸네일)
 
 **R-271 · "Pages" 버튼이 전체 페이지 그리드를 연다**
@@ -636,9 +653,10 @@ e2e "R-292 · 브라우저 쪽에서 나가도 상태가 맞는다"
 ### 2.11 설정 패널
 
 **R-2B1 · ⚙ 버튼과 `,` 키가 읽기 설정 패널을 연다**
-툴바에 버튼이 없던 설정 다섯이 여기 있다 — 표지를 혼자 둘지(`coverAlone`), 넓은
+툴바에 버튼이 없던 설정 여섯이 여기 있다 — 표지를 혼자 둘지(`coverAlone`), 넓은
 페이지를 가르는 문턱(`singleThreshold`), 넓은 페이지를 반씩 읽을지(`splitWide`), 작은
-페이지를 늘릴지(`enlargeToFit`), 책의 끝에서 무엇을 할지(`atBookEnd`).
+페이지를 늘릴지(`enlargeToFit`), 슬라이드쇼가 한 장에 머무는 시간(`slideSeconds`),
+책의 끝에서 무엇을 할지(`atBookEnd`).
 
 방향·한 장/두 장·맞춤은 여기 없다. 그것들은 읽는 동안 손이 가는 것이라 툴바에
 남고, 여기 있는 셋은 책을 열기 전에 한 번 정하는 것이다.
@@ -701,12 +719,12 @@ e2e "R-2B4 · 켜 두면 작은 페이지가 너비를 채운다", "R-2B4 · 끄
 📌 `[`/`]`는 앞뒤 북마크로 건너뛴다 (R-285).
 
 **R-2A2 · 토글**
-`d` 방향 · `v` 한/두 장 · `s` 묶기 뒤집기 · `r` 세우기 · `t` 썸네일 · `,` 설정 ·
-`b` 북마크 · `f` 전체화면 · `+`/`-` 줌.
+`d` 방향 · `v` 한/두 장 · `s` 묶기 뒤집기 · `r` 세우기 · `p` 슬라이드쇼 · `t` 썸네일 ·
+`,` 설정 · `b` 북마크 · `f` 전체화면 · `+`/`-` 줌.
 📖
 
 **R-2A3 · Escape는 한 겹씩 벗긴다**
-설정 → 썸네일 → 전체화면 → 책장.
+설정 → 썸네일 → 슬라이드쇼 → 전체화면 → 책장.
 ✅ reader/story "escape closes the settings panel before anything else"
 ✅ reader/story "escape closes the grid before it leaves anything",
 "escape then leaves fullscreen before it leaves the book",
@@ -735,6 +753,25 @@ of the book instead of leaving it", "shift and space goes back, the way it alway
 e2e "R-2A5 · Shift와 함께 누른 넘김 키가 열 장을 건너뛴다", "R-2A5 · 건너뛰기는 책의
 끝에서 멈춘다", "R-2A5 · Shift+Space는 뒤로 간다"
 
+### 2.13 슬라이드쇼
+
+**R-2C1 · `▶` 버튼과 `p` 키가 슬라이드쇼를 돌린다**
+정해 둔 시간마다 한 장씩 스스로 넘어간다. 시간은 설정 패널에서 2초에서 30초 사이로
+고른다(기본 5초).
+
+기다림은 페이지에 매여 있다. 넘어간 순간부터 다시 세므로, 사람이 손으로 넘긴 뒤에도
+꽉 찬 시간을 받는다 — 넘어가자마자 또 넘어가는 일이 없다.
+
+**더 갈 곳이 없으면 스스로 멈춘다.** 책 끝 동작(`R-212`)이 `stop`이면 마지막 장에서
+멈추고, `wrap`이면 계속 돌고, `next`면 이웃한 책이 열리며 그 책은 멈춘 채로 시작한다.
+
+넘어가는 것은 사람이 한 일로 치지 않는다. 그래서 툴바는 평소처럼 숨고(`R-251`), 도는
+동안 화면에는 페이지만 남는다. Escape는 전체화면을 벗기기 전에 슬라이드쇼를 먼저
+멈춘다(`R-2A3`).
+✅ reader/story "each turn of the wait moves a page on", "it stops itself where it can go
+no further", "escape stops it before it leaves anything else",
+e2e "R-2C1 · 슬라이드쇼가 스스로 페이지를 넘긴다"
+
 ---
 
 ## 3. 저장
@@ -755,7 +792,7 @@ already stored", "a record written before books could remember anything still re
 e2e "P-302 · 읽던 위치와 북마크가 남는다"
 
 **P-303 · 설정은 localStorage에 남는다**
-키는 `comicyuri:settings`. 방향·한두장·맞춤·테마·책 끝 동작.
+키는 `comicyuri:settings`. 방향·한두장·맞춤·테마·책 끝 동작·슬라이드쇼 간격.
 ✅ e2e "P-303 · 설정은 남고 다음 책에도 적용된다"
 
 **P-304 · 저장된 값이 깨져 있으면 기본값으로 떨어진다**

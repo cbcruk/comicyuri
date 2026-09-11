@@ -56,6 +56,7 @@ const DEFAULTS = {
   enlargeToFit: true,
   splitWide: false,
   atBookEnd: 'next',
+  slideSeconds: 5,
   rememberBookSettings: false,
 } as const
 
@@ -107,6 +108,13 @@ export const Settings = Schema.Struct({
    * 자리이며, 그쪽에서 다음 권을 여는 동작도 이것이었다.
    */
   atBookEnd: AtBookEnd.pipe(Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.atBookEnd))),
+  /**
+   * 슬라이드쇼가 한 장에 머무는 시간(초). 원본 뷰어의 "Slideshow Delay"와 같은
+   * 자리다. 읽는 속도는 그 사람의 것이지 그 책의 것이 아니라서 전역에만 남는다.
+   */
+  slideSeconds: Schema.Number.pipe(
+    Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.slideSeconds)),
+  ),
   /**
    * 책마다 다른 설정을 기억할지. 켜 두면 읽는 동안 바꾼 배치가 전역 기본값이
    * 아니라 그 책에 남는다. 원본 뷰어의 "Remember chenged book setting of all

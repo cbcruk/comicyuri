@@ -305,6 +305,33 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
     },
   ),
 
+  /**
+   * 슬라이드쇼. 정해 둔 시간이 지나면 한 장 넘긴다.
+   *
+   * 기다리는 것을 페이지에 매어 둔다. 그래야 넘어간 순간부터 다시 세고, 사람이
+   * 손으로 넘긴 뒤에도 처음부터 센다 — 넘어가자마자 또 넘어가는 일이 없다.
+   */
+  slideshow: entry(
+    {
+      isPlaying: Schema.Boolean,
+      page: Schema.Number,
+      seconds: Schema.Number,
+    },
+    {
+      modelToDependencies: (model) => ({
+        isPlaying: model.isPlaying,
+        page: model.page,
+        seconds: model.settings.slideSeconds,
+      }),
+      dependenciesToStream: ({ isPlaying, seconds }) =>
+        isPlaying
+          ? Stream.fromEffect(
+              Effect.as(Effect.sleep(Duration.seconds(seconds)), Message.ElapsedSlide()),
+            )
+          : Stream.empty,
+    },
+  ),
+
   chromeIdle: entry(
     {
       isWaiting: Schema.Boolean,
