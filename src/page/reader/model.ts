@@ -8,6 +8,7 @@ import { PageMark, Rotation, Settings } from '../../types.ts'
 import type { BookSettings } from '../../types.ts'
 import { SLIDER_ID, THUMBS_ID, THUMB_ROW_HEIGHT } from './constant.ts'
 import { ORIGIN, Point, Side, ZOOM_MIN } from './gesture.ts'
+import { Half } from './half.ts'
 
 /**
  * 아카이브를 여는 일이 어디까지 왔는지.
@@ -140,6 +141,8 @@ export const Model = Schema.Struct({
    * 끝에서 시작한다 — 되돌아 읽는 움직임과 맞는다.
    */
   entry: PageEntry,
+  /** 나뉜 페이지에서 보고 있는 반쪽. 나뉘지 않는 페이지에서는 쓰이지 않는다. */
+  half: Half,
 
   /** 툴바는 읽는 동안 스스로 숨고, 무슨 일이든 있으면 돌아온다. */
   isChromeVisible: Schema.Boolean,
@@ -208,6 +211,7 @@ export const init = (config: InitConfig): Model => ({
   pan: ORIGIN,
   gesture: Gesture.Idle(),
   entry: 'start',
+  half: 'first',
   isChromeVisible: true,
   isPointerOverChrome: false,
   activityToken: 0,

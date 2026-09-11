@@ -31,12 +31,14 @@ import { Message, OutMessage } from './message.ts'
 import { Gesture, Model, OpenState, SpreadState } from './model.ts'
 import type { PageEntry } from './model.ts'
 import type { OpenBookService } from './resource.ts'
+import { halfAfterStep, staysOnPage } from './half.ts'
 import { rotatedRight } from './rotation.ts'
 import { pannedBy, turnFromEdge } from './scroll.ts'
 import { loadedPages, missingFrom, pagesInView, shownPages } from './thumbs.ts'
 import {
   flipBinding,
   indexOfPage,
+  splitRatio,
   mirrorForDirection,
   neighbourPages,
   pageAfterStep,
@@ -108,7 +110,16 @@ const showPage = (model: Model, page: number): UpdateReturn =>
  * 아니므로 언제나 처음이다.
  */
 const goToPage = (model: Model, page: number, entry: PageEntry = 'start'): UpdateReturn =>
-  showPage(evo(model, { zoom: () => ZOOM_MIN, pan: () => ORIGIN, entry: () => entry }), page)
+  showPage(
+    evo(model, {
+      zoom: () => ZOOM_MIN,
+      pan: () => ORIGIN,
+      entry: () => entry,
+      // 나뉜 페이지에서 "끝"은 뒤쪽 반이다.
+      half: () => (entry === 'end' ? 'second' : 'first'),
+    }),
+    page,
+  )
 
 /** 이 걸음이 페이지의 어느 쪽으로 들어서는지. 뒤로 가는 걸음만 끝에서 시작한다. */
 const entryFor = (by: number): PageEntry => (by < 0 ? 'end' : 'start')
@@ -146,7 +157,21 @@ const step = (model: Model, by: number): UpdateReturn =>
     Opening: () => ({ model }),
     Failed: () => ({ model }),
     Ready: ({ pageCount, ratios }) => {
-      const spreads = spreadsFor({ pageCount, ratios, marks: model.marks }, model.settings)
+      const layout = { pageCount, ratios, marks: model.marks }
+      const spreads = spreadsFor(layout, model.settings)
+      const here = pagesAt(spreads, indexOfPage(spreads, model.page))
+
+      // 나뉜 페이지에 아직 반쪽이 남아 있으면, 페이지를 넘기기 전에 그쪽부터 본다.
+      // 같은 이미지라서 새로 불러올 것이 없다.
+      if (Option.isSome(splitRatio(layout, model.settings, here)) && staysOnPage(model.half, by)) {
+        return {
+          model: evo(model, {
+            half: () => halfAfterStep(by),
+            zoom: () => ZOOM_MIN,
+            pan: () => ORIGIN,
+          }),
+        }
+      }
 
       return Option.match(pageAfterStep(spreads, model.page, by), {
         onNone: () => beyondBookEnd(model, spreads, by),
@@ -566,6 +591,13 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
 
     ToggledEnlargeToFit: ({ isChecked }) =>
       withSettings(model, evo(model.settings, { enlargeToFit: () => isChecked })),
+
+    /** 반씩 읽기를 켜면 지금 페이지도 그 자리에서 나뉜다. 언제나 앞쪽 반부터다. */
+    ToggledSplitWide: ({ isChecked }) =>
+      withSettings(
+        evo(model, { half: () => 'first' as const }),
+        evo(model.settings, { splitWide: () => isChecked }),
+      ),
 
     /**
      * 기억하기를 끄면 이 책이 정한 것을 놓고 전역 기본값으로 돌아간다. 그러지

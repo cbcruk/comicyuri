@@ -109,7 +109,8 @@ export const counter = (page: Page) => page.locator('header span').first()
 export const control = {
   shelf: (page: Page) => page.getByRole('button', { name: '← Shelf' }),
   previous: (page: Page) => page.getByRole('button', { name: 'Previous' }),
-  next: (page: Page) => page.getByRole('button', { name: 'Next' }),
+  // "Next book"(설정 패널의 책 끝 동작)과 이름이 겹치므로 정확히 맞는 것만 고른다.
+  next: (page: Page) => page.getByRole('button', { name: 'Next', exact: true }),
   first: (page: Page) => page.getByRole('button', { name: 'First' }),
   last: (page: Page) => page.getByRole('button', { name: 'Last' }),
   bookmark: (page: Page) => page.getByRole('button', { name: /bookmark/i }),
