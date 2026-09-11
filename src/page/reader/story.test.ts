@@ -46,6 +46,7 @@ const openingModel = (settings = defaultSettings): Model =>
   init({
     bookId: 'volume-1::42',
     page: 0,
+    maybeResumePage: Option.none(),
     bookmarks: [],
     marks: [],
     rotation: 0,
@@ -89,7 +90,9 @@ const opened = (page: number, ratios: ReadonlyArray<Option.Option<number>> = UNM
 ]
 
 describe('opening', () => {
-  test('a book that opens shows its first spread and reports the position', () => {
+  test('a book that opens shows its first spread without claiming that as progress', () => {
+    // 받아 든 자리를 되받아 적으면 저장된 자리를 덮어쓴다. 리더는 스스로 옮긴
+    // 자리만 보고한다.
     story(
       update,
       given(openingModel()),
@@ -101,15 +104,7 @@ describe('opening', () => {
           names: namesOf(PAGE_COUNT),
         }),
       ),
-      expectOutMessage(
-        OutMessage.UpdatedProgress({
-          bookId: 'volume-1::42',
-          page: 0,
-          bookmarks: [],
-          marks: [],
-          rotation: 0,
-        }),
-      ),
+      expectNoOutMessage(),
       model((model) => {
         expect(model.openState).toStrictEqual(
           OpenState.Ready({
@@ -553,6 +548,7 @@ describe('layout', () => {
         init({
           bookId: 'volume-1::42',
           page: 0,
+          maybeResumePage: Option.none(),
           bookmarks: [],
           marks: [{ page: 1, binding: 'alone' }],
           rotation: 0,
@@ -649,6 +645,7 @@ describe('layout', () => {
         init({
           bookId: 'volume-1::42',
           page: 0,
+          maybeResumePage: Option.none(),
           bookmarks: [],
           marks: [],
           rotation: 0,
@@ -1402,6 +1399,109 @@ describe('bookmarks', () => {
       }),
     )
   })
+
+  test('a bookmark can be dropped from the list without going to its page', () => {
+    story(
+      update,
+      given({ ...openingModel(), bookmarks: [1, 4] }),
+      ...opened(0),
+      message(Message.ClickedRemoveBookmark({ page: 4 })),
+      expectOutMessage(
+        OutMessage.UpdatedProgress({
+          bookId: 'volume-1::42',
+          page: 0,
+          bookmarks: [1],
+          marks: [],
+          rotation: 0,
+        }),
+      ),
+      Command.resolve(LoadThumbs, Message.CompletedLoadThumbs({ panels: [] })),
+      model((model) => {
+        expect(model.bookmarks).toStrictEqual([1])
+        // 목록을 손보는 것이지 읽던 자리를 옮기는 것이 아니다.
+        expect(model.page).toBe(0)
+      }),
+    )
+  })
+
+  test('dropping the bookmark on the page being read leaves the reader there', () => {
+    story(
+      update,
+      given({ ...openingModel(), bookmarks: [0] }),
+      ...opened(0),
+      message(Message.ClickedRemoveBookmark({ page: 0 })),
+      expectOutMessage(
+        OutMessage.UpdatedProgress({
+          bookId: 'volume-1::42',
+          page: 0,
+          bookmarks: [],
+          marks: [],
+          rotation: 0,
+        }),
+      ),
+      Command.resolve(LoadThumbs, Message.CompletedLoadThumbs({ panels: [] })),
+      model((model) => {
+        expect(model.bookmarks).toStrictEqual([])
+        expect(model.page).toBe(0)
+      }),
+    )
+  })
+})
+
+describe('offering the saved position', () => {
+  /** 41쪽에 멈춰 있던 책을, 물어보기로 한 사람이 연 상태. */
+  const asked = (): Model => ({ ...openingModel(), maybeResumePage: Option.some(4) })
+
+  test('taking the offer goes there and the question is done', () => {
+    story(
+      update,
+      given(asked()),
+      ...opened(0),
+      message(Message.ClickedResume({ page: 4 })),
+      expectOutMessage(
+        OutMessage.UpdatedProgress({
+          bookId: 'volume-1::42',
+          page: 4,
+          bookmarks: [],
+          marks: [],
+          rotation: 0,
+        }),
+      ),
+      model((model) => {
+        expect(model.page).toBe(4)
+        expect(model.maybeResumePage).toStrictEqual(Option.none())
+      }),
+      ...settle(4),
+    )
+  })
+
+  test('turning it down leaves the reader where it opened', () => {
+    story(
+      update,
+      given(asked()),
+      ...opened(0),
+      message(Message.ClickedDismissResume()),
+      expectNoOutMessage(),
+      model((model) => {
+        expect(model.page).toBe(0)
+        expect(model.maybeResumePage).toStrictEqual(Option.none())
+      }),
+    )
+  })
+
+  test('reading on does not take the question away', () => {
+    // 첫 장부터 읽기 시작해도 그 자리는 여전히 거기 있다.
+    story(
+      update,
+      given(asked()),
+      ...opened(0),
+      message(Message.ClickedNext()),
+      ...settle(1),
+      model((model) => {
+        expect(model.maybeResumePage).toStrictEqual(Option.some(4))
+      }),
+    )
+  })
 })
 
 describe('going to a page by number', () => {
@@ -1596,6 +1696,7 @@ describe('turning the page upright', () => {
         init({
           bookId: 'volume-1::42',
           page: 0,
+          maybeResumePage: Option.none(),
           bookmarks: [],
           marks: [],
           rotation: 270,

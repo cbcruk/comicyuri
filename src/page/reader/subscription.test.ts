@@ -107,6 +107,7 @@ describe('what the chrome wait is gated on', () => {
   const reading = init({
     bookId: 'volume-1::42',
     page: 0,
+    maybeResumePage: Option.none(),
     bookmarks: [],
     marks: [],
     rotation: 0,
@@ -144,6 +145,7 @@ describe('a pointer resting on the chrome', () => {
   const reading = init({
     bookId: 'volume-1::42',
     page: 0,
+    maybeResumePage: Option.none(),
     bookmarks: [],
     marks: [],
     rotation: 0,

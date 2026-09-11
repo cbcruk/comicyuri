@@ -382,4 +382,55 @@ describe('routing', () => {
       ),
     )
   })
+
+  // 저장된 자리를 어떻게 쓸지는 설정이 정한다. 리더는 이미 정해진 자리를 받는다.
+  test('set to start over, a saved position does not decide where the reader opens', () => {
+    story(
+      update,
+      given({ ...shelfModel(), settings: { ...defaultSettings, resume: 'restart' } }),
+      message(Message.ChangedUrl({ url: readerUrl })),
+      Command.resolve(
+        LoadProgress,
+        Message.CompletedLoadProgress({
+          bookId: 'volume-1::42',
+          page: 7,
+          bookmarks: [],
+          marks: [],
+          rotation: 0,
+          maybeSettings: Option.none(),
+        }),
+      ),
+      model((model) => {
+        expect(Option.map(model.maybeReader, (reader) => reader.page)).toStrictEqual(Option.some(0))
+        expect(Option.map(model.maybeReader, (reader) => reader.maybeResumePage)).toStrictEqual(
+          Option.some(Option.none()),
+        )
+      }),
+    )
+  })
+
+  test('set to ask, the reader opens at the start carrying the question', () => {
+    story(
+      update,
+      given({ ...shelfModel(), settings: { ...defaultSettings, resume: 'ask' } }),
+      message(Message.ChangedUrl({ url: readerUrl })),
+      Command.resolve(
+        LoadProgress,
+        Message.CompletedLoadProgress({
+          bookId: 'volume-1::42',
+          page: 7,
+          bookmarks: [],
+          marks: [],
+          rotation: 0,
+          maybeSettings: Option.none(),
+        }),
+      ),
+      model((model) => {
+        expect(Option.map(model.maybeReader, (reader) => reader.page)).toStrictEqual(Option.some(0))
+        expect(Option.map(model.maybeReader, (reader) => reader.maybeResumePage)).toStrictEqual(
+          Option.some(Option.some(7)),
+        )
+      }),
+    )
+  })
 })

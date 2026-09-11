@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vite-plus/test'
 
 import { defaultSettings } from '../types.ts'
 import type { BookSettings, Settings } from '../types.ts'
-import { bookPartOf, forBook, split } from './reading.ts'
+import { bookPartOf, forBook, opening, split } from './reading.ts'
 
 const remembering: Settings = { ...defaultSettings, rememberBookSettings: true }
 
@@ -30,6 +30,38 @@ describe('opening a book', () => {
 
   test('with the switch off, what a book remembers is not used', () => {
     expect(forBook(defaultSettings, Option.some(western))).toStrictEqual(defaultSettings)
+  })
+})
+
+describe('where a book opens', () => {
+  const withResume = (resume: Settings['resume']): Settings => ({ ...defaultSettings, resume })
+
+  test('by default the saved position is taken without asking', () => {
+    expect(opening(withResume('continue'), 41)).toStrictEqual({
+      page: 41,
+      maybeOffer: Option.none(),
+    })
+  })
+
+  test('set to start over, the saved position is ignored rather than forgotten', () => {
+    expect(opening(withResume('restart'), 41)).toStrictEqual({
+      page: 0,
+      maybeOffer: Option.none(),
+    })
+  })
+
+  test('set to ask, the book opens at the start and offers the saved position', () => {
+    expect(opening(withResume('ask'), 41)).toStrictEqual({
+      page: 0,
+      maybeOffer: Option.some(41),
+    })
+  })
+
+  test('a book left on its first page has nothing to ask about', () => {
+    expect(opening(withResume('ask'), 0)).toStrictEqual({
+      page: 0,
+      maybeOffer: Option.none(),
+    })
   })
 })
 

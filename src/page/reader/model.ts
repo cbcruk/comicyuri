@@ -152,6 +152,14 @@ export const Model = Schema.Struct({
   /** 나뉜 페이지에서 보고 있는 반쪽. 나뉘지 않는 페이지에서는 쓰이지 않는다. */
   half: Half,
 
+  /**
+   * 저장된 자리로 갈지 묻고 있는 페이지. 묻지 않는 동안에는 없음이다.
+   *
+   * 물어보기로 한 사람에게만 생긴다(`Resume`). 답하기 전까지 사라지지 않으므로,
+   * 첫 장부터 읽다가 나중에 눌러도 그 자리로 간다.
+   */
+  maybeResumePage: Schema.Option(Schema.Number),
+
   /** 슬라이드쇼가 돌고 있는지. 돌면 정해 둔 시간마다 스스로 넘어간다. */
   isPlaying: Schema.Boolean,
   /** 툴바는 읽는 동안 스스로 숨고, 무슨 일이든 있으면 돌아온다. */
@@ -187,8 +195,13 @@ export type Model = typeof Model.Type
 export type InitConfig = Readonly<{
   /** 어느 책을 열지. 진행 상태를 저장하는 키이기도 하다. */
   bookId: string
-  /** 이 책을 어디까지 읽었는지. */
+  /** 리더가 처음 걸 페이지. */
   page: number
+  /**
+   * 저장된 자리로 갈지 물어볼 페이지. 묻지 않기로 했으면 없음이다.
+   * `Reading.opening`이 설정을 보고 이것과 `page`를 함께 정한다.
+   */
+  maybeResumePage: Option.Option<number>
   /** 이미 북마크된 페이지들. */
   bookmarks: ReadonlyArray<number>
   /** 이 책에 걸어 둔 묶기 교정. */
@@ -212,6 +225,7 @@ export const init = (config: InitConfig): Model => ({
   openState: OpenState.Opening(),
   spread: SpreadState.Loading(),
   page: config.page,
+  maybeResumePage: config.maybeResumePage,
   bookmarks: config.bookmarks,
   marks: config.marks,
   rotation: config.rotation,

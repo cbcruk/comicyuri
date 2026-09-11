@@ -524,14 +524,25 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 
 const applyMessage = (model: Model, message: Message): UpdateReturn =>
   Message.match<UpdateReturn>(message, {
-    CompletedOpenBook: ({ title, pageCount, ratios, names }) =>
-      showPage(
+    /**
+     * 책이 열렸다. 받아 든 자리를 그대로 보여 주되, 그것을 저장된 자리로 적지는
+     * 않는다. 리더는 스스로 옮긴 자리만 보고한다.
+     *
+     * 열자마자 적어 두면 받아 든 자리가 저장된 자리를 덮어쓴다. 첫 장에서 물어보는
+     * 동안 저장된 자리가 첫 장이 되어 물음이 스스로를 지우고, 처음부터 보기로 한
+     * 사람은 책을 열었다 나가는 것만으로 읽던 자리를 잃는다.
+     */
+    CompletedOpenBook: ({ title, pageCount, ratios, names }) => {
+      const opened = showPage(
         evo(model, {
           openState: () => OpenState.Ready({ title, pageCount, ratios, names }),
           slider: Slider.reflectRange({ min: 0, max: Math.max(0, pageCount - 1) }),
         }),
         model.page,
-      ),
+      )
+
+      return { model: opened.model, commands: opened.commands }
+    },
 
     FailedOpenBook: ({ text }) => ({
       model: evo(model, {
@@ -651,6 +662,9 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
     SelectedAtBookEnd: ({ atBookEnd }) =>
       withSettings(model, evo(model.settings, { atBookEnd: () => atBookEnd })),
 
+    SelectedResume: ({ resume }) =>
+      withSettings(model, evo(model.settings, { resume: () => resume })),
+
     ClickedNudgeThreshold: ({ by }) =>
       withSettings(
         model,
@@ -683,6 +697,17 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
     },
 
     GotSliderMessage: ({ message }) => foldSlider(model, message),
+
+    /**
+     * 물어본 자리로 간다. 묻는 줄은 답을 받았으므로 사라진다.
+     */
+    ClickedResume: ({ page }) =>
+      goToPage(evo(model, { maybeResumePage: () => Option.none<number>() }), page),
+
+    /** 묻는 줄을 치운다. 읽던 자리는 저장된 그대로 남으므로 다음에 또 물어본다. */
+    ClickedDismissResume: () => ({
+      model: evo(model, { maybeResumePage: () => Option.none<number>() }),
+    }),
 
     ClickedToggleBookmark: () => {
       const bookmarks = Array.contains(model.bookmarks, model.page)
@@ -751,6 +776,29 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
     /** 북마크를 목록으로 보는 것과 책 전체를 보는 것 사이를 오간다. */
     ClickedToggleBookmarksOnly: () =>
       fillThumbs(evo(model, { showsBookmarksOnly: (only) => !only })),
+
+    /**
+     * 목록에서 북마크 하나를 지운다. 지금 보고 있는 페이지가 아니라 목록이
+     * 가리키는 페이지의 것이므로, 툴바의 ★와 달리 어디로도 가지 않는다.
+     *
+     * 지운 자리만큼 목록이 줄어드니 격자를 다시 채운다 — 남은 것들이 앞으로
+     * 당겨져서, 창에 새로 들어온 페이지가 생긴다.
+     */
+    ClickedRemoveBookmark: ({ page }) => {
+      const bookmarks = Array.filter(model.bookmarks, (bookmark) => bookmark !== page)
+      const filled = fillThumbs(evo(model, { bookmarks: () => bookmarks }))
+
+      return {
+        ...filled,
+        outMessage: OutMessage.UpdatedProgress({
+          bookId: model.bookId,
+          page: model.page,
+          bookmarks,
+          marks: model.marks,
+          rotation: model.rotation,
+        }),
+      }
+    },
 
     /**
      * 앞뒤 북마크로 건너뛴다. 그쪽에 더 남은 북마크가 없으면 제자리에 머문다 —

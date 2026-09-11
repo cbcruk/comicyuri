@@ -3,7 +3,7 @@ import { defineMessageUnion } from 'foldkit/message'
 
 import { Slider, VirtualList } from '@foldkit/ui'
 
-import { AtBookEnd, PageMark, Rotation, Settings } from '../../types.ts'
+import { AtBookEnd, PageMark, Resume, Rotation, Settings } from '../../types.ts'
 import { Point } from './gesture.ts'
 import { Panel } from './model.ts'
 import { Room, ScrollDevice } from './scroll.ts'
@@ -75,9 +75,13 @@ export const Message = defineMessageUnion({
 
   ClickedRotate: {},
 
+  ClickedResume: { page: Schema.Number },
+  ClickedDismissResume: {},
+
   ClickedToggleBookmark: {},
   ClickedStepBookmark: { step: Schema.Number },
   ClickedToggleBookmarksOnly: {},
+  ClickedRemoveBookmark: { page: Schema.Number },
 
   ClickedToggleFullscreen: {},
   CompletedToggleFullscreen: {},
@@ -89,6 +93,7 @@ export const Message = defineMessageUnion({
   ToggledSplitWide: { isChecked: Schema.Boolean },
   ToggledRememberBookSettings: { isChecked: Schema.Boolean },
   SelectedAtBookEnd: { atBookEnd: AtBookEnd },
+  SelectedResume: { resume: Resume },
   ClickedNudgeThreshold: { by: Schema.Number },
 
   ClickedToggleThumbs: {},

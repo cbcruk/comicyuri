@@ -53,6 +53,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   openState: OpenState.Ready({ title: 'Volume 1', pageCount: 6, ratios: UNMEASURED, names: NAMES }),
   spread: SpreadState.Shown({ panels: [{ page, url: `blob:${page}` }] }),
   page,
+  maybeResumePage: Option.none(),
   bookmarks: [],
   marks: [],
   rotation: 0,
@@ -332,6 +333,57 @@ describe('the bookmark list', () => {
       program,
       given(bookmarksOnly(measuredThumbs(readingModel()))),
       expect(text('Nothing is bookmarked in this book yet')).toExist(),
+    )
+  })
+
+  test('each entry in the list carries its own way to drop it', () => {
+    scene(
+      program,
+      given(bookmarksOnly(measuredThumbs({ ...readingModel(), bookmarks: [1, 3] }))),
+      expect(role('button', { name: 'Remove the bookmark on page 2' })).toExist(),
+      expect(role('button', { name: 'Remove the bookmark on page 4' })).toExist(),
+      // 가는 길과 지우는 길은 서로 다른 컨트롤이다.
+      expect(role('button', { name: 'Go to page 2' })).toExist(),
+    )
+  })
+
+  test('the whole book carries no such control, where most pages have nothing to drop', () => {
+    scene(
+      program,
+      given(measuredThumbs({ ...readingModel(), bookmarks: [1] })),
+      expect(role('button', { name: 'Go to page 2' })).toExist(),
+      expect(role('button', { name: 'Remove the bookmark on page 2' })).not.toExist(),
+    )
+  })
+})
+
+describe('the offer to pick up where you left off', () => {
+  const asked = (): Model => ({ ...readingModel(), maybeResumePage: Option.some(40) })
+
+  test('the offer names the page and gives both answers', () => {
+    scene(
+      program,
+      given(asked()),
+      expect(text('You left this book on page 41')).toExist(),
+      expect(role('button', { name: 'Go there' })).toExist(),
+      expect(role('button', { name: 'Stay on the first page' })).toExist(),
+    )
+  })
+
+  test('a book opened without an offer says nothing', () => {
+    scene(
+      program,
+      given(readingModel()),
+      expect(role('button', { name: 'Go there' })).not.toExist(),
+    )
+  })
+
+  test('staying takes the offer off the screen', () => {
+    scene(
+      program,
+      given(asked()),
+      click(role('button', { name: 'Stay on the first page' })),
+      expect(role('button', { name: 'Go there' })).not.toExist(),
     )
   })
 })

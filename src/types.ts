@@ -41,6 +41,16 @@ export const AtBookEnd = Schema.Literals(['stop', 'wrap', 'next'])
 /** {@linkcode AtBookEnd} 스키마의 디코딩된 값. */
 export type AtBookEnd = typeof AtBookEnd.Type
 
+/**
+ * 저장된 자리가 있는 책을 열 때 무엇을 할지.
+ *
+ * `continue`는 조용히 그리로 가고, `restart`는 언제나 처음부터 보여 주며,
+ * `ask`는 첫 장을 열어 둔 채 그리로 갈지 묻는다.
+ */
+export const Resume = Schema.Literals(['continue', 'ask', 'restart'])
+/** {@linkcode Resume} 스키마의 디코딩된 값. */
+export type Resume = typeof Resume.Type
+
 /** 책의 페이지가 어디서 왔는지. 아카이브, 낱장 이미지 묶음, 아니면 고른 폴더다. */
 export const BookSource = Schema.Literals(['zip', 'images', 'folder'])
 /** {@linkcode BookSource} 스키마의 디코딩된 값. */
@@ -58,6 +68,7 @@ const DEFAULTS = {
   atBookEnd: 'next',
   slideSeconds: 5,
   rememberBookSettings: false,
+  resume: 'continue',
 } as const
 
 /**
@@ -123,6 +134,11 @@ export const Settings = Schema.Struct({
   rememberBookSettings: Schema.Boolean.pipe(
     Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.rememberBookSettings)),
   ),
+  /**
+   * 저장된 자리가 있는 책을 열 때 무엇을 할지. 원본 뷰어의 `goToLastPageMode`와
+   * 같은 자리다. 읽는 사람의 습관이라서 전역에만 남는다.
+   */
+  resume: Resume.pipe(Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.resume))),
 })
 /** {@linkcode Settings} 스키마의 디코딩된 값. */
 export type Settings = typeof Settings.Type
