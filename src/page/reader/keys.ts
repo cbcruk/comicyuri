@@ -1,5 +1,6 @@
 import { Option, Record } from 'effect'
 
+import { SKIP_PAGES } from './constant.ts'
 import { Message } from './message.ts'
 import type { Model } from './model.ts'
 
@@ -61,8 +62,15 @@ export const isReaderKey = (key: string, modifiers: Modifiers): boolean => {
  *
  * 넘김 키는 눈에 보이는 방향을 따른다. 오른쪽에서 왼쪽으로 읽을 때는 왼쪽 키가
  * 앞으로 가고, 그래야 만화를 넘기는 감각이 맞는다.
+ *
+ * Shift는 리더가 자기 것으로 쓰는 유일한 수정키다. 같은 넘김 키를 크게 만든다 —
+ * 한 장 대신 한 뭉치. Space만은 예외로, 예부터 Shift와 함께라면 뒤로 가는 키다.
  */
-export const messageForKey = (model: Model, key: string): Option.Option<Message> => {
+export const messageForKey = (
+  model: Model,
+  key: string,
+  withShift: boolean,
+): Option.Option<Message> => {
   // Escape는 늘 책을 떠나는 대신 한 겹씩 벗긴다.
   if (key === 'Escape') {
     if (model.isSettingsOpen) return Option.some(Message.ClickedToggleSettings())
@@ -74,13 +82,17 @@ export const messageForKey = (model: Model, key: string): Option.Option<Message>
   const rtl = model.settings.direction === 'rtl'
   const forward = rtl ? 'ArrowLeft' : 'ArrowRight'
   const back = rtl ? 'ArrowRight' : 'ArrowLeft'
+  const goesForward = key === forward || key === 'ArrowDown' || key === 'PageDown'
+  const goesBack = key === back || key === 'ArrowUp' || key === 'PageUp'
 
-  if (key === forward || key === 'ArrowDown' || key === 'PageDown' || key === ' ') {
-    return Option.some(Message.ClickedNext())
+  if (withShift) {
+    if (key === ' ') return Option.some(Message.ClickedPrevious())
+    if (goesForward) return Option.some(Message.ClickedSkip({ pages: SKIP_PAGES }))
+    if (goesBack) return Option.some(Message.ClickedSkip({ pages: -SKIP_PAGES }))
   }
-  if (key === back || key === 'ArrowUp' || key === 'PageUp') {
-    return Option.some(Message.ClickedPrevious())
-  }
+
+  if (goesForward || key === ' ') return Option.some(Message.ClickedNext())
+  if (goesBack) return Option.some(Message.ClickedPrevious())
 
   return Option.map(Record.get(COMMAND_KEYS, key), (toMessage) => toMessage())
 }

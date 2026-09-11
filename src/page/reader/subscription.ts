@@ -128,7 +128,7 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
             }
 
             event.preventDefault()
-            return Option.some(Message.PressedKey({ key: event.key }))
+            return Option.some(Message.PressedKey({ key: event.key, withShift: event.shiftKey }))
           },
         }),
     },

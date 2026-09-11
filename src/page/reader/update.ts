@@ -152,6 +152,20 @@ const beyondBookEnd = (
     Match.exhaustive,
   )
 
+/**
+ * 정해 둔 장수만큼 건너뛴다. 책의 양 끝에서 멈춘다 — 넘기는 것과 달리 건너뛰기는
+ * 책을 벗어나는 동작이 아니므로, 끝을 넘어서 이웃한 책을 열지 않는다(`R-212`).
+ */
+const skip = (model: Model, pages: number): UpdateReturn =>
+  OpenState.match(model.openState, {
+    Opening: () => ({ model }),
+    Failed: () => ({ model }),
+    Ready: ({ pageCount }) => {
+      const page = Math.max(0, Math.min(pageCount - 1, model.page + pages))
+      return page === model.page ? { model } : goToPage(model, page)
+    },
+  })
+
 const step = (model: Model, by: number): UpdateReturn =>
   OpenState.match(model.openState, {
     Opening: () => ({ model }),
@@ -570,6 +584,8 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
         }),
       ),
 
+    ClickedSkip: ({ pages }) => skip(model, pages),
+
     ClickedCycleFit: () => withSettings(model, evo(model.settings, { fit: nextFit })),
 
     ClickedToggleBinding: () => flipBindingHere(model),
@@ -814,8 +830,8 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
         ? { model: evo(model, { isChromeVisible: () => false }) }
         : { model },
 
-    PressedKey: ({ key }) =>
-      Option.match(messageForKey(model, key), {
+    PressedKey: ({ key, withShift }) =>
+      Option.match(messageForKey(model, key, withShift), {
         onNone: () => ({ model }),
         onSome: (message) => update(model, message),
       }),

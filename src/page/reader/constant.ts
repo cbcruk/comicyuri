@@ -7,6 +7,15 @@ export const STAGE_ID = 'reader-stage'
  */
 export const PAGE_ID = 'reader-page'
 
+/**
+ * 한 번 건너뛸 때 지나가는 페이지 수.
+ *
+ * 원본 뷰어는 이 값을 고르게 했지만, 여기서는 하나로 두었다. 크게 움직이는 다른
+ * 길이 이미 둘 있다 — 슬라이더와 썸네일 격자 — 그래서 이것은 "한 화면에 없는
+ * 앞쪽을 훑는" 한 가지 크기면 된다.
+ */
+export const SKIP_PAGES = 10
+
 /** 페이지 슬라이더. 부모가 드래그 구독을 lift 할 때 이 id로 부른다. */
 export const SLIDER_ID = 'reader-page-slider'
 

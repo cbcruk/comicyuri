@@ -35,6 +35,8 @@ Everything runs client-side — your files never leave the browser.
 | `←` / `→`                        | Turn page in the visual direction              |
 | `↑` / `↓`, `PageUp` / `PageDown` | Previous / next                                |
 | `Space`                          | Next                                           |
+| `Shift` + `Space`                | Previous                                       |
+| `Shift` + turn key               | Skip ten pages                                 |
 | `Home` / `End`                   | First / last page                              |
 | `d`                              | Toggle reading direction                       |
 | `v`                              | Toggle one / two pages                         |
