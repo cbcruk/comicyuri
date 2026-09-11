@@ -63,6 +63,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   gesture: Gesture.Idle(),
   entry: 'start',
   half: 'first',
+  isPlaying: false,
   isChromeVisible: true,
   isPointerOverChrome: false,
   activityToken: 0,
@@ -532,12 +533,12 @@ describe('page slider', () => {
   })
 
   test('the track fills the row, so the thumb sits where it says it does', () => {
-    // thumb은 행의 비율로 놓이고 트랙은 그 행을 채운다. 흐름에 다른 것이 끼면
-    // 트랙만 좁아져 둘이 어긋난다.
+    // thumb은 행의 비율로 놓이고 트랙은 그 행을 채운다. 슬라이더 안쪽 흐름에 다른
+    // 것이 끼면 트랙만 좁아져 둘이 어긋난다.
     scene(
       program,
       given(readingModel()),
-      expect(selector('input')).not.toExist(),
+      expect(within(role('slider', { name: 'Page' }), selector('input'))).not.toExist(),
       expect(role('slider', { name: 'Page' })).toExist(),
     )
   })

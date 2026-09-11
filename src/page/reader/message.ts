@@ -39,6 +39,8 @@ export const Message = defineMessageUnion({
   ClickedToggleBinding: {},
   ClickedCycleFit: {},
   ClickedSkip: { pages: Schema.Number },
+  /** 번호를 적고 Enter를 눌렀거나 입력란을 떠났다. 적힌 것이 무엇이든 지고 온다. */
+  SubmittedGoToPage: { text: Schema.String },
   /** 키가 눌렸다. Shift는 리더가 쓰는 유일한 수정키라 함께 지고 온다. */
   PressedKey: { key: Schema.String, withShift: Schema.Boolean },
 
@@ -58,6 +60,10 @@ export const Message = defineMessageUnion({
    * 어느 장치에서 온 굴림인지를 함께 지고 온다 — 둘 다 브라우저에서만 알 수 있다.
    */
   ScrolledStage: { delta: Point, room: Room, device: ScrollDevice },
+
+  ClickedToggleSlideshow: {},
+  ElapsedSlide: {},
+  ClickedNudgeSlideSeconds: { by: Schema.Number },
 
   ClickedZoomIn: {},
   ClickedZoomOut: {},

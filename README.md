@@ -27,6 +27,7 @@ Everything runs client-side — your files never leave the browser.
   bottom of the previous one.
 - **Bookmarks** — mark any page, jump between marks with `[` / `]`, or narrow
   the thumbnail grid to the marked pages.
+- **Slideshow** — turn pages on a timer, two to thirty seconds a page.
 - **Fullscreen**, an auto-hiding immersive UI, and a light / dark theme.
 
 ## Keyboard shortcuts
@@ -43,6 +44,7 @@ Everything runs client-side — your files never leave the browser.
 | `v`                              | Toggle one / two pages                         |
 | `t`                              | Thumbnail grid                                 |
 | `b`                              | Bookmark current page                          |
+| `p`                              | Start / stop the slideshow                     |
 | `r`                              | Turn the page a quarter clockwise              |
 | `[` / `]`                        | Previous / next bookmark                       |
 | `f`                              | Fullscreen                                     |

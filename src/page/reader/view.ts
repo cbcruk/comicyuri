@@ -2,15 +2,19 @@ import { Array, Option } from 'effect'
 import type { Attribute, Html, HtmlBuilder } from 'foldkit/html'
 import { defineView } from 'foldkit/submodel'
 
-import { Button, Slider, Switch, VirtualList } from '@foldkit/ui'
+import { Button, Input, Slider, Switch, VirtualList } from '@foldkit/ui'
 import clsx from 'clsx'
 
 import type { AtBookEnd, FitMode, Settings } from '../../types.ts'
 import {
   COVER_ALONE_ID,
   ENLARGE_ID,
+  GOTO_ID,
   PAGE_ID,
   REMEMBER_ID,
+  SLIDE_MAX,
+  SLIDE_MIN,
+  SLIDE_STEP,
   SPLIT_ID,
   STAGE_ID,
   THRESHOLD_MAX,
@@ -244,6 +248,17 @@ const toolbarView = (
           label: FIT_LABEL[model.settings.fit],
           message: Message.ClickedCycleFit(),
           attributes: [h.AriaLabel('Change how pages are fitted')],
+        },
+        h,
+      ),
+      controlView(
+        {
+          label: model.isPlaying ? '⏸' : '▶',
+          message: Message.ClickedToggleSlideshow(),
+          attributes: [
+            h.AriaLabel(model.isPlaying ? 'Stop the slideshow' : 'Start the slideshow'),
+            h.AriaPressed(model.isPlaying ? 'true' : 'false'),
+          ],
         },
         h,
       ),
@@ -576,6 +591,39 @@ const choiceView = <A extends string>(
     ),
   )
 
+const slideSecondsView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
+  h.div(
+    [h.Class('flex items-center gap-2')],
+    [
+      controlView(
+        {
+          label: '−',
+          message: Message.ClickedNudgeSlideSeconds({ by: -SLIDE_STEP }),
+          attributes: [
+            h.AriaLabel('Spend less time on a page'),
+            h.AriaDisabled(settings.slideSeconds <= SLIDE_MIN),
+          ],
+        },
+        h,
+      ),
+      h.span(
+        [h.Class('w-12 text-center text-sm tabular-nums text-muted')],
+        [`${settings.slideSeconds}s`],
+      ),
+      controlView(
+        {
+          label: '+',
+          message: Message.ClickedNudgeSlideSeconds({ by: SLIDE_STEP }),
+          attributes: [
+            h.AriaLabel('Spend more time on a page'),
+            h.AriaDisabled(settings.slideSeconds >= SLIDE_MAX),
+          ],
+        },
+        h,
+      ),
+    ],
+  )
+
 const thresholdView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
   h.div(
     [h.Class('flex items-center gap-2')],
@@ -700,6 +748,7 @@ const settingsView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
             },
             h,
           ),
+          settingRow('A slideshow stays on a page for', slideSecondsView(settings, h), h),
           settingRow(
             'At the end of a book',
             choiceView(
@@ -778,6 +827,32 @@ const thumbsView = (model: Model, pageCount: number, h: HtmlBuilder<Message>): H
   )
 }
 
+/**
+ * 번호를 적어 그 페이지로 가는 자리.
+ *
+ * 값을 Model에 두지 않는다. 적는 동안 리더가 그것을 고쳐 쓰면 손가락과 싸우게
+ * 되고, 여기서 필요한 것은 다 적은 뒤의 한 번뿐이다 — Enter를 누르거나 입력란을
+ * 떠날 때 `change`가 그것을 준다. 지금 어디인지는 자리표시자가 말해 준다.
+ */
+const goToPageView = (page: number, h: HtmlBuilder<Message>): Html =>
+  Input.view(
+    {
+      id: GOTO_ID,
+      type: 'number',
+      placeholder: String(page + 1),
+      toView: (attributes) =>
+        h.input([
+          ...attributes.input,
+          h.Class(
+            'w-16 rounded-lg border border-edge bg-surface-2 px-2 py-1.5 text-center text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+          ),
+          h.AriaLabel('Go to page'),
+          h.OnChange((text) => Message.SubmittedGoToPage({ text })),
+        ]),
+    },
+    h,
+  )
+
 const turnView = (model: Model, isVisible: boolean, h: HtmlBuilder<Message>): Html =>
   h.footer(
     [
@@ -797,6 +872,7 @@ const turnView = (model: Model, isVisible: boolean, h: HtmlBuilder<Message>): Ht
       controlView({ label: 'First', message: Message.ClickedFirst() }, h),
       controlView({ label: 'Previous', message: Message.ClickedPrevious() }, h),
       sliderView(model, h),
+      goToPageView(model.page, h),
       controlView({ label: 'Next', message: Message.ClickedNext() }, h),
       controlView({ label: 'Last', message: Message.ClickedLast() }, h),
     ],

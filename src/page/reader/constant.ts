@@ -19,6 +19,9 @@ export const SKIP_PAGES = 10
 /** 페이지 슬라이더. 부모가 드래그 구독을 lift 할 때 이 id로 부른다. */
 export const SLIDER_ID = 'reader-page-slider'
 
+/** 번호를 적어 그 페이지로 가는 입력란. */
+export const GOTO_ID = 'reader-go-to-page'
+
 /** 표지를 혼자 두는 스위치. 라벨과 설명이 이 id에서 갈라져 나온다. */
 export const COVER_ALONE_ID = 'reader-cover-alone'
 
@@ -37,6 +40,11 @@ export const THRESHOLD_STEP = 0.02
 export const THRESHOLD_MIN = 0.5
 /** 문턱의 위쪽 끝. 정사각형보다 넓은 페이지만 혼자 서는 자리다. */
 export const THRESHOLD_MAX = 1
+
+/** 슬라이드쇼가 한 장에 머무는 시간의 폭과 양 끝(초). */
+export const SLIDE_STEP = 1
+export const SLIDE_MIN = 2
+export const SLIDE_MAX = 30
 
 /** 페이지 격자. 부모가 리스트 구독을 lift 할 때 이 id로 부른다. */
 export const THUMBS_ID = 'reader-thumbs'

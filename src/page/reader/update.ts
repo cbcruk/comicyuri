@@ -6,7 +6,7 @@ import { evo } from 'foldkit/struct'
 import type { FitMode } from '../../types.ts'
 import { bookmarkFrom } from './bookmark.ts'
 import { LoadSpread, LoadThumbs, PreloadNeighbours, ToggleFullscreen } from './command.ts'
-import { THRESHOLD_MAX, THRESHOLD_MIN } from './constant.ts'
+import { SLIDE_MAX, SLIDE_MIN, THRESHOLD_MAX, THRESHOLD_MIN } from './constant.ts'
 import {
   DOUBLE_TAP_MILLIS,
   DOUBLE_TAP_ZOOM,
@@ -586,6 +586,22 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
 
     ClickedSkip: ({ pages }) => skip(model, pages),
 
+    /**
+     * 적어 넣은 번호로 간다. 책 밖의 번호나 숫자가 아닌 것은 아무 일도 일으키지
+     * 않는다 — 잘못 적은 것을 되돌릴 자리가 입력란 자신이기 때문이다.
+     */
+    SubmittedGoToPage: ({ text }) =>
+      OpenState.match(model.openState, {
+        Opening: () => ({ model }),
+        Failed: () => ({ model }),
+        Ready: ({ pageCount }) => {
+          const page = Number.parseInt(text, 10) - 1
+          return Number.isInteger(page) && page >= 0 && page < pageCount
+            ? goToPage(model, page)
+            : { model }
+        },
+      }),
+
     ClickedCycleFit: () => withSettings(model, evo(model.settings, { fit: nextFit })),
 
     ClickedToggleBinding: () => flipBindingHere(model),
@@ -640,6 +656,31 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
         model,
         evo(model.settings, { singleThreshold: (threshold) => nudged(threshold, by) }),
       ),
+
+    ClickedToggleSlideshow: () => ({
+      model: evo(model, { isPlaying: (isPlaying) => !isPlaying }),
+    }),
+
+    ClickedNudgeSlideSeconds: ({ by }) =>
+      withSettings(
+        model,
+        evo(model.settings, {
+          slideSeconds: (seconds) =>
+            Math.max(SLIDE_MIN, Math.min(SLIDE_MAX, Math.round(seconds + by))),
+        }),
+      ),
+
+    /**
+     * 슬라이드쇼가 한 장을 다 보여 주었다. 더 갈 곳이 없으면 스스로 멈춘다 —
+     * 아무도 보고 있지 않을 수 있는 화면에서 마지막 장을 붙들고 도는 것은 도는
+     * 것이 아니다.
+     */
+    ElapsedSlide: () => {
+      const turned = step(model, 1)
+      const moved = turned.model.page !== model.page || turned.outMessage !== undefined
+
+      return moved ? turned : { model: evo(model, { isPlaying: () => false }) }
+    },
 
     GotSliderMessage: ({ message }) => foldSlider(model, message),
 
