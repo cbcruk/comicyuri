@@ -25,7 +25,7 @@ import type { Book } from './domain/index.ts'
 import { Message } from './message.ts'
 import type { Model } from './model.ts'
 import { Notice, Shelf } from './model.ts'
-import { AppRoute } from './route.ts'
+import { AppRoute, readerRouter, urlToAppRoute } from './route.ts'
 import { defaultSettings } from './types.ts'
 import { update } from './update.ts'
 
@@ -338,6 +338,48 @@ describe('routing', () => {
       model((model) => {
         expect(Option.map(model.maybeReader, (reader) => reader.page)).toStrictEqual(Option.some(7))
       }),
+    )
+  })
+
+  // 책 id는 파일 이름을 그대로 담으므로 띄어쓰기와 한글이 흔하다. 경로가 그것을
+  // 인코딩하고 되돌리지 못하면 리더가 다른 id로 책을 찾게 된다.
+  test('a book id with spaces survives the trip through the url', () => {
+    const id = 'Shuuden Deisui Anken.zip::24452540'
+    const path = readerRouter(id)
+
+    expect(path).not.toContain(' ')
+
+    const url = Option.getOrThrow(urlFromString(`https://comicyuri.test${path}`))
+
+    expect(urlToAppRoute(url)).toStrictEqual(AppRoute.Reader({ id }))
+  })
+
+  test('a url change asks for the saved position under the decoded id', () => {
+    const id = 'Shuuden Deisui Anken.zip::24452540'
+
+    story(
+      update,
+      given(shelfModel()),
+      message(
+        Message.ChangedUrl({
+          url: Option.getOrThrow(urlFromString(`https://comicyuri.test${readerRouter(id)}`)),
+        }),
+      ),
+      model((model) => {
+        expect(model.route).toStrictEqual(AppRoute.Reader({ id }))
+      }),
+      Command.expectExact(LoadProgress({ bookId: id })),
+      Command.resolve(
+        LoadProgress,
+        Message.CompletedLoadProgress({
+          bookId: id,
+          page: 0,
+          bookmarks: [],
+          marks: [],
+          rotation: 0,
+          maybeSettings: Option.none(),
+        }),
+      ),
     )
   })
 })

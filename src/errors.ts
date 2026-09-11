@@ -25,6 +25,16 @@ export class EmptyBookError extends Data.TaggedError('EmptyBookError')<{
   readonly title: string
 }> {}
 
+/**
+ * 그 id를 가진 책이 책장에 없었다.
+ *
+ * 책을 지운 뒤에도 살아 있는 링크나 북마크가 여기로 온다. 열어 보니 비어 있는
+ * {@linkcode EmptyBookError}와 다르다 — 열어 볼 것 자체가 없었다.
+ */
+export class MissingBookError extends Data.TaggedError('MissingBookError')<{
+  readonly id: string
+}> {}
+
 /** 고른 파일 중에 들여올 수 있는 것이 없었다. */
 export class NoComicFilesError extends Data.TaggedError('NoComicFilesError')<{}> {}
 
@@ -39,12 +49,19 @@ export class CoverError extends Data.TaggedError('CoverError')<{
  * {@linkcode describe}가 이것을 문장으로 바꾸므로, 유니온에 새 멤버를 더하면
  * 할 말이 생기기 전까지 그곳에서 타입 에러가 난다.
  */
-export type AppError = DbError | ArchiveError | EmptyBookError | NoComicFilesError | CoverError
+export type AppError =
+  | DbError
+  | ArchiveError
+  | EmptyBookError
+  | MissingBookError
+  | NoComicFilesError
+  | CoverError
 
 const APP_ERROR_TAGS = [
   'DbError',
   'ArchiveError',
   'EmptyBookError',
+  'MissingBookError',
   'NoComicFilesError',
   'CoverError',
 ] as const
@@ -57,6 +74,7 @@ export const describe: (error: AppError) => string = Match.type<AppError>().pipe
   Match.tag('DbError', (e) => `Shelf storage is unavailable (${e.op})`),
   Match.tag('ArchiveError', (e) => e.reason),
   Match.tag('EmptyBookError', (e) => `No images found in "${e.title}"`),
+  Match.tag('MissingBookError', (e) => `That book is no longer on the shelf ("${e.id}")`),
   Match.tag('NoComicFilesError', () => 'No comic files found (images or .cbz/.zip)'),
   Match.tag('CoverError', (e) => e.reason),
   Match.exhaustive,

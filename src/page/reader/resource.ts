@@ -2,7 +2,7 @@ import { Array, Effect, Option, Schema } from 'effect'
 import { ManagedResource } from 'foldkit'
 
 import { getAllBooks } from '../../db.ts'
-import { EmptyBookError, describeUnknown } from '../../errors.ts'
+import { MissingBookError, describeUnknown } from '../../errors.ts'
 import type { AppError } from '../../errors.ts'
 import { bookFromStored } from '../../loader.ts'
 import type { LoadedBook } from '../../types.ts'
@@ -25,7 +25,7 @@ const openBook = (bookId: string): Effect.Effect<LoadedBook, AppError> =>
     const stored = Array.findFirst(yield* getAllBooks, ({ id }) => id === bookId)
 
     if (Option.isNone(stored)) {
-      return yield* new EmptyBookError({ title: bookId })
+      return yield* new MissingBookError({ id: bookId })
     }
 
     return yield* bookFromStored(stored.value)

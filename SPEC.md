@@ -827,6 +827,14 @@ the app"
 **N-405 · 없는 주소는 안내와 함께 돌아갈 길을 준다**
 📖
 
+**N-406 · 이름에 공백이나 한글이 있는 책도 열린다**
+책 id는 파일 이름을 그대로 담으므로, 경로에 실을 때 인코딩하고 읽을 때 되돌린다.
+콜론은 그대로 두므로 `href`는 여전히 `/book/volume-1::42` 모양이다.
+✅ story "a book id with spaces survives the trip through the url",
+"a url change asks for the saved position under the decoded id"
+✅ e2e "N-406 · 이름에 공백이 있는 책도 열린다",
+"N-406 · 이름에 공백이 있는 책은 새로고침 뒤에도 그 자리다"
+
 ---
 
 ## 5. 실패했을 때
@@ -855,18 +863,24 @@ the app"
 
 **F-507 · 실패 문구**
 
-| 상황                 | 문구                                         |
-| -------------------- | -------------------------------------------- |
-| IndexedDB            | `Shelf storage is unavailable (<연산>)`      |
-| 손상된 아카이브      | `Not a valid ZIP/CBZ archive`                |
-| 이미지 없는 아카이브 | `No images found in "<제목>"`                |
-| 임포트할 것이 없음   | `No comic files found (images or .cbz/.zip)` |
-| 지원하지 않는 압축   | `Unsupported compression method <n>`         |
+| 상황                 | 문구                                           |
+| -------------------- | ---------------------------------------------- |
+| IndexedDB            | `Shelf storage is unavailable (<연산>)`        |
+| 손상된 아카이브      | `Not a valid ZIP/CBZ archive`                  |
+| 이미지 없는 아카이브 | `No images found in "<제목>"`                  |
+| 책장에 없는 책       | `That book is no longer on the shelf ("<id>")` |
+| 임포트할 것이 없음   | `No comic files found (images or .cbz/.zip)`   |
+| 지원하지 않는 압축   | `Unsupported compression method <n>`           |
 | 📖                   |
 
 **F-508 · 실패는 색만으로 구분되지 않는다**
 전용 색(`--color-danger`)에 더해 "Couldn't do that —" 접두사가 붙는다.
 📖 ❓
+
+**F-509 · 없는 책과 빈 책은 다르게 말한다**
+지워진 책을 가리키는 링크나 북마크는 열어 볼 것 자체가 없으므로, 열어 보니 비어
+있는 아카이브와 문구가 갈린다.
+✅ e2e "F-509 · 지워진 책을 가리키는 링크는 없어졌다고 말한다"
 
 ---
 
