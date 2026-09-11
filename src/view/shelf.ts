@@ -133,7 +133,7 @@ const cardView = (book: Book.BookSummary, h: HtmlBuilder<Message>): Html =>
           h.Class(
             'flex flex-col gap-2 rounded-lg transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
           ),
-          h.Href(readerRouter({ id: book.id })),
+          h.Href(readerRouter(book.id)),
           h.AriaLabel(book.title),
         ],
         [

@@ -112,7 +112,7 @@ const foldReaderOutMessage = Reader.OutMessage.match<
           onNone: () => ({ model }),
           onSome: (book) => ({
             model,
-            commands: [NavigateInternal({ url: readerRouter({ id: book.id }) })],
+            commands: [NavigateInternal({ url: readerRouter(book.id) })],
           }),
         },
       ),
