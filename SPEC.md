@@ -195,12 +195,17 @@ ManagedResource가 Model 상태에 따라 해제한다.
 
 **R-217 · 카운터 아래에 지금 걸린 파일 이름이 붙는다**
 아카이브 안에서의 이름이고, 폴더는 떼어 낸 것이다. 두 장이 걸리면 읽는 순서대로 둘
-다 보인다. 긴 이름은 줄여서 보여 주고, 통째로는 `title` 속성에 남는다.
+다 보인다.
+
+긴 이름은 **앞을** 줄인다. 스캔본의 이름은 대개 `Vol.01 Ch.003 - 045.jpg`처럼 공통된
+머리에 번호가 붙는 꼴이라, 뒤를 자르면 페이지마다 똑같은 머리만 남는다. 통째로는
+`title` 속성에 남는다.
 
 번호만으로는 정렬이 어긋난 것을 알아볼 수 없다. 아카이브는 이름순으로 서는데 그
 이름이 사람의 기대와 다른 책이 있고, 그때 몇 번째 장인지가 아니라 어느 파일인지가
 단서가 된다. 툴바와 함께 숨으므로(`R-251`) 읽는 동안 눈에 걸리지 않는다.
-✅ reader/scene "the counter says which files are on screen",
+✅ reader/scene "the counter says which files are on screen", "a long file name keeps its
+tail, where the page number lives",
 e2e "R-217 · 카운터 아래에 아카이브 안의 파일 이름이 보인다", "R-217 · 두 장이 걸리면
 이름도 둘이다"
 

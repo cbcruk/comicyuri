@@ -113,6 +113,24 @@ describe('reading', () => {
     )
   })
 
+  test('a long file name keeps its tail, where the page number lives', () => {
+    // 스캔본의 이름은 공통된 머리에 번호가 붙는 꼴이다. 뒤를 자르면 페이지마다
+    // 똑같은 머리만 남는다.
+    scene(
+      program,
+      given({
+        ...readingModel(),
+        openState: OpenState.Ready({
+          title: 'Volume 1',
+          pageCount: 6,
+          ratios: UNMEASURED,
+          names: Array.from({ length: 6 }, (_, page) => `Vol.01 Chapter 003 - 0${page + 41}.jpg`),
+        }),
+      }),
+      expect(text('…1 Chapter 003 - 041.jpg')).toExist(),
+    )
+  })
+
   test('next turns the page and the counter follows', () => {
     scene(
       program,
