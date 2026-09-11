@@ -193,6 +193,17 @@ ManagedResource가 Model 상태에 따라 해제한다.
 한 장이면 `3 / 120`, 두 장이면 `4–5 / 120`.
 ✅ reader/scene "the stage shows the page and the toolbar counts it"
 
+**R-217 · 카운터 아래에 지금 걸린 파일 이름이 붙는다**
+아카이브 안에서의 이름이고, 폴더는 떼어 낸 것이다. 두 장이 걸리면 읽는 순서대로 둘
+다 보인다. 긴 이름은 줄여서 보여 주고, 통째로는 `title` 속성에 남는다.
+
+번호만으로는 정렬이 어긋난 것을 알아볼 수 없다. 아카이브는 이름순으로 서는데 그
+이름이 사람의 기대와 다른 책이 있고, 그때 몇 번째 장인지가 아니라 어느 파일인지가
+단서가 된다. 툴바와 함께 숨으므로(`R-251`) 읽는 동안 눈에 걸리지 않는다.
+✅ reader/scene "the counter says which files are on screen",
+e2e "R-217 · 카운터 아래에 아카이브 안의 파일 이름이 보인다", "R-217 · 두 장이 걸리면
+이름도 둘이다"
+
 **R-214 · 이미 지나간 페이지의 이미지가 늦게 도착하면 버린다**
 ✅ reader/story "a spread that arrives after the reader moved on is discarded"
 

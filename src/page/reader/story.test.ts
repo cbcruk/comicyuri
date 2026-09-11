@@ -31,6 +31,10 @@ const UNMEASURED: ReadonlyArray<Option.Option<number>> = Array.from({ length: PA
   Option.none(),
 )
 
+/** 아카이브 안의 파일 이름. 여섯 쪽이면 `page-01.png`부터 여섯 개다. */
+const namesOf = (pageCount: number): ReadonlyArray<string> =>
+  Array.from({ length: pageCount }, (_, page) => `page-${String(page + 1).padStart(2, '0')}.png`)
+
 /** 책의 끝에서 이웃한 책으로 넘어가지 않고 제자리에 머무는 설정. */
 const STOPS_AT_THE_END = { ...defaultSettings, atBookEnd: 'stop' } as const
 
@@ -65,7 +69,14 @@ const settle = (page: number) => [
 
 /** 책을 열고 첫 스프레드까지 안정시킨다. 모든 테스트가 여기서 시작한다. */
 const opened = (page: number, ratios: ReadonlyArray<Option.Option<number>> = UNMEASURED) => [
-  message(Message.CompletedOpenBook({ title: 'Volume 1', pageCount: PAGE_COUNT, ratios })),
+  message(
+    Message.CompletedOpenBook({
+      title: 'Volume 1',
+      pageCount: PAGE_COUNT,
+      ratios,
+      names: namesOf(PAGE_COUNT),
+    }),
+  ),
   Command.expectHas(LoadSpread({ page, pages: [page] })),
   Command.resolve(
     LoadSpread,
@@ -83,7 +94,12 @@ describe('opening', () => {
       update,
       given(openingModel()),
       message(
-        Message.CompletedOpenBook({ title: 'Volume 1', pageCount: PAGE_COUNT, ratios: UNMEASURED }),
+        Message.CompletedOpenBook({
+          title: 'Volume 1',
+          pageCount: PAGE_COUNT,
+          ratios: UNMEASURED,
+          names: namesOf(PAGE_COUNT),
+        }),
       ),
       expectOutMessage(
         OutMessage.UpdatedProgress({
@@ -96,7 +112,12 @@ describe('opening', () => {
       ),
       model((model) => {
         expect(model.openState).toStrictEqual(
-          OpenState.Ready({ title: 'Volume 1', pageCount: PAGE_COUNT, ratios: UNMEASURED }),
+          OpenState.Ready({
+            title: 'Volume 1',
+            pageCount: PAGE_COUNT,
+            ratios: UNMEASURED,
+            names: namesOf(PAGE_COUNT),
+          }),
         )
         expect(model.spread._tag).toBe('Loading')
       }),
@@ -245,6 +266,7 @@ describe('keyboard', () => {
         title: 'Volume 1',
         pageCount: LONG_PAGE_COUNT,
         ratios: Array.from({ length: LONG_PAGE_COUNT }, () => Option.none<number>()),
+        names: namesOf(LONG_PAGE_COUNT),
       }),
     ),
     Command.expectHas(LoadSpread({ page, pages: [page] })),
@@ -539,7 +561,12 @@ describe('layout', () => {
         }),
       ),
       message(
-        Message.CompletedOpenBook({ title: 'Volume 1', pageCount: PAGE_COUNT, ratios: UNMEASURED }),
+        Message.CompletedOpenBook({
+          title: 'Volume 1',
+          pageCount: PAGE_COUNT,
+          ratios: UNMEASURED,
+          names: namesOf(PAGE_COUNT),
+        }),
       ),
       Command.expectHas(LoadSpread({ page: 0, pages: [0] })),
       ...settle(0),
@@ -868,7 +895,12 @@ describe('using a control keeps the chrome up', () => {
   // 처리해 주어야 한다.
   const busyReading: Model = {
     ...openingModel(),
-    openState: OpenState.Ready({ title: 'Volume 1', pageCount: PAGE_COUNT, ratios: UNMEASURED }),
+    openState: OpenState.Ready({
+      title: 'Volume 1',
+      pageCount: PAGE_COUNT,
+      ratios: UNMEASURED,
+      names: namesOf(PAGE_COUNT),
+    }),
     isChromeVisible: false,
     activityToken: 5,
   }

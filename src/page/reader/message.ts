@@ -20,6 +20,7 @@ export const Message = defineMessageUnion({
     title: Schema.String,
     pageCount: Schema.Number,
     ratios: Schema.Array(Schema.Option(Schema.Number)),
+    names: Schema.Array(Schema.String),
   },
   FailedOpenBook: { text: Schema.String },
   CompletedReleaseBook: {},

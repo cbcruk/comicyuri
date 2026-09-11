@@ -20,7 +20,8 @@ Everything runs client-side — your files never leave the browser.
 - **Zoom & pan** — pinch, `Ctrl`+wheel, the toolbar buttons, or double-tap;
   drag to pan when zoomed in.
 - **Navigation** — tap zones (left / centre / right), swipe, keyboard, the wheel,
-  or the page slider. A thumbnail grid lets you jump anywhere.
+  or the page slider. A thumbnail grid lets you jump anywhere, and the toolbar
+  names the files currently on screen.
 - **Scroll to read** — a page taller than the screen scrolls; with a mouse
   wheel, another notch at its end turns the page, and turning back lands at the
   bottom of the previous one.

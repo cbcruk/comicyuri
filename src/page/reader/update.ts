@@ -524,10 +524,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 
 const applyMessage = (model: Model, message: Message): UpdateReturn =>
   Message.match<UpdateReturn>(message, {
-    CompletedOpenBook: ({ title, pageCount, ratios }) =>
+    CompletedOpenBook: ({ title, pageCount, ratios, names }) =>
       showPage(
         evo(model, {
-          openState: () => OpenState.Ready({ title, pageCount, ratios }),
+          openState: () => OpenState.Ready({ title, pageCount, ratios, names }),
           slider: Slider.reflectRange({ min: 0, max: Math.max(0, pageCount - 1) }),
         }),
         model.page,
