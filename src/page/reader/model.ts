@@ -24,6 +24,14 @@ export const OpenState = defineTaggedUnion({
     pageCount: Schema.Number,
     /** 페이지별 가로세로비. 임포트할 때 재지 못한 페이지는 없음이다. */
     ratios: Schema.Array(Schema.Option(Schema.Number)),
+    /**
+     * 페이지별 파일 이름. 아카이브 안에서의 이름이고, 폴더는 떼어 낸 것이다.
+     *
+     * 정렬이 이상할 때 그것을 알아볼 유일한 단서다 — 화면에 걸린 것이 몇 번째
+     * 페이지인지는 카운터가 말해 주지만, 그 번호가 왜 그 그림인지는 파일 이름만이
+     * 말해 준다.
+     */
+    names: Schema.Array(Schema.String),
   },
   Failed: { text: Schema.String },
 })

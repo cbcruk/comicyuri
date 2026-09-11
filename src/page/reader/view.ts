@@ -105,9 +105,68 @@ const counterLabel = (pages: ReadonlyArray<number>, pageCount: number): string =
   return `${shown} / ${pageCount}`
 }
 
+/**
+ * 긴 파일 이름을 줄일 때 남길 글자 수. 한 장이면 넉넉하고, 두 장이면 둘이 나란히
+ * 서야 하므로 절반씩이다.
+ */
+const nameTailFor = (count: number): number => (count > 1 ? 12 : 24)
+
+/**
+ * 이름을 꼬리부터 남기고 앞을 줄인다.
+ *
+ * 줄일 곳이 앞인 이유는 스캔본의 이름이 대개 `Vol.01 Ch.003 - 045.jpg`처럼 공통된
+ * 머리에 번호가 붙는 꼴이기 때문이다. 뒤를 자르면 남는 것이 페이지마다 똑같은
+ * 머리뿐이라, 정렬을 확인하려고 띄운 이름이 아무것도 말해 주지 않는다.
+ */
+const clipStart = (name: string, tail: number): string =>
+  name.length <= tail ? name : `…${name.slice(-(tail - 1))}`
+
+/** 지금 화면에 걸린 파일들의 이름. 두 장이면 읽는 순서대로 둘 다. */
+const namesLabel = (pages: ReadonlyArray<number>, names: ReadonlyArray<string>): string => {
+  const shown = Array.getSomes(Array.map(pages, (page) => Array.get(names, page)))
+  const tail = nameTailFor(shown.length)
+
+  return Array.join(
+    Array.map(shown, (name) => clipStart(name, tail)),
+    ' · ',
+  )
+}
+
+/** 줄이지 않은 이름들. 툴팁이 통째로 말해 준다. */
+const fullNamesLabel = (pages: ReadonlyArray<number>, names: ReadonlyArray<string>): string =>
+  Array.join(Array.getSomes(Array.map(pages, (page) => Array.get(names, page))), ' · ')
+
+/**
+ * 카운터 자리. 몇 번째 장인지 위에, 그것이 어느 파일인지 아래에 둔다.
+ *
+ * 파일 이름이 붙는 이유는 정렬 때문이다. 아카이브가 이름순으로 서는데 그 이름이
+ * 사람의 기대와 어긋나는 책이 있고, 그때 번호만 보아서는 무엇이 어긋났는지 알
+ * 수 없다. 긴 이름은 앞을 줄이고, `title`로 통째로 남겨 둔다.
+ */
+const counterView = (
+  counter: string,
+  names: string,
+  fullNames: string,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.div(
+    [h.Class('mx-auto flex min-w-0 flex-col items-center')],
+    [
+      h.span([h.Class('text-sm text-muted')], [counter]),
+      names === ''
+        ? h.empty
+        : h.span(
+            [h.Class('max-w-[28ch] truncate text-xs text-muted/70'), h.Title(fullNames)],
+            [names],
+          ),
+    ],
+  )
+
 const toolbarView = (
   model: Model,
   counter: string,
+  names: string,
+  fullNames: string,
   isVisible: boolean,
   h: HtmlBuilder<Message>,
 ): Html =>
@@ -124,7 +183,7 @@ const toolbarView = (
     ],
     [
       controlView({ label: '← Shelf', message: Message.ClickedExit() }, h),
-      h.span([h.Class('mx-auto text-sm text-muted')], [counter]),
+      counterView(counter, names, fullNames, h),
       controlView(
         {
           label: model.bookmarks.includes(model.page) ? '★' : '☆',
@@ -760,12 +819,13 @@ export const view = defineView<Model, Message>((model, h): Html =>
   OpenState.match(model.openState, {
     Opening: () => openingView('Opening…', h),
     Failed: ({ text }) => openingView(text, h),
-    Ready: ({ title, pageCount, ratios }) => {
+    Ready: ({ title, pageCount, ratios, names }) => {
       const layout = { pageCount, ratios, marks: model.marks }
       const spreads = spreadsFor(layout, model.settings)
       const index = indexOfPage(spreads, model.page)
+      const here = pagesAt(spreads, index)
       const maybeHalf = Option.map(
-        splitRatio(layout, model.settings, pagesAt(spreads, index)),
+        splitRatio(layout, model.settings, here),
         (ratio): SplitHalf => ({ ratio, side: sideOf(model.half, model.settings.direction) }),
       )
 
@@ -774,10 +834,9 @@ export const view = defineView<Model, Message>((model, h): Html =>
         [
           toolbarView(
             model,
-            counterLabel(
-              Option.getOrElse(Array.get(spreads, index), () => []),
-              pageCount,
-            ),
+            counterLabel(here, pageCount),
+            namesLabel(here, names),
+            fullNamesLabel(here, names),
             model.isChromeVisible,
             h,
           ),

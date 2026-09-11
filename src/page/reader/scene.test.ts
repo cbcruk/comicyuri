@@ -40,6 +40,9 @@ const measuredThumbs = (model: Model): Model => ({
   },
 })
 
+/** 아카이브 안의 파일 이름. 카운터 아래에 그대로 보인다. */
+const NAMES = Array.from({ length: 6 }, (_, page) => `page-0${page + 1}.png`)
+
 /** 크기를 재기 전에 들여온 책. 묶기는 페이지 수만 따른다. */
 const UNMEASURED: ReadonlyArray<Option.Option<number>> = Array.from({ length: 6 }, () =>
   Option.none(),
@@ -47,7 +50,7 @@ const UNMEASURED: ReadonlyArray<Option.Option<number>> = Array.from({ length: 6 
 
 const readingModel = (page = 0, settings = defaultSettings): Model => ({
   bookId: 'volume-1::42',
-  openState: OpenState.Ready({ title: 'Volume 1', pageCount: 6, ratios: UNMEASURED }),
+  openState: OpenState.Ready({ title: 'Volume 1', pageCount: 6, ratios: UNMEASURED, names: NAMES }),
   spread: SpreadState.Shown({ panels: [{ page, url: `blob:${page}` }] }),
   page,
   bookmarks: [],
@@ -92,6 +95,39 @@ describe('reading', () => {
       given(readingModel()),
       expect(role('img', { name: 'Page 1' })).toHaveAttr('src', 'blob:0'),
       expect(text('1 / 6')).toExist(),
+    )
+  })
+
+  test('the counter says which files are on screen', () => {
+    // 정렬이 이상한 책에서 그것을 알아볼 단서는 파일 이름뿐이다.
+    scene(
+      program,
+      given(readingModel()),
+      expect(text('page-01.png')).toExist(),
+      click(role('button', { name: 'Toggle one or two pages' })),
+      ...settleTurn(0),
+      click(role('button', { name: 'Next' })),
+      ...settleTurn(1),
+      // 두 장이 걸리면 읽는 순서대로 둘 다.
+      expect(text('page-02.png · page-03.png')).toExist(),
+    )
+  })
+
+  test('a long file name keeps its tail, where the page number lives', () => {
+    // 스캔본의 이름은 공통된 머리에 번호가 붙는 꼴이다. 뒤를 자르면 페이지마다
+    // 똑같은 머리만 남는다.
+    scene(
+      program,
+      given({
+        ...readingModel(),
+        openState: OpenState.Ready({
+          title: 'Volume 1',
+          pageCount: 6,
+          ratios: UNMEASURED,
+          names: Array.from({ length: 6 }, (_, page) => `Vol.01 Chapter 003 - 0${page + 41}.jpg`),
+        }),
+      }),
+      expect(text('…1 Chapter 003 - 041.jpg')).toExist(),
     )
   })
 
@@ -169,6 +205,7 @@ describe('the stage', () => {
         title: 'Volume 1',
         pageCount: 6,
         ratios: Array.from({ length: 6 }, (_, page) => Option.some(page === 3 ? 1.4 : 0.7)),
+        names: NAMES,
       }),
       spread: SpreadState.Shown({ panels: [{ page: 3, url: 'blob:3' }] }),
     }
