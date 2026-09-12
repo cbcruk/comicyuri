@@ -48,8 +48,8 @@ ManagedResource·라우팅이 맞물리는지도 여기서만 드러납니다. �
 ✅ scene "a shelf still loading does not claim to be empty"
 
 **S-102 · 책은 최근에 추가한 것이 먼저 온다**
-`createdAt` 내림차순.
-📖
+`createdAt` 내림차순. 뷰가 아니라 저장 계층이 정한다(`P-301`).
+✅ db "the most recently imported book comes first"
 
 **S-103 · 각 책은 표지·제목·쪽수를 보여준다**
 표지가 없으면 📖 이모지 자리표시자. 쪽수는 `24 pages`, 한 쪽짜리는 `1 page`.
@@ -906,8 +906,22 @@ e2e "R-2C1 · 슬라이드쇼가 스스로 페이지를 넘긴다"
 ## 3. 저장
 
 **P-301 · 책은 IndexedDB에 남는다**
-원본 바이트 그대로. 새로고침해도 책장이 그대로다.
-✅ e2e "P-301 · 책은 새로고침을 넘겨 책장에 남는다"
+원본 바이트 그대로. 새로고침해도 책장이 그대로다. 데이터베이스는 `comicyuri`,
+스토어는 `books`이고 키는 책 id다. 그래서 같은 파일을 다시 들여오면 레코드가 하나
+더 생기지 않고 덮어쓰인다(`S-115`).
+
+읽기는 `readonly`, 쓰기와 삭제는 `readwrite` 트랜잭션이다. 연결은 호출마다 열고
+어떻게 끝나든 닫는다 — 실패로 끝났을 때도 그렇다.
+
+책장의 순서는 뷰가 아니라 이 계층이 정한다. `createdAt` 내림차순이므로 새로고침이
+격자를 다시 배열하는 일이 없다(`S-102`).
+✅ db "the most recently imported book comes first", "an empty store comes back empty
+rather than failing", "a book written once comes back", "writing the same id again
+replaces the record rather than adding one", "a removed book is gone", "removing an id
+that is not there is not a failure", "reading takes a readonly transaction and writing a
+readwrite one", "every call closes the connection it opened", "a failed request still
+closes the connection",
+e2e "P-301 · 책은 새로고침을 넘겨 책장에 남는다"
 
 **P-302 · 책마다 남는 것은 읽던 위치·북마크·묶기 교정·세운 각도, 그리고 그 책의 설정이다**
 키는 `comicyuri:progress:<book id>`. 나중에 붙은 항목들은 모두 디코딩 기본값을 지고
@@ -994,8 +1008,11 @@ URL이 어느 책인지 말하고, 어느 자리에서 열지는 `R-2B5`가 정�
 
 **F-506 · IndexedDB를 아예 열 수 없어도 실패로 보고된다**
 `indexedDB`가 없거나 시크릿 모드처럼 `open`이 던지는 환경에서도 defect가 아니라
-`DbError`가 된다.
-📖 ❓
+`DbError`가 된다. 실패한 요청의 이름이 `op`로 실리므로, 상태 줄의 문구가 어느
+호출에서 멎었는지 말한다(`F-507`).
+✅ db "no indexedDB at all is reported as a failure to open", "an open that throws is
+reported rather than thrown", "an open that errors is reported as a failure to open",
+"a request that errors is reported under the name of that request"
 
 **F-507 · 실패 문구**
 
@@ -1026,7 +1043,6 @@ URL이 어느 책인지 말하고, 어느 자리에서 열지는 `R-2B5`가 정�
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | L-601 | 썸네일 그리드의 행 높이가 180px 고정이다. 한 행의 칸 수는 창을 따라가지만(`R-276`) 칸이 넓어져도 썸네일은 커지지 않는다                         |
 | L-606 | 부팅 시 라이트 테마 사용자에게 어두운 첫 프레임이 보일 수 있다                                                                                  |
-| L-609 | `src/db.ts`를 직접 겨냥한 테스트가 없다. 이 계층은 update를 통해서만 간접 검증된다 (`src/zip.ts`는 `R-205`가 덮는다)                            |
 | L-610 | Runtime 전체를 부팅하는 테스트가 불가능하다 — vitest + happy-dom에서 `Runtime.run`이 아무것도 렌더링하지 않는다 (최소 Foldkit 앱으로 대조 확인) |
 | L-611 | 프로덕션 배포 시 `/book/:id` 직접 접근에는 SPA 폴백 설정이 필요하다                                                                             |
 | L-612 | 설정 패널이 리더 안에만 있다. 책장에서는 테마 말고 아무것도 바꿀 수 없다                                                                        |
