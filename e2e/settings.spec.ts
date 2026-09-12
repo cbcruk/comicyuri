@@ -1,9 +1,21 @@
-/** R-2B1~2B3 · 툴바에 버튼이 없던 설정들을 패널에서 바꾸고, 그것이 남는지. */
+/**
+ * R-2B1~2B3 · 툴바에 버튼이 없던 설정들을 패널에서 바꾸고, 그것이 남는지.
+ * R-2B6 · 같은 패널을 책장에서도 여는지.
+ */
 
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, importBooks, openReader, openShelf, readBook, stage } from './fixture/app.ts'
+import {
+  control,
+  counter,
+  importBook,
+  importBooks,
+  openReader,
+  openShelf,
+  readBook,
+  stage,
+} from './fixture/app.ts'
 
 const panel = (page: Page) => page.getByRole('dialog', { name: 'Reading settings' })
 const coverAlone = (page: Page) => page.getByRole('switch', { name: 'Cover on its own' })
@@ -104,4 +116,50 @@ test('R-2B3 · 스위치를 끄면 전역 기본값으로 돌아간다', async (
 
   await page.reload()
   await expect(control.direction(page)).toHaveText('RTL')
+})
+
+test('R-2B6 · 책장에서 정한 기본값이 그 뒤에 여는 책에 걸린다', async ({ page }) => {
+  await openShelf(page)
+  const title = await importBook(page)
+
+  // 책을 열지 않고 이어 읽기 방식을 정한다.
+  await page.getByRole('button', { name: 'Reading settings' }).click()
+  await page.getByRole('button', { name: 'Start over', exact: true }).click()
+  await page.getByRole('button', { name: 'Close' }).click()
+
+  await openReader(page, title)
+  await control.next(page).click()
+  await expect(counter(page)).toHaveText('2 / 6')
+  await control.shelf(page).click()
+
+  // 처음부터 보기로 했으므로 읽던 자리로 가지 않는다.
+  await openReader(page, title)
+  await expect(counter(page)).toHaveText('1 / 6')
+})
+
+test('R-2B6 · 책장에서 정한 것이 새로고침을 넘기고, 리더의 패널에도 그대로 보인다', async ({
+  page,
+}) => {
+  await openShelf(page)
+  const title = await importBook(page)
+
+  await page.getByRole('button', { name: 'Reading settings' }).click()
+  await page.getByRole('switch', { name: 'Cover on its own' }).click()
+  await page.getByRole('button', { name: 'Close' }).click()
+
+  await page.reload()
+  await page.getByRole('button', { name: 'Reading settings' }).click()
+  await expect(page.getByRole('switch', { name: 'Cover on its own' })).toHaveAttribute(
+    'aria-checked',
+    'false',
+  )
+  await page.getByRole('button', { name: 'Close' }).click()
+
+  // 같은 값을 리더의 패널이 그대로 보여 준다. 한 자리를 두 곳에서 여는 것이다.
+  await openReader(page, title)
+  await control.settings(page).click()
+  await expect(page.getByRole('switch', { name: 'Cover on its own' })).toHaveAttribute(
+    'aria-checked',
+    'false',
+  )
 })

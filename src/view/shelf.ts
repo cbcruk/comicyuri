@@ -9,6 +9,7 @@ import { Book } from '../domain/index.ts'
 import { Message } from '../message.ts'
 import { Model, Notice, Shelf } from '../model.ts'
 import { readerRouter } from '../route.ts'
+import { settingsView } from './settings.ts'
 import type { Theme } from '../types.ts'
 
 const buttonClassName =
@@ -41,7 +42,7 @@ const buttonView = (config: ButtonConfig, h: HtmlBuilder<Message>): Html =>
 const themeToggleLabel = (theme: Theme): string =>
   theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
 
-const headerView = (theme: Theme, h: HtmlBuilder<Message>): Html =>
+const headerView = (theme: Theme, isSettingsOpen: boolean, h: HtmlBuilder<Message>): Html =>
   h.header(
     [h.Class('flex flex-wrap items-center gap-3 border-b border-edge px-6 py-4')],
     [
@@ -71,6 +72,15 @@ const headerView = (theme: Theme, h: HtmlBuilder<Message>): Html =>
           message: Message.ClickedToggleTheme(),
           className: buttonClassName,
           attributes: [h.Title(themeToggleLabel(theme)), h.AriaLabel(themeToggleLabel(theme))],
+        },
+        h,
+      ),
+      buttonView(
+        {
+          label: '⚙',
+          message: Message.ClickedToggleSettings(),
+          className: buttonClassName,
+          attributes: [h.AriaLabel('Reading settings'), h.AriaExpanded(isSettingsOpen)],
         },
         h,
       ),
@@ -263,9 +273,9 @@ const shelfContentView = (
 /** 책장을 그린다. 헤더, 상태 줄, 그리고 임포트를 받는 드롭 존 안의 책 격자. */
 export const shelfView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
-    [h.Class('flex h-full flex-col')],
+    [h.Class('relative flex h-full flex-col')],
     [
-      headerView(model.settings.theme, h),
+      headerView(model.settings.theme, model.isSettingsOpen, h),
       noticeView(model.notice, h),
       h.submodel({
         slotId: model.fileDrop.id,
@@ -292,5 +302,29 @@ export const shelfView = (model: Model, h: HtmlBuilder<Message>): Html =>
         },
         toParentMessage: (message) => Message.GotFileDropMessage({ message }),
       }),
+      model.isSettingsOpen
+        ? settingsView(
+            model.settings,
+            {
+              // 리더의 패널과 같은 이름을 쓴다. 같은 값을 정하는 같은 자리다.
+              title: 'Reading settings',
+              // 스위치 `id`는 리더의 것과 갈라 둔다. 둘이 한 문서에 설 일은
+              // 없지만, 같은 `id`를 둔 채 그렇게 되면 라벨이 어느 쪽을
+              // 가리키는지 알 수 없다.
+              idPrefix: 'shelf',
+              onClose: Message.ClickedToggleSettings(),
+              onToggleCoverAlone: (isChecked) => Message.ToggledCoverAlone({ isChecked }),
+              onToggleSplitWide: (isChecked) => Message.ToggledSplitWide({ isChecked }),
+              onToggleEnlargeToFit: (isChecked) => Message.ToggledEnlargeToFit({ isChecked }),
+              onToggleRememberBookSettings: (isChecked) =>
+                Message.ToggledRememberBookSettings({ isChecked }),
+              onNudgeThreshold: (by) => Message.ClickedNudgeThreshold({ by }),
+              onNudgeSlideSeconds: (by) => Message.ClickedNudgeSlideSeconds({ by }),
+              onSelectAtBookEnd: (atBookEnd) => Message.SelectedAtBookEnd({ atBookEnd }),
+              onSelectResume: (resume) => Message.SelectedResume({ resume }),
+            },
+            h,
+          )
+        : h.empty,
     ],
   )

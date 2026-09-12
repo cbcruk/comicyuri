@@ -170,6 +170,31 @@ e2e "S-131 · 🗑은 묻기만 하고, 지키기를 고르면 책이 남는다"
 다크일 때 "Switch to light theme", 라이트일 때 그 반대. 글리프는 `◐`로 고정.
 ✅ scene "the theme toggle says where it will take you and applies it"
 
+**R-2B6 · 같은 설정 패널을 책장에서도 연다**
+책장 헤더의 ⚙. 리더의 것과 같은 항목이 같은 순서로 서고 이름도 같다 —
+"Reading settings"다. 뷰가 한 벌이라서, 한쪽에 항목을 더하면 다른 쪽에도 선다.
+
+여는 자리에 따라 보여 주는 값이 다르다. 리더에서는 그 책에 걸린 것까지 합친
+결과이고(`R-2B3`), 책장에서는 전역 기본값 그대로다. 책장에는 책이 없으므로 바꾼
+것을 가를 것도 없다 — 그대로 모든 책의 기본값이 된다.
+
+그래서 책을 열지 않고도 이어 읽기 방식이나 책 끝 동작을 정할 수 있다. 그 둘은
+책을 여는 순간의 동작이라, 정하려고 책을 열어야 하는 것이 앞뒤가 맞지 않았다.
+
+스위치의 `id` 앞머리만 갈라 둔다(`reader-`/`shelf-`). 둘이 한 문서에 설 일은
+없지만, 같은 `id`를 둔 채 그렇게 되면 라벨이 어느 쪽을 가리키는지 알 수 없다.
+✅ story "the control opens the panel and closes it again", "what changes here is the
+global default, saved as it is", "the threshold moves a step at a time and stops at the
+ends", "the slideshow delay stops at the ends too", "choosing how a part-read book opens
+is kept as the default",
+scene "the settings control opens the same panel the reader has", "the panel shows the
+defaults as they stand",
+e2e "R-2B6 · 책장에서 정한 기본값이 그 뒤에 여는 책에 걸린다", "R-2B6 · 책장에서 정한
+것이 새로고침을 넘기고, 리더의 패널에도 그대로 보인다"
+⚠️ 레이아웃 항목은 책장에서 눌러도 효과가 보이지 않는다. 페이지가 화면에 없기
+때문이다. 그래도 한 자리에 모아 둔다 — "모든 책의 기본값"이 두 벌로 갈리는 것이 더
+헷갈린다.
+
 **S-143 · DevTools 오버레이가 개발 중에 뜬다**
 `@foldkit/devtools`가 설치돼 있으면 Vite 플러그인이 개발 빌드에만 주입한다. 기본
 위치는 오른쪽 아래. Message 흐름과 Model을 들여다보고 시간을 되감을 수 있다.
@@ -762,7 +787,8 @@ e2e "R-292 · 브라우저 쪽에서 나가도 상태가 맞는다"
 방향·한 장/두 장·맞춤은 여기 없다. 그것들은 읽는 동안 손이 가는 것이라 툴바에
 남고, 여기 있는 셋은 책을 열기 전에 한 번 정하는 것이다.
 
-패널에서 바꾼 것은 곧바로 배치에 반영되고 다른 설정과 같이 저장된다(`P-303`).
+패널에서 바꾼 것은 곧바로 배치에 반영되고 다른 설정과 같이 저장된다(`P-303`). 같은
+패널을 책장에서도 연다(`R-2B6`).
 ✅ reader/scene "the settings that have no toolbar button live here",
 "turning the cover rule off reports the new settings", "turning off stretching caps the
 page at its own size", "picking what happens at the end of a book reports it",
@@ -1045,7 +1071,6 @@ reported rather than thrown", "an open that errors is reported as a failure to o
 | L-606 | 부팅 시 라이트 테마 사용자에게 어두운 첫 프레임이 보일 수 있다                                                                                  |
 | L-610 | Runtime 전체를 부팅하는 테스트가 불가능하다 — vitest + happy-dom에서 `Runtime.run`이 아무것도 렌더링하지 않는다 (최소 Foldkit 앱으로 대조 확인) |
 | L-611 | 프로덕션 배포 시 `/book/:id` 직접 접근에는 SPA 폴백 설정이 필요하다                                                                             |
-| L-612 | 설정 패널이 리더 안에만 있다. 책장에서는 테마 말고 아무것도 바꿀 수 없다                                                                        |
 
 ---
 

@@ -27,7 +27,8 @@ import { Message } from './message.ts'
 import { Model, Notice, Shelf } from './model.ts'
 import { Reader } from './page/index.ts'
 import { AppRoute, readerRouter, shelfRouter, urlToAppRoute } from './route.ts'
-import type { Theme } from './types.ts'
+import { nudgedSlideSeconds, nudgedThreshold } from './settings.ts'
+import type { Settings, Theme } from './types.ts'
 
 type UpdateReturn = Update.Return<Model, Message, Reader.OpenBookService>
 
@@ -63,6 +64,17 @@ const withOperationEnded = (model: Model): Model =>
     Failed: () => model,
     Busy: () => evo(model, { notice: () => Notice.Idle() }),
   })
+
+/**
+ * 책장에서 바꾼 설정은 전역 기본값 그대로다.
+ *
+ * 여기에는 책이 없으므로 가를 것이 없다. 리더에서 바꾼 것은 책별 몫으로
+ * 갈리지만(`Reading.split`), 책장에서 바꾼 것은 모든 책의 기본값이다.
+ */
+const withSettings = (model: Model, settings: Settings): UpdateReturn => ({
+  model: evo(model, { settings: () => settings }),
+  commands: [SaveSettings({ settings })],
+})
 
 /** 지금 화면에 걸려 있는 표지들. 다시 읽어도 그대로 쓰이도록 넘겨 준다. */
 const coversOnScreen = (model: Model): ReadonlyArray<Book.Cover> =>
@@ -312,6 +324,40 @@ export const update = (model: Model, message: Message) =>
         commands: [SaveSettings({ settings }), ApplyTheme({ theme })],
       }
     },
+
+    ClickedToggleSettings: () => ({
+      model: evo(model, { isSettingsOpen: (isOpen) => !isOpen }),
+    }),
+
+    ToggledCoverAlone: ({ isChecked }) =>
+      withSettings(model, evo(model.settings, { coverAlone: () => isChecked })),
+
+    ToggledEnlargeToFit: ({ isChecked }) =>
+      withSettings(model, evo(model.settings, { enlargeToFit: () => isChecked })),
+
+    ToggledSplitWide: ({ isChecked }) =>
+      withSettings(model, evo(model.settings, { splitWide: () => isChecked })),
+
+    ToggledRememberBookSettings: ({ isChecked }) =>
+      withSettings(model, evo(model.settings, { rememberBookSettings: () => isChecked })),
+
+    SelectedAtBookEnd: ({ atBookEnd }) =>
+      withSettings(model, evo(model.settings, { atBookEnd: () => atBookEnd })),
+
+    SelectedResume: ({ resume }) =>
+      withSettings(model, evo(model.settings, { resume: () => resume })),
+
+    ClickedNudgeThreshold: ({ by }) =>
+      withSettings(
+        model,
+        evo(model.settings, { singleThreshold: (threshold) => nudgedThreshold(threshold, by) }),
+      ),
+
+    ClickedNudgeSlideSeconds: ({ by }) =>
+      withSettings(
+        model,
+        evo(model.settings, { slideSeconds: (seconds) => nudgedSlideSeconds(seconds, by) }),
+      ),
 
     // 지금 화면에 떠 있는 메시지를 위해 시작된 대기만 그것을 지울 수 있다.
     CompletedWaitBeforeClearingNotice: ({ token }) =>

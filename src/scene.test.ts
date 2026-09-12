@@ -52,6 +52,7 @@ const shelfModel = (
   notice,
   fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
   maybePendingDelete: Option.none(),
+  isSettingsOpen: false,
   maybeReader: Option.none(),
 })
 
@@ -197,6 +198,35 @@ describe('interaction', () => {
       Command.resolve(LoadShelf, Message.SucceededLoadShelf({ books: [] })),
       Command.resolve(RevokeCoverUrls, Message.CompletedRevokeCoverUrls()),
       expect(text('Your shelf is empty')).toExist(),
+    )
+  })
+
+  test('the settings control opens the same panel the reader has', () => {
+    scene(
+      program,
+      given(shelfModel()),
+      expect(role('dialog', { name: 'Reading settings' })).not.toExist(),
+      click(role('button', { name: 'Reading settings' })),
+      expect(role('dialog', { name: 'Reading settings' })).toExist(),
+      // 리더의 패널과 같은 항목이 선다.
+      expect(role('switch', { name: 'Cover on its own' })).toExist(),
+      expect(role('button', { name: 'Go there' })).toExist(),
+      click(role('button', { name: 'Close' })),
+      expect(role('dialog', { name: 'Reading settings' })).not.toExist(),
+    )
+  })
+
+  test('the panel shows the defaults as they stand', () => {
+    scene(
+      program,
+      given({
+        ...shelfModel(),
+        settings: { ...defaultSettings, resume: 'ask', coverAlone: false },
+        isSettingsOpen: true,
+      }),
+      expect(role('button', { name: 'Ask' })).toHaveAttr('aria-pressed', 'true'),
+      expect(role('button', { name: 'Go there' })).toHaveAttr('aria-pressed', 'false'),
+      expect(role('switch', { name: 'Cover on its own' })).toHaveAttr('aria-checked', 'false'),
     )
   })
 

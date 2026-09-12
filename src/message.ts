@@ -7,7 +7,7 @@ import { Url } from 'foldkit/url'
 import { FileDrop } from '@foldkit/ui'
 
 import { BookSummary } from './domain/book.ts'
-import { BookSettings, PageMark, Rotation } from './types.ts'
+import { AtBookEnd, BookSettings, PageMark, Resume, Rotation } from './types.ts'
 import { Reader } from './page/index.ts'
 
 /**
@@ -42,6 +42,17 @@ export const Message = defineMessageUnion({
   FailedDeleteBook: { text: Schema.String },
 
   ClickedToggleTheme: {},
+
+  /** 책장의 ⚙. 리더의 것과 같은 패널을 연다. */
+  ClickedToggleSettings: {},
+  ToggledCoverAlone: { isChecked: Schema.Boolean },
+  ToggledEnlargeToFit: { isChecked: Schema.Boolean },
+  ToggledSplitWide: { isChecked: Schema.Boolean },
+  ToggledRememberBookSettings: { isChecked: Schema.Boolean },
+  SelectedAtBookEnd: { atBookEnd: AtBookEnd },
+  SelectedResume: { resume: Resume },
+  ClickedNudgeThreshold: { by: Schema.Number },
+  ClickedNudgeSlideSeconds: { by: Schema.Number },
   CompletedSaveSettings: {},
   CompletedApplyTheme: {},
 
