@@ -7,6 +7,27 @@
     <meta name="theme-color" content="#14141a" />
     <link href="/src/styles.css" rel="stylesheet" />
     <title>comicyuri · web comic viewer</title>
+    <!--
+      저장된 테마를 첫 페인트 전에 세운다. 앱이 `ApplyTheme`으로 같은 일을 하지만
+      그것은 모듈이 받아져 돌기 시작한 뒤라, 라이트 테마인 사람이 어두운 화면을
+      한 번 보고 만다.
+
+      여기서는 스키마를 쓸 수 없으므로 읽은 것을 믿지 않는다. 저장소가 없거나
+      (시크릿 모드) JSON이 깨졌거나 `theme`이 아는 값이 아니면 아무것도 하지
+      않고, 문서가 이미 지고 있는 어두운 기본값이 그대로 남는다.
+    -->
+    <script>
+      try {
+        var stored = JSON.parse(localStorage.getItem('comicyuri:settings'))
+        var theme = stored && stored.theme
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.dataset.theme = theme
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute('content', theme === 'light' ? '#f4f2f7' : '#14141a')
+        }
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
