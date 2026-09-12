@@ -18,7 +18,8 @@ import { defaultSettings } from '../../types.ts'
 import { LoadSpread, LoadThumbs, MeasureThumbsWidth, PreloadNeighbours } from './command.ts'
 import { Slider, VirtualList } from '@foldkit/ui'
 
-import { SLIDER_ID, THUMBS_ID, THUMBS_PER_ROW_DEFAULT, THUMB_ROW_HEIGHT } from './constant.ts'
+import { SLIDER_ID, THUMBS_DEFAULT_WIDTH, THUMBS_ID } from './constant.ts'
+import { rowHeightFor } from './thumbs.ts'
 import { Message, OutMessage } from './message.ts'
 import { ORIGIN, ZOOM_MIN } from './gesture.ts'
 import { Gesture, Model, OpenState, SpreadState } from './model.ts'
@@ -75,8 +76,8 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   isSettingsOpen: false,
   isThumbsOpen: false,
   showsBookmarksOnly: false,
-  thumbsPerRow: THUMBS_PER_ROW_DEFAULT,
-  thumbs: VirtualList.init({ id: THUMBS_ID, rowHeightPx: THUMB_ROW_HEIGHT }),
+  thumbsWidth: THUMBS_DEFAULT_WIDTH,
+  thumbs: VirtualList.init({ id: THUMBS_ID, rowHeightPx: rowHeightFor(THUMBS_DEFAULT_WIDTH) }),
   thumbPanels: [],
 })
 

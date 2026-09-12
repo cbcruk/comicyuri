@@ -40,7 +40,14 @@ import type { OpenBookService } from './resource.ts'
 import { halfAfterStep, staysOnPage } from './half.ts'
 import { rotatedRight } from './rotation.ts'
 import { pannedBy, turnFromEdge } from './scroll.ts'
-import { loadedPages, missingFrom, pagesInView, perRowFor, shownPages } from './thumbs.ts'
+import {
+  loadedPages,
+  missingFrom,
+  pagesInView,
+  perRowFor,
+  rowHeightFor,
+  shownPages,
+} from './thumbs.ts'
 import {
   flipBinding,
   indexOfPage,
@@ -478,7 +485,7 @@ const fillThumbs = (model: Model): UpdateReturn => {
   const pages = shownPages(pageCount, model.bookmarks, model.showsBookmarksOnly)
   const missing = missingFrom(
     model.thumbPanels,
-    pagesInView(model.thumbs, pages, model.thumbsPerRow),
+    pagesInView(model.thumbs, pages, perRowFor(model.thumbsWidth)),
   )
 
   return Array.match(missing, {
@@ -777,11 +784,19 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
     }),
 
     /**
-     * 폭이 바뀌면 한 행에 서는 칸의 수도 바뀐다. 창이 넓어지며 새로 드러난
-     * 자리를 채워야 하므로 다시 뽑는다.
+     * 폭이 바뀌면 칸의 수도, 칸의 너비도, 행의 높이도 바뀐다. 가상 리스트는 행을
+     * 자기가 쥔 높이로 셈하므로 그쪽에도 새 값을 먹인다 — 그러지 않으면 그려진
+     * 행과 리스트가 잡은 자리가 어긋난다.
+     *
+     * 새로 드러난 자리를 채워야 하므로 다시 뽑는다.
      */
     MeasuredThumbsWidth: ({ width }) =>
-      fillThumbs(evo(model, { thumbsPerRow: () => perRowFor(width) })),
+      fillThumbs(
+        evo(model, {
+          thumbsWidth: () => width,
+          thumbs: (thumbs) => evo(thumbs, { rowHeightPx: () => rowHeightFor(width) }),
+        }),
+      ),
 
     /** 북마크를 목록으로 보는 것과 책 전체를 보는 것 사이를 오간다. */
     ClickedToggleBookmarksOnly: () =>

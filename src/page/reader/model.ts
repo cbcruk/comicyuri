@@ -6,7 +6,8 @@ import { Slider, VirtualList } from '@foldkit/ui'
 import { Reading } from '../../domain/index.ts'
 import { PageMark, Rotation, Settings } from '../../types.ts'
 import type { BookSettings } from '../../types.ts'
-import { SLIDER_ID, THUMBS_ID, THUMBS_PER_ROW_DEFAULT, THUMB_ROW_HEIGHT } from './constant.ts'
+import { SLIDER_ID, THUMBS_DEFAULT_WIDTH, THUMBS_ID } from './constant.ts'
+import { rowHeightFor } from './thumbs.ts'
 import { ORIGIN, Point, Side, ZOOM_MIN } from './gesture.ts'
 import { Half } from './half.ts'
 
@@ -181,13 +182,14 @@ export const Model = Schema.Struct({
   /** 격자가 북마크한 페이지만 늘어놓고 있는지. 그것이 곧 북마크 목록이다. */
   showsBookmarksOnly: Schema.Boolean,
   /**
-   * 격자 한 행에 세울 칸의 수. 창 너비를 재어 정한다.
+   * 격자가 놓인 곳의 너비(픽셀). 몇 칸이 서고 칸이 얼마나 넓고 행이 얼마나
+   * 높은지가 모두 여기서 나온다.
    *
-   * 가상 리스트는 칸이 아니라 행을 잰다. 그래서 이 수는 격자를 그리는 데만이
-   * 아니라 어느 페이지가 창에 들어오는지 셈하는 데도 쓰인다 — 둘이 어긋나면
-   * 보이지 않는 썸네일을 뽑거나 보이는 자리를 비워 둔다.
+   * 재어 둔 값 하나에서 갈라 내는 이유는 셋이 서로 맞물려 있기 때문이다. 따로
+   * 두면 어긋난 채로 그려지고, 그러면 보이지 않는 썸네일을 뽑거나 보이는 자리를
+   * 비워 둔다.
    */
-  thumbsPerRow: Schema.Number,
+  thumbsWidth: Schema.Number,
   thumbs: VirtualList.Model,
   /** 지금까지 뽑아 둔 썸네일. 격자는 보여 줄 수 있는 것만 요청한다. */
   thumbPanels: Schema.Array(Panel),
@@ -256,10 +258,10 @@ export const init = (config: InitConfig): Model => ({
   isSettingsOpen: false,
   isThumbsOpen: false,
   showsBookmarksOnly: false,
-  thumbsPerRow: THUMBS_PER_ROW_DEFAULT,
+  thumbsWidth: THUMBS_DEFAULT_WIDTH,
   thumbs: VirtualList.init({
     id: THUMBS_ID,
-    rowHeightPx: THUMB_ROW_HEIGHT,
+    rowHeightPx: rowHeightFor(THUMBS_DEFAULT_WIDTH),
   }),
   thumbPanels: [],
 })

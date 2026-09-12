@@ -49,16 +49,22 @@ export const THUMB_INSET = 8
 export const THUMBS_PER_ROW_MIN = 2
 
 /**
- * 폭을 재기 전에 쓰는 행당 칸 수. 첫 프레임에만 쓰이고, 곧 실제로 잰 값이
- * 그 자리를 대신한다.
+ * 폭을 재기 전에 쓰는 격자 너비(픽셀). 첫 프레임에만 쓰이고, 곧 실제로 잰 값이
+ * 그 자리를 대신한다. 이 값에서는 네 칸이 서는데, 폭을 재기 전의 격자가 그
+ * 모양이었다.
  */
-export const THUMBS_PER_ROW_DEFAULT = 4
+export const THUMBS_DEFAULT_WIDTH = 480
 
 /**
- * 행 높이(픽셀). 가상 리스트가 아직 아무것도 재기 전에 패널이 몇 행을 담을지
- * 알려면 이 값이 필요하다.
+ * 칸 하나의 세로세로비. 인쇄된 만화 한 쪽이 2:3이므로 너비의 1.5배다.
+ *
+ * 칸이 넓어지면 높이도 이 비로 따라간다. 그러지 않으면 넓어진 칸 안에서
+ * 썸네일만 그대로 작게 선다.
  */
-export const THUMB_ROW_HEIGHT = 180
+export const THUMB_RATIO = 1.5
+
+/** 칸 아래 페이지 번호가 서는 자리(픽셀). */
+export const THUMB_LABEL_HEIGHT = 24
 
 /** 화면에 보이는 행 너머로 더 읽어 두는 행 수. 스크롤하면 이미 준비되어 있다. */
 export const THUMB_OVERSCAN = 2

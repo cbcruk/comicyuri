@@ -2,16 +2,20 @@ import { describe, expect, test } from 'vite-plus/test'
 
 import { VirtualList } from '@foldkit/ui'
 
-import { THUMBS_ID, THUMBS_PER_ROW_DEFAULT, THUMB_ROW_HEIGHT } from './constant.ts'
+import { THUMBS_DEFAULT_WIDTH, THUMBS_ID } from './constant.ts'
 import {
+  cellWidthFor,
   missingFrom,
   pagesInView,
   perRowFor,
-  rowWidthFor,
+  rowHeightFor,
   rowsFor,
   shownPages,
   urlFor,
 } from './thumbs.ts'
+
+const THUMBS_PER_ROW_DEFAULT = perRowFor(THUMBS_DEFAULT_WIDTH)
+const THUMB_ROW_HEIGHT = rowHeightFor(THUMBS_DEFAULT_WIDTH)
 
 const listAt = (scrollTop: number, containerHeight: number) => ({
   ...VirtualList.init({ id: THUMBS_ID, rowHeightPx: THUMB_ROW_HEIGHT }),
@@ -63,18 +67,43 @@ describe('how many stand in a row', () => {
     expect(perRowFor(0)).toBe(2)
   })
 
-  // 칸은 늘어나지 않는다. 늘리면 창이 넓어질수록 같은 칸이 서로 멀어지기만 한다.
-  test('a row is as wide as the columns it holds, and no wider', () => {
+  // 칸이 남는 자리를 나눠 가져서 행이 폭을 남김없이 쓴다.
+  test('the columns fill the row they stand in', () => {
     const width = 1680
     const perRow = perRowFor(width)
+    const used = perRow * cellWidthFor(width) + (perRow - 1) * 12 + 8
 
-    expect(rowWidthFor(perRow)).toBeLessThanOrEqual(width)
-    // 한 칸 더 세우면 넘친다. 그래서 그 수가 그 폭에 맞는 최대다.
-    expect(rowWidthFor(perRow + 1)).toBeGreaterThan(width)
+    expect(width - used).toBeLessThan(perRow)
   })
 
-  test('a row of one column is just that column', () => {
-    expect(rowWidthFor(1)).toBe(104)
+  test('a column never gets narrower than the width that decided the count', () => {
+    for (const width of [320, 390, 834, 1280, 1680, 2560]) {
+      expect(cellWidthFor(width)).toBeGreaterThanOrEqual(104)
+    }
+  })
+
+  test('a wider window makes the thumbnails bigger, not just more of them', () => {
+    // 한 칸이 더 들어가기 직전까지는 칸이 넓어진다.
+    expect(cellWidthFor(900)).toBeGreaterThan(cellWidthFor(840))
+  })
+
+  test('a row is as tall as its columns are wide, with room for the number', () => {
+    for (const width of [390, 834, 1680]) {
+      expect(rowHeightFor(width)).toBe(Math.round(cellWidthFor(width) * 1.5) + 24)
+    }
+  })
+
+  /**
+   * 폭이 넓어지면 칸은 한 칸이 더 들어갈 때까지 넓어지다가, 들어가는 순간 다시
+   * 좁아진다. 그래서 넓은 창이 늘 큰 썸네일을 주지는 않는다 — 좁은 창은 열이
+   * 적어서 오히려 칸이 크다. 어느 폭에서든 지켜지는 것은 이 범위다.
+   */
+  test('a column stays between one column wide and two', () => {
+    for (const width of [320, 390, 480, 834, 900, 1280, 1680, 2560]) {
+      expect(cellWidthFor(width)).toBeGreaterThanOrEqual(104)
+      // 이보다 넓으면 한 칸이 더 들어갔어야 한다.
+      expect(cellWidthFor(width)).toBeLessThan(104 * 2 + 12)
+    }
   })
 })
 

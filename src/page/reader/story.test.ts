@@ -25,6 +25,7 @@ import type { Point } from './gesture.ts'
 import { Model, OpenState, SpreadState, init } from './model.ts'
 import { NO_ROOM } from './scroll.ts'
 import type { ScrollDevice } from './scroll.ts'
+import { perRowFor } from './thumbs.ts'
 import { update } from './update.ts'
 
 const PAGE_COUNT = 6
@@ -1785,13 +1786,13 @@ describe('thumbnails', () => {
       Command.resolve(MeasureThumbsWidth, Message.MeasuredThumbsWidth({ width: 1680 })),
       Command.resolve(LoadThumbs, Message.CompletedLoadThumbs({ panels: [] })),
       model((wide) => {
-        expect(wide.thumbsPerRow).toBe(14)
+        expect(perRowFor(wide.thumbsWidth)).toBe(14)
       }),
       // 창이 줄면 서 있던 칸도 줄어든다.
       message(Message.MeasuredThumbsWidth({ width: 390 })),
       Command.resolve(LoadThumbs, Message.CompletedLoadThumbs({ panels: [] })),
       model((narrow) => {
-        expect(narrow.thumbsPerRow).toBe(3)
+        expect(perRowFor(narrow.thumbsWidth)).toBe(3)
       }),
     )
   })
@@ -1805,7 +1806,7 @@ describe('thumbnails', () => {
       Command.resolve(MeasureThumbsWidth, Message.MeasuredThumbsWidth({ width: 120 })),
       Command.resolve(LoadThumbs, Message.CompletedLoadThumbs({ panels: [] })),
       model((model) => {
-        expect(model.thumbsPerRow).toBe(2)
+        expect(perRowFor(model.thumbsWidth)).toBe(2)
       }),
     )
   })
