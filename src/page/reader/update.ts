@@ -5,7 +5,13 @@ import { evo } from 'foldkit/struct'
 
 import type { FitMode } from '../../types.ts'
 import { bookmarkFrom } from './bookmark.ts'
-import { LoadSpread, LoadThumbs, PreloadNeighbours, ToggleFullscreen } from './command.ts'
+import {
+  LoadSpread,
+  LoadThumbs,
+  MeasureThumbsWidth,
+  PreloadNeighbours,
+  ToggleFullscreen,
+} from './command.ts'
 import { SLIDE_MAX, SLIDE_MIN, THRESHOLD_MAX, THRESHOLD_MIN } from './constant.ts'
 import {
   DOUBLE_TAP_MILLIS,
@@ -34,7 +40,7 @@ import type { OpenBookService } from './resource.ts'
 import { halfAfterStep, staysOnPage } from './half.ts'
 import { rotatedRight } from './rotation.ts'
 import { pannedBy, turnFromEdge } from './scroll.ts'
-import { loadedPages, missingFrom, pagesInView, shownPages } from './thumbs.ts'
+import { loadedPages, missingFrom, pagesInView, perRowFor, shownPages } from './thumbs.ts'
 import {
   flipBinding,
   indexOfPage,
@@ -477,7 +483,10 @@ const fillThumbs = (model: Model): UpdateReturn => {
   })
 
   const pages = shownPages(pageCount, model.bookmarks, model.showsBookmarksOnly)
-  const missing = missingFrom(model.thumbPanels, pagesInView(model.thumbs, pages))
+  const missing = missingFrom(
+    model.thumbPanels,
+    pagesInView(model.thumbs, pages, model.thumbsPerRow),
+  )
 
   return Array.match(missing, {
     onEmpty: () => ({ model }),
@@ -749,13 +758,17 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
               thumbPanels: () => [],
             }),
           }
-        : fillThumbs(
-            evo(model, {
+        : {
+            // 폭을 묻기만 하고 뽑지는 않는다. 몇 칸이 서는지가 무엇을 뽑을지도
+            // 정하므로, 여기서 뽑으면 기본값으로 한 번 뽑았다가 잰 값으로 다시
+            // 뽑게 된다. 채우는 일은 잰 답이 돌아올 때 한 번에 한다.
+            model: evo(model, {
               isThumbsOpen: () => true,
               isChromeVisible: () => true,
               activityToken: (token) => token + 1,
             }),
-          ),
+            commands: [MeasureThumbsWidth()],
+          },
 
     GotThumbsMessage: ({ message }) => {
       const scrolled = foldThumbs(model, message)
@@ -772,6 +785,13 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
         thumbPanels: (existing) => Array.appendAll(existing, panels),
       }),
     }),
+
+    /**
+     * 폭이 바뀌면 한 행에 서는 칸의 수도 바뀐다. 창이 넓어지며 새로 드러난
+     * 자리를 채워야 하므로 다시 뽑는다.
+     */
+    MeasuredThumbsWidth: ({ width }) =>
+      fillThumbs(evo(model, { thumbsPerRow: () => perRowFor(width) })),
 
     /** 북마크를 목록으로 보는 것과 책 전체를 보는 것 사이를 오간다. */
     ClickedToggleBookmarksOnly: () =>

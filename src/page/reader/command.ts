@@ -110,6 +110,17 @@ export const LoadThumbs = Command.define('LoadThumbs', {
 })
 
 /**
+ * 격자가 놓인 곳의 너비를 잰다.
+ *
+ * 격자는 `inset-0`이라 그 너비가 곧 창의 너비다. 가상 리스트는 높이만 재어
+ * 주므로 너비는 이쪽에서 묻는다.
+ */
+export const MeasureThumbsWidth = Command.define('MeasureThumbsWidth', {
+  messages: [Message.MeasuredThumbsWidth],
+  execute: Effect.sync(() => Message.MeasuredThumbsWidth({ width: window.innerWidth })),
+})
+
+/**
  * Fullscreen API는 브라우저가 거절하면 reject 되는 promise이고, 어느 쪽이든
  * 결과는 document가 자기 이벤트로 알린다. 그래서 이 Command는 묻기만 하면 된다.
  */

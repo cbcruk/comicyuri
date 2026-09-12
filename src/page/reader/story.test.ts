@@ -11,7 +11,13 @@ import {
 import { describe, expect, test } from 'vite-plus/test'
 
 import { defaultSettings } from '../../types.ts'
-import { LoadSpread, LoadThumbs, PreloadNeighbours, ToggleFullscreen } from './command.ts'
+import {
+  LoadSpread,
+  LoadThumbs,
+  MeasureThumbsWidth,
+  PreloadNeighbours,
+  ToggleFullscreen,
+} from './command.ts'
 import { SKIP_PAGES } from './constant.ts'
 import { Message, OutMessage } from './message.ts'
 import { DOUBLE_TAP_ZOOM, ORIGIN, ZOOM_MIN } from './gesture.ts'
@@ -1755,6 +1761,9 @@ describe('thumbnails', () => {
       model((model) => {
         expect(model.isThumbsOpen).toBe(true)
       }),
+      // 격자를 열면 폭부터 묻는다. 몇 칸이 서는지가 무엇을 뽑을지도 정한다.
+      Command.expectHas(MeasureThumbsWidth()),
+      Command.resolve(MeasureThumbsWidth, Message.MeasuredThumbsWidth({ width: 1280 })),
       Command.resolve(
         LoadThumbs,
         Message.CompletedLoadThumbs({
@@ -1763,6 +1772,40 @@ describe('thumbnails', () => {
       ),
       model((model) => {
         expect(model.thumbPanels).toStrictEqual([{ page: 0, url: 'blob:t0' }])
+      }),
+    )
+  })
+
+  test('a wider window stands more thumbnails in a row, a narrow one fewer', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ClickedToggleThumbs()),
+      Command.resolve(MeasureThumbsWidth, Message.MeasuredThumbsWidth({ width: 1680 })),
+      Command.resolve(LoadThumbs, Message.CompletedLoadThumbs({ panels: [] })),
+      model((wide) => {
+        expect(wide.thumbsPerRow).toBe(14)
+      }),
+      // 창이 줄면 서 있던 칸도 줄어든다.
+      message(Message.MeasuredThumbsWidth({ width: 390 })),
+      Command.resolve(LoadThumbs, Message.CompletedLoadThumbs({ panels: [] })),
+      model((narrow) => {
+        expect(narrow.thumbsPerRow).toBe(3)
+      }),
+    )
+  })
+
+  test('however narrow the window, the grid never falls to a single column', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ClickedToggleThumbs()),
+      Command.resolve(MeasureThumbsWidth, Message.MeasuredThumbsWidth({ width: 120 })),
+      Command.resolve(LoadThumbs, Message.CompletedLoadThumbs({ panels: [] })),
+      model((model) => {
+        expect(model.thumbsPerRow).toBe(2)
       }),
     )
   })

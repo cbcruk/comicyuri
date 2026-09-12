@@ -243,6 +243,26 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
     },
   ),
 
+  /**
+   * 격자가 열려 있는 동안에만 창 너비를 따라간다. 닫혀 있으면 다시 열 때
+   * 재므로, 그때까지 들을 이유가 없다.
+   */
+  thumbsWidth: entry(
+    { isThumbsOpen: Schema.Boolean },
+    {
+      modelToDependencies: (model) => ({ isThumbsOpen: model.isThumbsOpen }),
+      dependenciesToStream: ({ isThumbsOpen }) =>
+        isThumbsOpen
+          ? Subscription.fromEventFilterMap<Event, Message>({
+              target: window,
+              type: 'resize',
+              toMessage: () =>
+                Option.some(Message.MeasuredThumbsWidth({ width: window.innerWidth })),
+            })
+          : Stream.empty,
+    },
+  ),
+
   // 트랙패드 핀치와 마우스 줌은 둘 다 Ctrl+휠로 도착한다.
   wheel: entry(
     {},

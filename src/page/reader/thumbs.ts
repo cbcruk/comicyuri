@@ -2,7 +2,13 @@ import { Array, Option } from 'effect'
 
 import { VirtualList } from '@foldkit/ui'
 
-import { THUMBS_PER_ROW, THUMB_OVERSCAN } from './constant.ts'
+import {
+  THUMBS_PER_ROW_MIN,
+  THUMB_GAP,
+  THUMB_INSET,
+  THUMB_OVERSCAN,
+  THUMB_WIDTH,
+} from './constant.ts'
 import type { Panel } from './model.ts'
 
 /**
@@ -21,9 +27,35 @@ export const shownPages = (
   return bookmarksOnly ? Array.filter(pages, (page) => Array.contains(bookmarks, page)) : pages
 }
 
+/**
+ * 그 폭에 몇 칸이 서는지.
+ *
+ * 마지막 칸 뒤에는 사이 여백이 붙지 않으므로, 여백 하나를 더해 두고 나눈다.
+ * 아무리 좁아도 {@linkcode THUMBS_PER_ROW_MIN}칸은 세운다 — 한 칸씩 늘어서면
+ * 격자가 아니라 목록이다.
+ *
+ * @param width 격자가 놓인 곳의 너비(픽셀).
+ */
+export const perRowFor = (width: number): number =>
+  Math.max(
+    THUMBS_PER_ROW_MIN,
+    Math.floor((width - THUMB_INSET + THUMB_GAP) / (THUMB_WIDTH + THUMB_GAP)),
+  )
+
+/**
+ * 그 수의 칸이 차지하는 너비(픽셀). 마지막 칸 뒤에는 사이 여백이 없다.
+ *
+ * 행을 이 너비로 묶어 가운데 두면 칸이 격자의 열로 선다. 남는 자리를 칸에
+ * 나눠 주면 마지막 줄의 두어 칸이 화면을 반씩 차지한다.
+ */
+export const rowWidthFor = (perRow: number): number =>
+  perRow * (THUMB_WIDTH + THUMB_GAP) - THUMB_GAP
+
 /** 격자의 각 행에 들어갈 페이지들. */
-export const rowsFor = (pages: ReadonlyArray<number>): ReadonlyArray<ReadonlyArray<number>> =>
-  Array.chunksOf(pages, THUMBS_PER_ROW)
+export const rowsFor = (
+  pages: ReadonlyArray<number>,
+  perRow: number,
+): ReadonlyArray<ReadonlyArray<number>> => Array.chunksOf(pages, perRow)
 
 /**
  * 지금 격자가 보여 줄 수 있는 페이지들. 리스트 자신의 스크롤 상태에서 읽어 낸다.
@@ -35,6 +67,7 @@ export const rowsFor = (pages: ReadonlyArray<number>): ReadonlyArray<ReadonlyArr
 export const pagesInView = (
   list: VirtualList.Model,
   pages: ReadonlyArray<number>,
+  perRow: number,
 ): ReadonlyArray<number> => {
   const containerHeight =
     list.measurement._tag === 'Measured' ? list.measurement.containerHeight : 0
@@ -45,7 +78,7 @@ export const pagesInView = (
   const from = Math.max(0, firstRow - THUMB_OVERSCAN)
   const to = firstRow + rowsOnScreen + THUMB_OVERSCAN
 
-  return Array.take(Array.drop(pages, from * THUMBS_PER_ROW), (to - from) * THUMBS_PER_ROW)
+  return Array.take(Array.drop(pages, from * perRow), (to - from) * perRow)
 }
 
 /**
