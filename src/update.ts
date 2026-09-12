@@ -170,7 +170,12 @@ export const update = (model: Model, message: Message) =>
 
     ChangedUrl: ({ url }) => {
       const route = urlToAppRoute(url)
-      const routed = evo(model, { route: () => route })
+      // 자리를 옮기면 묻던 것도 접는다. 화면에 없는 카드의 물음이 남아 있다가
+      // 책장에 돌아왔을 때 다시 떠 있어서는 안 된다.
+      const routed = evo(model, {
+        route: () => route,
+        maybePendingDelete: () => Option.none<string>(),
+      })
 
       return AppRoute.match(route, {
         Reader: ({ id }) =>
@@ -229,7 +234,12 @@ export const update = (model: Model, message: Message) =>
     CompletedSaveBookSettings: () => ({ model }),
 
     SucceededLoadShelf: ({ books }) => ({
-      model: evo(model, { shelf: () => Shelf.Success({ data: books }) }),
+      model: evo(model, {
+        shelf: () => Shelf.Success({ data: books }),
+        // 방금 읽은 책장에 없는 책을 두고 묻고 있을 수는 없다.
+        maybePendingDelete: (pending) =>
+          Option.filter(pending, (id) => Array.some(books, (book) => book.id === id)),
+      }),
       // 새 표지가 Model에 들어왔으니 앞서 읽은 표지들에는 이제 닿을 수 없다.
       commands: [
         RevokeCoverUrls({
@@ -264,7 +274,22 @@ export const update = (model: Model, message: Message) =>
 
     FailedImportFiles: ({ text }) => failed(model, text),
 
-    ClickedDeleteBook: ({ id }) => ({ model, commands: [DeleteBook({ id })] }),
+    /**
+     * 지우는 것이 아니라 지울지 묻는다. 지운 책은 되돌아오지 않고 읽던 자리도
+     * 함께 가는데, 🗑은 카드 위에 떠 있어서 책을 누르려다 스칠 수 있다.
+     */
+    ClickedDeleteBook: ({ id }) => ({
+      model: evo(model, { maybePendingDelete: () => Option.some(id) }),
+    }),
+
+    ClickedConfirmDeleteBook: ({ id }) => ({
+      model: evo(model, { maybePendingDelete: () => Option.none<string>() }),
+      commands: [DeleteBook({ id })],
+    }),
+
+    ClickedCancelDeleteBook: () => ({
+      model: evo(model, { maybePendingDelete: () => Option.none<string>() }),
+    }),
 
     SucceededDeleteBook: () => reloadShelf(model),
 

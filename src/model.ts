@@ -44,6 +44,13 @@ export const Model = Schema.Struct({
   shelf: Shelf.schema,
   notice: Notice,
   fileDrop: FileDrop.Model,
+  /**
+   * 지울지 묻고 있는 책. 묻는 중이 아니면 없음이다.
+   *
+   * 지우는 것은 되돌릴 수 없고 그 책의 읽던 자리까지 함께 간다. 그래서 🗑은
+   * 지우는 버튼이 아니라 묻는 버튼이고, 실제로 지우는 것은 그 답이다.
+   */
+  maybePendingDelete: Schema.Option(Schema.String),
   /** 리더 라우트가 열려 있는 동안에만 있다. */
   maybeReader: Schema.Option(Reader.Model),
 })

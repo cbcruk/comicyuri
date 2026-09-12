@@ -47,6 +47,7 @@ const shelfModel = (shelf: Shelf = Shelf.Success({ data: [] })): Model => ({
   shelf,
   notice: Notice.Idle(),
   fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
+  maybePendingDelete: Option.none(),
   maybeReader: Option.none(),
 })
 
@@ -238,11 +239,61 @@ describe('notice', () => {
 })
 
 describe('delete', () => {
+  test('the bin asks rather than deletes', () => {
+    story(
+      update,
+      given(shelfModel(Shelf.Success({ data: [book('gone::1', 'Gone')] }))),
+      message(Message.ClickedDeleteBook({ id: 'gone::1' })),
+      // 아무 Command도 나가지 않는다. 나간 것이 있으면 story가 거기서 멈춘다.
+      model((model) => {
+        expect(model.maybePendingDelete).toStrictEqual(Option.some('gone::1'))
+        expect(titlesOf(model.shelf)).toStrictEqual(['Gone'])
+      }),
+    )
+  })
+
+  test('keeping the book leaves the shelf as it was', () => {
+    story(
+      update,
+      given(shelfModel(Shelf.Success({ data: [book('gone::1', 'Gone')] }))),
+      message(Message.ClickedDeleteBook({ id: 'gone::1' })),
+      message(Message.ClickedCancelDeleteBook()),
+      model((model) => {
+        expect(model.maybePendingDelete).toStrictEqual(Option.none())
+        expect(titlesOf(model.shelf)).toStrictEqual(['Gone'])
+      }),
+    )
+  })
+
+  test('leaving the shelf takes the question with it', () => {
+    story(
+      update,
+      given(shelfModel(Shelf.Success({ data: [book('gone::1', 'Gone')] }))),
+      message(Message.ClickedDeleteBook({ id: 'gone::1' })),
+      message(Message.ChangedUrl({ url: readerUrl })),
+      Command.resolve(
+        LoadProgress,
+        Message.CompletedLoadProgress({
+          bookId: 'volume-1::42',
+          page: 0,
+          bookmarks: [],
+          marks: [],
+          rotation: 0,
+          maybeSettings: Option.none(),
+        }),
+      ),
+      model((model) => {
+        expect(model.maybePendingDelete).toStrictEqual(Option.none())
+      }),
+    )
+  })
+
   test('deleting a book refreshes the shelf', () => {
     story(
       update,
       given(shelfModel(Shelf.Success({ data: [book('gone::1', 'Gone')] }))),
       message(Message.ClickedDeleteBook({ id: 'gone::1' })),
+      message(Message.ClickedConfirmDeleteBook({ id: 'gone::1' })),
       Command.expectExact(DeleteBook({ id: 'gone::1' })),
       Command.resolve(DeleteBook, Message.SucceededDeleteBook()),
       Command.resolve(LoadShelf, Message.SucceededLoadShelf({ books: [] })),
@@ -258,6 +309,7 @@ describe('delete', () => {
       update,
       given(shelfModel(Shelf.Success({ data: [book('stuck::1', 'Stuck')] }))),
       message(Message.ClickedDeleteBook({ id: 'stuck::1' })),
+      message(Message.ClickedConfirmDeleteBook({ id: 'stuck::1' })),
       Command.resolve(
         DeleteBook,
         Message.FailedDeleteBook({ text: 'Shelf storage is unavailable' }),

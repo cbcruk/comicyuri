@@ -119,10 +119,28 @@ e2e "S-121 · 잰 크기는 새로고침을 넘겨 남는다"
 
 ### 1.3 삭제
 
-**S-131 · 카드의 🗑 버튼이 책을 책장에서 지운다**
-버튼 이름은 "Remove <제목> from shelf". 평소에는 투명하고 hover·focus 시 보인다.
-✅ scene "removing a book from the shelf takes it out of the grid",
-"every book gets its own named link and delete control"
+**S-131 · 카드의 🗑 버튼이 지울지 묻는다**
+버튼 이름은 "Remove <제목> from shelf…". 평소에는 투명하고 hover·focus 시 보인다.
+누르면 지우는 것이 아니라 물음이 카드를 덮는다 — "Remove this book and where you left
+off?"와 함께 "Remove"(이름 "Remove <제목> from shelf")와 "Keep"(이름 "Keep <제목>")이
+선다.
+
+묻는 것은 지우는 것이 되돌릴 수 없고 그 책의 읽던 자리까지 함께 가기 때문이다. 🗑은
+카드 위에 떠 있어서 책을 누르려다 스칠 수 있다.
+
+물음은 카드를 통째로 덮으므로 답하기 전에는 그 책이 열리지 않는다. 물음과 답을 같은
+자리에 두지 않는 이유도 같다 — 🗑이 있던 곳에 "Remove"가 서면 두 번째 누름이 첫
+번째와 같은 동작처럼 보이고, 그 자리는 손이 이미 가 있는 자리다.
+
+한 번에 한 책만 묻는다. 다른 카드의 🗑을 누르면 물음이 그쪽으로 옮겨 간다. 책장을
+떠나면 물음도 접힌다.
+✅ story "the bin asks rather than deletes", "keeping the book leaves the shelf as it
+was", "leaving the shelf takes the question with it",
+scene "removing a book from the shelf takes it out of the grid", "the question stands on
+one card only, and keeping it puts the bin back",
+e2e "S-131 · 🗑은 묻기만 하고, 지키기를 고르면 책이 남는다", "S-131 · 지우기를 고르면
+책장에서 사라지고 새로고침을 넘겨 돌아오지 않는다", "S-131 · 묻는 동안에는 그 카드로
+들어갈 수 없다", "S-131 · 다른 책을 열었다 돌아오면 묻던 것이 남아 있지 않다"
 ❓ hover 시 나타나는 동작
 
 **S-132 · 삭제 후 책장이 다시 읽힌다**
@@ -131,7 +149,7 @@ e2e "S-121 · 잰 크기는 새로고침을 넘겨 남는다"
 **S-133 · 삭제가 실패하면 책은 남고 실패만 보고된다**
 ✅ story "a failed delete is reported and the book stays"
 
-⚠️ 삭제에 확인 절차가 없다. 누르면 바로 지워지고 되돌릴 수 없다.
+⚠️ 되돌리기는 없다. 답하고 나면 그 책의 바이트도 읽던 자리도 돌아오지 않는다.
 
 ### 1.4 테마
 
@@ -994,7 +1012,6 @@ URL이 어느 책인지 말하고, 어느 자리에서 열지는 `R-2B5`가 정�
 | ID    | 내용                                                                                                                                            |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | L-601 | 썸네일 그리드의 행 높이가 180px 고정이다. 한 행의 칸 수는 창을 따라가지만(`R-276`) 칸이 넓어져도 썸네일은 커지지 않는다                         |
-| L-604 | 삭제에 확인 절차가 없다                                                                                                                         |
 | L-606 | 부팅 시 라이트 테마 사용자에게 어두운 첫 프레임이 보일 수 있다                                                                                  |
 | L-607 | 책장을 다시 읽을 때마다 모든 표지의 object URL을 새로 만든다 — 한 권을 임포트해도 나머지 표지가 다시 그려진다                                   |
 | L-609 | `src/db.ts`를 직접 겨냥한 테스트가 없다. 이 계층은 update를 통해서만 간접 검증된다 (`src/zip.ts`는 `R-205`가 덮는다)                            |
