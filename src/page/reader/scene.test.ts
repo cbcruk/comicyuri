@@ -15,10 +15,10 @@ import {
 import { describe, test } from 'vite-plus/test'
 
 import { defaultSettings } from '../../types.ts'
-import { LoadSpread, LoadThumbs, PreloadNeighbours } from './command.ts'
+import { LoadSpread, LoadThumbs, MeasureThumbsWidth, PreloadNeighbours } from './command.ts'
 import { Slider, VirtualList } from '@foldkit/ui'
 
-import { SLIDER_ID, THUMBS_ID, THUMB_ROW_HEIGHT } from './constant.ts'
+import { SLIDER_ID, THUMBS_ID, THUMBS_PER_ROW_DEFAULT, THUMB_ROW_HEIGHT } from './constant.ts'
 import { Message, OutMessage } from './message.ts'
 import { ORIGIN, ZOOM_MIN } from './gesture.ts'
 import { Gesture, Model, OpenState, SpreadState } from './model.ts'
@@ -75,6 +75,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   isSettingsOpen: false,
   isThumbsOpen: false,
   showsBookmarksOnly: false,
+  thumbsPerRow: THUMBS_PER_ROW_DEFAULT,
   thumbs: VirtualList.init({ id: THUMBS_ID, rowHeightPx: THUMB_ROW_HEIGHT }),
   thumbPanels: [],
 })
@@ -654,6 +655,7 @@ describe('every page', () => {
       }),
       expect(role('dialog', { name: 'Every page' })).not.toExist(),
       click(role('button', { name: 'Show every page' })),
+      Command.resolve(MeasureThumbsWidth, Message.MeasuredThumbsWidth({ width: 1280 })),
       Command.resolve(
         LoadThumbs,
         Message.CompletedLoadThumbs({ panels: [{ page: 0, url: 'blob:t0' }] }),

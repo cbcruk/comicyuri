@@ -21,6 +21,7 @@ import {
   THRESHOLD_MIN,
   THRESHOLD_STEP,
   THUMB_ROW_HEIGHT,
+  THUMB_WIDTH,
 } from './constant.ts'
 import { ZOOM_MIN } from './gesture.ts'
 import { Message } from './message.ts'
@@ -31,7 +32,7 @@ import { sideOf } from './half.ts'
 import { swapsSides } from './rotation.ts'
 import { indexOfPage, pagesAt, splitRatio, spreadsFor } from './spread.ts'
 import { sliderPage } from './update.ts'
-import { rowsFor, shownPages, urlFor } from './thumbs.ts'
+import { rowWidthFor, rowsFor, shownPages, urlFor } from './thumbs.ts'
 
 const FIT_LABEL: Record<FitMode, string> = {
   contain: 'Fit',
@@ -530,7 +531,7 @@ const sliderView = (model: Model, h: HtmlBuilder<Message>): Html => {
 const thumbView = (model: Model, page: number, h: HtmlBuilder<Message>): Html =>
   h.keyed('div')(
     String(page),
-    [h.Class('relative flex flex-1')],
+    [h.Class('relative flex shrink-0'), h.Style({ width: `${THUMB_WIDTH}px` })],
     [
       h.button(
         [
@@ -856,12 +857,17 @@ const thumbsView = (model: Model, pageCount: number, h: HtmlBuilder<Message>): H
         model: model.thumbs,
         view: VirtualList.view<ReadonlyArray<number>>(),
         viewInputs: {
-          items: rowsFor(pages),
+          items: rowsFor(pages, model.thumbsPerRow),
           itemToKey: (_row, index) => String(index),
           containerClassName: 'flex-1 overflow-y-auto p-4',
+          // 행을 격자 한 줄의 너비로 묶어 가운데 둔다. 그래야 칸이 열로 서고,
+          // 마지막 줄의 남은 칸도 그 열을 따라 왼쪽부터 찬다.
           itemToView: (row) =>
             h.div(
-              [h.Class('flex gap-3 px-1')],
+              [
+                h.Class('mx-auto flex justify-start gap-3 px-1'),
+                h.Style({ width: `${rowWidthFor(model.thumbsPerRow)}px` }),
+              ],
               Array.map(row, (page) => thumbView(model, page, h)),
             ),
         },

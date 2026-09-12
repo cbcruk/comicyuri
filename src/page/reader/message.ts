@@ -97,6 +97,8 @@ export const Message = defineMessageUnion({
   ClickedNudgeThreshold: { by: Schema.Number },
 
   ClickedToggleThumbs: {},
+  /** 격자가 놓인 곳의 너비를 쟀다. 열 때 한 번, 그 뒤로는 창이 바뀔 때마다. */
+  MeasuredThumbsWidth: { width: Schema.Number },
   GotThumbsMessage: { message: VirtualList.Message },
   SelectedThumb: { page: Schema.Number },
   CompletedLoadThumbs: { panels: Schema.Array(Panel) },
