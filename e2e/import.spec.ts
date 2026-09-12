@@ -1,6 +1,6 @@
 /** S-113 · 폴더 열기. 테스트 경로가 없어 브라우저에서만 확인되던 자리다. */
 
-import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -9,9 +9,20 @@ import { expect, test } from '@playwright/test'
 import { png } from './fixture/archive.ts'
 import { control, counter, importBook, openReader, openShelf } from './fixture/app.ts'
 
+/**
+ * 이 파일이 디스크에 만든 폴더들. 테스트가 끝나면 치운다.
+ *
+ * 치우지 않으면 실행마다 하나씩 임시 디렉터리에 쌓인다. 폴더 선택창은 실제
+ * 경로만 받으므로 이 테스트만 디스크에 무엇을 남기는데, 그래서 이 테스트만
+ * 치울 것이 있다.
+ */
+const made: string[] = []
+
 /** 이미지 몇 장이 든 폴더를 디스크에 만든다. 폴더 선택창은 실제 경로만 받는다. */
 const imageFolder = (name: string, count: number): string => {
   const root = mkdtempSync(join(tmpdir(), 'comicyuri-'))
+  made.push(root)
+
   const folder = join(root, name)
   mkdirSync(folder)
   for (let page = 0; page < count; page++) {
@@ -22,6 +33,12 @@ const imageFolder = (name: string, count: number): string => {
   }
   return folder
 }
+
+test.afterAll(() => {
+  for (const root of made.splice(0)) {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
 
 test('S-113 · 폴더를 고르면 폴더 이름의 책 한 권이 된다', async ({ page }) => {
   const folder = imageFolder('collected-pages', 4)
