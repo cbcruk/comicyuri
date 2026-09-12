@@ -56,7 +56,8 @@ export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (
     },
     commands: [
       ApplyTheme({ theme: flags.settings.theme }),
-      LoadShelf(),
+      // 첫 부팅에는 쥐고 있는 표지가 없다.
+      LoadShelf({ have: [] }),
       ...AppRoute.match(route, {
         Reader: ({ id }) => [LoadProgress({ bookId: id })],
         Shelf: () => [],

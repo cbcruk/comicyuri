@@ -17,24 +17,45 @@ import { BookSettings, PageMark, Rotation, Settings, Theme } from './types.ts'
 /** 실패가 상태 줄에 머무르다 스스로 사라지기까지의 시간. */
 const NOTICE_LINGER = Duration.seconds(4)
 
-const summarise = (stored: StoredBook): Book.BookSummary =>
-  Book.fromRecord(
-    stored,
-    Option.map(Option.fromNullishOr(stored.cover), (cover) => URL.createObjectURL(cover)),
-  )
+/**
+ * 레코드 하나를 요약한다. 이미 쥐고 있는 표지가 있으면 그것을 그대로 쓰고,
+ * 없을 때만 새 object URL을 만든다.
+ */
+const summarise =
+  (have: ReadonlyArray<Book.Cover>) =>
+  (stored: StoredBook): Book.BookSummary =>
+    Book.fromRecord(
+      stored,
+      Option.orElse(
+        Option.map(
+          Array.findFirst(have, (cover) => cover.id === stored.id),
+          (cover) => cover.url,
+        ),
+        () => Option.map(Option.fromNullishOr(stored.cover), (cover) => URL.createObjectURL(cover)),
+      ),
+    )
 
 /**
- * 책장을 통째로 읽어 격자용으로 요약하면서, 찾은 표지마다 object URL을 만든다.
+ * 책장을 통째로 읽어 격자용으로 요약하면서, 아직 URL이 없는 표지마다 object
+ * URL을 만든다.
  *
- * 책장을 읽을 때마다 그것이 밀어내는 표지들에 대한 {@linkcode RevokeCoverUrls}가
- * 늘 따라붙는 이유가 이 URL들이다.
+ * 이미 화면에 걸려 있는 표지는 `have`로 받아 그대로 되돌려 준다. 다시 만들면
+ * 카드마다 `src`가 바뀌어서, 한 권을 들여왔을 뿐인데 나머지 표지가 전부 다시
+ * 그려진다.
+ *
+ * 그러고도 밀려난 URL은 남는다. 그것을 놓아 주는 {@linkcode RevokeCoverUrls}가
+ * 책장을 읽은 뒤에 따라붙는 이유다.
  */
 export const LoadShelf = Command.define('LoadShelf', {
+  args: { have: Schema.Array(Schema.Struct({ id: Schema.String, url: Schema.String })) },
   messages: [Message.SucceededLoadShelf, Message.FailedLoadShelf],
-  execute: getAllBooks.pipe(
-    Effect.map((stored) => Message.SucceededLoadShelf({ books: Array.map(stored, summarise) })),
-    Effect.catch((error) => Effect.succeed(Message.FailedLoadShelf({ text: describe(error) }))),
-  ),
+  execute: ({ have }) =>
+    getAllBooks.pipe(
+      Effect.map((stored) =>
+        Message.SucceededLoadShelf({ books: Array.map(stored, summarise(have)) }),
+      ),
+      Effect.catch((error) => Effect.succeed(Message.FailedLoadShelf({ text: describe(error) }))),
+    ),
 })
 
 /**

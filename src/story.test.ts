@@ -81,6 +81,41 @@ describe('shelf', () => {
     )
   })
 
+  // 다시 읽어도 그대로 남은 책의 표지는 같은 URL을 쥐고 있다. 놓아 주고 다시
+  // 만들면 카드마다 `src`가 바뀌어서 한 권을 들여왔을 뿐인데 전부 다시 그려진다.
+  test('a reload that keeps a book keeps its cover as it was', () => {
+    const kept = book('kept::1', 'Kept', Option.some('blob:kept'))
+
+    story(
+      update,
+      given(shelfModel(Shelf.Success({ data: [kept] }))),
+      message(
+        Message.SucceededLoadShelf({
+          books: [kept, book('added::1', 'Added', Option.some('blob:added'))],
+        }),
+      ),
+      // 놓아 줄 것이 없다. 밀려난 표지가 하나도 없다.
+      Command.expectExact(RevokeCoverUrls({ urls: [] })),
+      Command.resolve(RevokeCoverUrls, Message.CompletedRevokeCoverUrls()),
+      model((model) => {
+        expect(titlesOf(model.shelf)).toStrictEqual(['Kept', 'Added'])
+      }),
+    )
+  })
+
+  test('a reload is told which covers it can keep', () => {
+    story(
+      update,
+      given(
+        shelfModel(Shelf.Success({ data: [book('kept::1', 'Kept', Option.some('blob:kept'))] })),
+      ),
+      message(Message.SucceededDeleteBook()),
+      Command.expectExact(LoadShelf({ have: [{ id: 'kept::1', url: 'blob:kept' }] })),
+      Command.resolve(LoadShelf, Message.SucceededLoadShelf({ books: [] })),
+      Command.resolve(RevokeCoverUrls, Message.CompletedRevokeCoverUrls()),
+    )
+  })
+
   test('a first load that fails has nothing to keep on screen', () => {
     story(
       update,
