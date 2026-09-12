@@ -48,6 +48,7 @@ const shelfModel = (shelf: Shelf = Shelf.Success({ data: [] })): Model => ({
   notice: Notice.Idle(),
   fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
   maybePendingDelete: Option.none(),
+  isSettingsOpen: false,
   maybeReader: Option.none(),
 })
 
@@ -380,6 +381,84 @@ describe('settings', () => {
       }),
       Command.resolve(SaveSettings, Message.CompletedSaveSettings()),
       Command.resolve(ApplyTheme, Message.CompletedApplyTheme()),
+    )
+  })
+})
+
+describe('settings from the shelf', () => {
+  test('the control opens the panel and closes it again', () => {
+    story(
+      update,
+      given(shelfModel()),
+      message(Message.ClickedToggleSettings()),
+      model((model) => {
+        expect(model.isSettingsOpen).toBe(true)
+      }),
+      message(Message.ClickedToggleSettings()),
+      model((model) => {
+        expect(model.isSettingsOpen).toBe(false)
+      }),
+    )
+  })
+
+  // 책장에는 책이 없으므로 가를 것이 없다. 바꾼 것은 모든 책의 기본값이다.
+  test('what changes here is the global default, saved as it is', () => {
+    const expected = { ...defaultSettings, coverAlone: false }
+
+    story(
+      update,
+      given(shelfModel()),
+      message(Message.ToggledCoverAlone({ isChecked: false })),
+      model((model) => {
+        expect(model.settings).toStrictEqual(expected)
+      }),
+      Command.expectExact(SaveSettings({ settings: expected })),
+      Command.resolve(SaveSettings, Message.CompletedSaveSettings()),
+    )
+  })
+
+  test('the threshold moves a step at a time and stops at the ends', () => {
+    story(
+      update,
+      given({
+        ...shelfModel(),
+        settings: { ...defaultSettings, singleThreshold: 0.98 },
+      }),
+      message(Message.ClickedNudgeThreshold({ by: 0.02 })),
+      model((model) => {
+        expect(model.settings.singleThreshold).toBe(1)
+      }),
+      Command.resolve(SaveSettings, Message.CompletedSaveSettings()),
+      // 끝에 닿으면 더 가지 않는다.
+      message(Message.ClickedNudgeThreshold({ by: 0.02 })),
+      model((model) => {
+        expect(model.settings.singleThreshold).toBe(1)
+      }),
+      Command.resolve(SaveSettings, Message.CompletedSaveSettings()),
+    )
+  })
+
+  test('the slideshow delay stops at the ends too', () => {
+    story(
+      update,
+      given({ ...shelfModel(), settings: { ...defaultSettings, slideSeconds: 2 } }),
+      message(Message.ClickedNudgeSlideSeconds({ by: -1 })),
+      model((model) => {
+        expect(model.settings.slideSeconds).toBe(2)
+      }),
+      Command.resolve(SaveSettings, Message.CompletedSaveSettings()),
+    )
+  })
+
+  test('choosing how a part-read book opens is kept as the default', () => {
+    story(
+      update,
+      given(shelfModel()),
+      message(Message.SelectedResume({ resume: 'ask' })),
+      model((model) => {
+        expect(model.settings.resume).toBe('ask')
+      }),
+      Command.resolve(SaveSettings, Message.CompletedSaveSettings()),
     )
   })
 })

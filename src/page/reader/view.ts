@@ -2,27 +2,11 @@ import { Array, Option } from 'effect'
 import type { Attribute, Html, HtmlBuilder } from 'foldkit/html'
 import { defineView } from 'foldkit/submodel'
 
-import { Button, Input, Slider, Switch, VirtualList } from '@foldkit/ui'
+import { Input, Slider, VirtualList } from '@foldkit/ui'
 import clsx from 'clsx'
 
-import type { AtBookEnd, FitMode, Resume, Settings } from '../../types.ts'
-import {
-  COVER_ALONE_ID,
-  ENLARGE_ID,
-  GOTO_ID,
-  PAGE_ID,
-  REMEMBER_ID,
-  SLIDE_MAX,
-  SLIDE_MIN,
-  SLIDE_STEP,
-  SPLIT_ID,
-  STAGE_ID,
-  THRESHOLD_MAX,
-  THRESHOLD_MIN,
-  THRESHOLD_STEP,
-  THUMB_ROW_HEIGHT,
-  THUMB_WIDTH,
-} from './constant.ts'
+import type { FitMode } from '../../types.ts'
+import { GOTO_ID, PAGE_ID, STAGE_ID, THUMB_ROW_HEIGHT, THUMB_WIDTH } from './constant.ts'
 import { ZOOM_MIN } from './gesture.ts'
 import { Message } from './message.ts'
 import { Model, OpenState, SpreadState } from './model.ts'
@@ -33,6 +17,8 @@ import { swapsSides } from './rotation.ts'
 import { indexOfPage, pagesAt, splitRatio, spreadsFor } from './spread.ts'
 import { sliderPage } from './update.ts'
 import { rowWidthFor, rowsFor, shownPages, urlFor } from './thumbs.ts'
+import { controlView } from '../../view/control.ts'
+import { settingsView } from '../../view/settings.ts'
 
 const FIT_LABEL: Record<FitMode, string> = {
   contain: 'Fit',
@@ -67,28 +53,6 @@ const NO_ENLARGE_CLASS: Record<FitMode, string> = {
 
 const fitClassName = (fit: FitMode, enlargeToFit: boolean): string =>
   clsx(FIT_CLASS[fit], { [NO_ENLARGE_CLASS[fit]]: !enlargeToFit && NO_ENLARGE_CLASS[fit] !== '' })
-
-const controlClassName =
-  'cursor-pointer rounded-lg border border-edge bg-surface-2 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-accent/60 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
-
-type ControlConfig = Readonly<{
-  label: string
-  message: Message
-  attributes?: ReadonlyArray<Attribute<Message>>
-}>
-
-const controlView = (config: ControlConfig, h: HtmlBuilder<Message>): Html =>
-  Button.view(
-    {
-      onClick: config.message,
-      toView: (attributes) =>
-        h.button(
-          [...attributes.button, h.Class(controlClassName), ...(config.attributes ?? [])],
-          [config.label],
-        ),
-    },
-    h,
-  )
 
 /** 툴바는 읽는 동안 사라지고, 탭 순서에서도 함께 빠진다. */
 const chromeClassName = (isVisible: boolean): string =>
@@ -571,245 +535,6 @@ const thumbView = (model: Model, page: number, h: HtmlBuilder<Message>): Html =>
     ],
   )
 
-const AT_BOOK_END_LABEL: Record<AtBookEnd, string> = {
-  next: 'Next book',
-  wrap: 'Back to start',
-  stop: 'Stay put',
-}
-
-const AT_BOOK_END_ORDER: ReadonlyArray<AtBookEnd> = ['next', 'wrap', 'stop']
-
-const RESUME_LABEL: Record<Resume, string> = {
-  continue: 'Go there',
-  ask: 'Ask',
-  restart: 'Start over',
-}
-
-const RESUME_ORDER: ReadonlyArray<Resume> = ['continue', 'ask', 'restart']
-
-const settingRowClassName =
-  'flex flex-wrap items-center justify-between gap-3 border-b border-edge py-3'
-
-/** 설정 한 줄. 왼쪽에 무엇을 정하는지, 오른쪽에 그것을 정하는 것. */
-const settingRow = (label: string, control: Html, h: HtmlBuilder<Message>): Html =>
-  h.div([h.Class(settingRowClassName)], [h.span([h.Class('text-sm text-ink')], [label]), control])
-
-/**
- * 여럿 중 하나를 고르는 줄. 고른 것이 `aria-pressed`로 드러나므로, 어느 것이
- * 켜져 있는지 보이지 않고도 읽힌다.
- */
-const choiceView = <A extends string>(
-  options: ReadonlyArray<A>,
-  chosen: A,
-  label: (option: A) => string,
-  toMessage: (option: A) => Message,
-  h: HtmlBuilder<Message>,
-): Html =>
-  h.div(
-    [h.Class('flex flex-wrap gap-2')],
-    Array.map(options, (option) =>
-      h.keyed('span')(
-        option,
-        [h.Class('contents')],
-        [
-          controlView(
-            {
-              label: label(option),
-              message: toMessage(option),
-              attributes: [h.AriaPressed(option === chosen ? 'true' : 'false')],
-            },
-            h,
-          ),
-        ],
-      ),
-    ),
-  )
-
-const slideSecondsView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
-  h.div(
-    [h.Class('flex items-center gap-2')],
-    [
-      controlView(
-        {
-          label: '−',
-          message: Message.ClickedNudgeSlideSeconds({ by: -SLIDE_STEP }),
-          attributes: [
-            h.AriaLabel('Spend less time on a page'),
-            h.AriaDisabled(settings.slideSeconds <= SLIDE_MIN),
-          ],
-        },
-        h,
-      ),
-      h.span(
-        [h.Class('w-12 text-center text-sm tabular-nums text-muted')],
-        [`${settings.slideSeconds}s`],
-      ),
-      controlView(
-        {
-          label: '+',
-          message: Message.ClickedNudgeSlideSeconds({ by: SLIDE_STEP }),
-          attributes: [
-            h.AriaLabel('Spend more time on a page'),
-            h.AriaDisabled(settings.slideSeconds >= SLIDE_MAX),
-          ],
-        },
-        h,
-      ),
-    ],
-  )
-
-const thresholdView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
-  h.div(
-    [h.Class('flex items-center gap-2')],
-    [
-      controlView(
-        {
-          label: '−',
-          message: Message.ClickedNudgeThreshold({ by: -THRESHOLD_STEP }),
-          attributes: [
-            h.AriaLabel('Pair more pages'),
-            h.AriaDisabled(settings.singleThreshold <= THRESHOLD_MIN),
-          ],
-        },
-        h,
-      ),
-      h.span(
-        [h.Class('w-12 text-center text-sm tabular-nums text-muted')],
-        [settings.singleThreshold.toFixed(2)],
-      ),
-      controlView(
-        {
-          label: '+',
-          message: Message.ClickedNudgeThreshold({ by: THRESHOLD_STEP }),
-          attributes: [
-            h.AriaLabel('Pair fewer pages'),
-            h.AriaDisabled(settings.singleThreshold >= THRESHOLD_MAX),
-          ],
-        },
-        h,
-      ),
-    ],
-  )
-
-/** 스위치 한 줄. 이름을 자기 라벨에서 가져가므로 줄 전체를 스위치가 그린다. */
-const switchRow = (
-  config: Readonly<{
-    id: string
-    label: string
-    isChecked: boolean
-    onToggle: (isChecked: boolean) => Message
-  }>,
-  h: HtmlBuilder<Message>,
-): Html =>
-  Switch.view(
-    {
-      id: config.id,
-      isChecked: config.isChecked,
-      onToggle: config.onToggle,
-      toView: (attributes) =>
-        h.div(
-          [h.Class(settingRowClassName)],
-          [
-            h.span([...attributes.label, h.Class('text-sm text-ink')], [config.label]),
-            h.button(
-              [...attributes.button, h.Class(controlClassName)],
-              [config.isChecked ? 'On' : 'Off'],
-            ),
-          ],
-        ),
-    },
-    h,
-  )
-
-/**
- * 읽는 규칙을 한 번 정해 두는 자리.
- *
- * 툴바에 이미 버튼이 있는 것들 — 방향, 한 장/두 장, 맞춤 — 은 여기 없다. 그것들은
- * 읽는 동안 손이 가는 것이고, 여기 있는 셋은 책을 열기 전에 한 번 정하는 것이다.
- */
-const settingsView = (settings: Settings, h: HtmlBuilder<Message>): Html =>
-  h.div(
-    [
-      h.Class('absolute inset-0 z-10 flex flex-col bg-bg/95 backdrop-blur-sm'),
-      h.Role('dialog'),
-      h.AriaLabel('Reading settings'),
-    ],
-    [
-      h.div(
-        [h.Class('flex items-center gap-2 border-b border-edge px-4 py-2')],
-        [
-          h.span([h.Class('mr-auto text-sm text-muted')], ['Reading settings']),
-          controlView({ label: 'Close', message: Message.ClickedToggleSettings() }, h),
-        ],
-      ),
-      h.div(
-        [h.Class('flex-1 overflow-y-auto px-4')],
-        [
-          switchRow(
-            {
-              id: COVER_ALONE_ID,
-              label: 'Cover on its own',
-              isChecked: settings.coverAlone,
-              onToggle: (isChecked) => Message.ToggledCoverAlone({ isChecked }),
-            },
-            h,
-          ),
-          settingRow('A page wider than this stands alone', thresholdView(settings, h), h),
-          switchRow(
-            {
-              id: SPLIT_ID,
-              label: 'Read wide pages in halves',
-              isChecked: settings.splitWide,
-              onToggle: (isChecked) => Message.ToggledSplitWide({ isChecked }),
-            },
-            h,
-          ),
-          switchRow(
-            {
-              id: ENLARGE_ID,
-              label: 'Stretch small pages to fit',
-              isChecked: settings.enlargeToFit,
-              onToggle: (isChecked) => Message.ToggledEnlargeToFit({ isChecked }),
-            },
-            h,
-          ),
-          switchRow(
-            {
-              id: REMEMBER_ID,
-              label: 'Remember these for each book',
-              isChecked: settings.rememberBookSettings,
-              onToggle: (isChecked) => Message.ToggledRememberBookSettings({ isChecked }),
-            },
-            h,
-          ),
-          settingRow('A slideshow stays on a page for', slideSecondsView(settings, h), h),
-          settingRow(
-            'At the end of a book',
-            choiceView(
-              AT_BOOK_END_ORDER,
-              settings.atBookEnd,
-              (option) => AT_BOOK_END_LABEL[option],
-              (atBookEnd) => Message.SelectedAtBookEnd({ atBookEnd }),
-              h,
-            ),
-            h,
-          ),
-          settingRow(
-            'Opening a book you were part way through',
-            choiceView(
-              RESUME_ORDER,
-              settings.resume,
-              (option) => RESUME_LABEL[option],
-              (resume) => Message.SelectedResume({ resume }),
-              h,
-            ),
-            h,
-          ),
-        ],
-      ),
-    ],
-  )
-
 /**
  * 모든 페이지를 한눈에. 리스트가 창을 내주므로 500페이지짜리 책이 격자 하나
  * 그리자고 이미지 500장을 뽑는 일은 없다.
@@ -1002,7 +727,26 @@ export const view = defineView<Model, Message>((model, h): Html =>
           stageView(model, maybeHalf, h),
           turnView(model, model.isChromeVisible, h),
           model.isThumbsOpen ? thumbsView(model, pageCount, h) : h.empty,
-          model.isSettingsOpen ? settingsView(model.settings, h) : h.empty,
+          model.isSettingsOpen
+            ? settingsView(
+                model.settings,
+                {
+                  title: 'Reading settings',
+                  idPrefix: 'reader',
+                  onClose: Message.ClickedToggleSettings(),
+                  onToggleCoverAlone: (isChecked) => Message.ToggledCoverAlone({ isChecked }),
+                  onToggleSplitWide: (isChecked) => Message.ToggledSplitWide({ isChecked }),
+                  onToggleEnlargeToFit: (isChecked) => Message.ToggledEnlargeToFit({ isChecked }),
+                  onToggleRememberBookSettings: (isChecked) =>
+                    Message.ToggledRememberBookSettings({ isChecked }),
+                  onNudgeThreshold: (by) => Message.ClickedNudgeThreshold({ by }),
+                  onNudgeSlideSeconds: (by) => Message.ClickedNudgeSlideSeconds({ by }),
+                  onSelectAtBookEnd: (atBookEnd) => Message.SelectedAtBookEnd({ atBookEnd }),
+                  onSelectResume: (resume) => Message.SelectedResume({ resume }),
+                },
+                h,
+              )
+            : h.empty,
         ],
       )
     },

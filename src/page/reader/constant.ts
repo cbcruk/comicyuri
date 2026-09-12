@@ -22,30 +22,6 @@ export const SLIDER_ID = 'reader-page-slider'
 /** 번호를 적어 그 페이지로 가는 입력란. */
 export const GOTO_ID = 'reader-go-to-page'
 
-/** 표지를 혼자 두는 스위치. 라벨과 설명이 이 id에서 갈라져 나온다. */
-export const COVER_ALONE_ID = 'reader-cover-alone'
-
-/** 작은 페이지를 늘릴지 정하는 스위치. */
-export const ENLARGE_ID = 'reader-enlarge-to-fit'
-
-/** 넓은 페이지를 반씩 읽을지 정하는 스위치. */
-export const SPLIT_ID = 'reader-split-wide'
-
-/** 설정을 책마다 기억할지 정하는 스위치. */
-export const REMEMBER_ID = 'reader-remember-book-settings'
-
-/** 넓은 페이지 문턱이 한 번 누를 때 움직이는 폭. */
-export const THRESHOLD_STEP = 0.02
-/** 문턱의 아래쪽 끝. 이보다 낮으면 세로로 긴 페이지까지 혼자 서기 시작한다. */
-export const THRESHOLD_MIN = 0.5
-/** 문턱의 위쪽 끝. 정사각형보다 넓은 페이지만 혼자 서는 자리다. */
-export const THRESHOLD_MAX = 1
-
-/** 슬라이드쇼가 한 장에 머무는 시간의 폭과 양 끝(초). */
-export const SLIDE_STEP = 1
-export const SLIDE_MIN = 2
-export const SLIDE_MAX = 30
-
 /** 페이지 격자. 부모가 리스트 구독을 lift 할 때 이 id로 부른다. */
 export const THUMBS_ID = 'reader-thumbs'
 

@@ -12,7 +12,7 @@ import {
   PreloadNeighbours,
   ToggleFullscreen,
 } from './command.ts'
-import { SLIDE_MAX, SLIDE_MIN, THRESHOLD_MAX, THRESHOLD_MIN } from './constant.ts'
+import { nudgedSlideSeconds, nudgedThreshold } from '../../settings.ts'
 import {
   DOUBLE_TAP_MILLIS,
   DOUBLE_TAP_ZOOM,
@@ -241,13 +241,6 @@ const flipBindingHere = (model: Model): UpdateReturn =>
           return showPage(evo(model, { marks: () => marks }), model.page)
         },
       })
-
-/**
- * 문턱을 한 걸음 옮긴다. 범위 밖으로는 나가지 않고, 0.02씩 더한 값이 0.7400000001이
- * 되지 않도록 자리를 끊는다.
- */
-const nudged = (threshold: number, by: number): number =>
-  Math.round(Math.min(THRESHOLD_MAX, Math.max(THRESHOLD_MIN, threshold + by)) * 100) / 100
 
 /** 툴바를 다시 불러오고, 그것을 숨기는 대기를 처음부터 다시 시작한다. */
 const withActivity = (model: Model): Model =>
@@ -677,7 +670,7 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
     ClickedNudgeThreshold: ({ by }) =>
       withSettings(
         model,
-        evo(model.settings, { singleThreshold: (threshold) => nudged(threshold, by) }),
+        evo(model.settings, { singleThreshold: (threshold) => nudgedThreshold(threshold, by) }),
       ),
 
     ClickedToggleSlideshow: () => ({
@@ -687,10 +680,7 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
     ClickedNudgeSlideSeconds: ({ by }) =>
       withSettings(
         model,
-        evo(model.settings, {
-          slideSeconds: (seconds) =>
-            Math.max(SLIDE_MIN, Math.min(SLIDE_MAX, Math.round(seconds + by))),
-        }),
+        evo(model.settings, { slideSeconds: (seconds) => nudgedSlideSeconds(seconds, by) }),
       ),
 
     /**

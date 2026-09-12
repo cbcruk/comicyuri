@@ -51,6 +51,8 @@ export const Model = Schema.Struct({
    * 지우는 버튼이 아니라 묻는 버튼이고, 실제로 지우는 것은 그 답이다.
    */
   maybePendingDelete: Schema.Option(Schema.String),
+  /** 책장에서 설정 패널이 열려 있는지. 리더의 것과 같은 패널이다. */
+  isSettingsOpen: Schema.Boolean,
   /** 리더 라우트가 열려 있는 동안에만 있다. */
   maybeReader: Schema.Option(Reader.Model),
 })
