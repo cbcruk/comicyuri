@@ -6,7 +6,7 @@ import { Input, Slider, VirtualList } from '@foldkit/ui'
 import clsx from 'clsx'
 
 import type { FitMode } from '../../types.ts'
-import { GOTO_ID, PAGE_ID, STAGE_ID, THUMB_ROW_HEIGHT, THUMB_WIDTH } from './constant.ts'
+import { GOTO_ID, PAGE_ID, STAGE_ID, THUMB_RATIO } from './constant.ts'
 import { ZOOM_MIN } from './gesture.ts'
 import { Message } from './message.ts'
 import { Model, OpenState, SpreadState } from './model.ts'
@@ -16,7 +16,7 @@ import { sideOf } from './half.ts'
 import { swapsSides } from './rotation.ts'
 import { indexOfPage, pagesAt, splitRatio, spreadsFor } from './spread.ts'
 import { sliderPage } from './update.ts'
-import { rowWidthFor, rowsFor, shownPages, urlFor } from './thumbs.ts'
+import { cellWidthFor, perRowFor, rowsFor, shownPages, urlFor } from './thumbs.ts'
 import { controlView } from '../../view/control.ts'
 import { settingsView } from '../../view/settings.ts'
 
@@ -492,10 +492,10 @@ const sliderView = (model: Model, h: HtmlBuilder<Message>): Html => {
  * 버튼 안이 아니라 형제로 둔다 — 버튼 안의 버튼은 설 수 없고, 칸의 접근 가능한
  * 이름도 "Go to page 3"으로 남아야 한다.
  */
-const thumbView = (model: Model, page: number, h: HtmlBuilder<Message>): Html =>
+const thumbView = (model: Model, page: number, cellWidth: number, h: HtmlBuilder<Message>): Html =>
   h.keyed('div')(
     String(page),
-    [h.Class('relative flex shrink-0'), h.Style({ width: `${THUMB_WIDTH}px` })],
+    [h.Class('relative flex shrink-0'), h.Style({ width: `${cellWidth}px` })],
     [
       h.button(
         [
@@ -507,7 +507,7 @@ const thumbView = (model: Model, page: number, h: HtmlBuilder<Message>): Html =>
                 : 'border-transparent text-muted hover:border-edge',
             ),
           ),
-          h.Style({ height: `${THUMB_ROW_HEIGHT - 24}px` }),
+          h.Style({ height: `${Math.round(cellWidth * THUMB_RATIO)}px` }),
           h.OnClick(Message.SelectedThumb({ page })),
           h.AriaLabel(`Go to page ${page + 1}`),
         ],
@@ -582,18 +582,15 @@ const thumbsView = (model: Model, pageCount: number, h: HtmlBuilder<Message>): H
         model: model.thumbs,
         view: VirtualList.view<ReadonlyArray<number>>(),
         viewInputs: {
-          items: rowsFor(pages, model.thumbsPerRow),
+          items: rowsFor(pages, perRowFor(model.thumbsWidth)),
           itemToKey: (_row, index) => String(index),
           containerClassName: 'flex-1 overflow-y-auto p-4',
-          // 행을 격자 한 줄의 너비로 묶어 가운데 둔다. 그래야 칸이 열로 서고,
-          // 마지막 줄의 남은 칸도 그 열을 따라 왼쪽부터 찬다.
+          // 칸이 남는 자리를 고르게 나눠 가져서 행이 폭을 남김없이 쓴다. 그래서
+          // 마지막 줄의 남은 칸도 위 줄의 열을 그대로 따라 왼쪽부터 찬다.
           itemToView: (row) =>
             h.div(
-              [
-                h.Class('mx-auto flex justify-start gap-3 px-1'),
-                h.Style({ width: `${rowWidthFor(model.thumbsPerRow)}px` }),
-              ],
-              Array.map(row, (page) => thumbView(model, page, h)),
+              [h.Class('flex justify-start gap-3 px-1')],
+              Array.map(row, (page) => thumbView(model, page, cellWidthFor(model.thumbsWidth), h)),
             ),
         },
         toParentMessage: (message) => Message.GotThumbsMessage({ message }),

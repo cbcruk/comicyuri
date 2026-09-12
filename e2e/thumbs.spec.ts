@@ -11,7 +11,7 @@ import { control, readBook } from './fixture/app.ts'
 /** 지금 한 행에 서 있는 칸의 수와 좌우 여백. */
 const rowOf = (page: Page) =>
   page.evaluate(() => {
-    const row = document.querySelector('[role="dialog"] div.mx-auto.flex')
+    const row = document.querySelector('[role="dialog"] div.justify-start')
     const cells = row ? Array.from(row.children) : []
     const boxes = cells.map((cell) => cell.getBoundingClientRect())
     const first = boxes[0]
@@ -46,6 +46,27 @@ test('R-276 · 격자가 한쪽으로 몰리지 않는다', async ({ page }) => 
 
   // 열의 너비는 고정이라 남는 자리가 생긴다. 그것을 양쪽에 고르게 둔다.
   expect(Math.abs(left - right)).toBeLessThanOrEqual(16)
+})
+
+test('R-276 · 칸이 넓어지면 행도 그만큼 높아진다', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await openGrid(page)
+
+  const measured = await page.evaluate(() => {
+    const row = document.querySelector('[role="dialog"] div.justify-start')
+    const cell = row?.firstElementChild?.getBoundingClientRect()
+    const rows = Array.from(document.querySelectorAll('[role="dialog"] div.justify-start'))
+    const first = rows[0]?.getBoundingClientRect()
+    const second = rows[1]?.getBoundingClientRect()
+    return {
+      cellWidth: cell ? Math.round(cell.width) : 0,
+      rowHeight: first && second ? Math.round(second.top - first.top) : 0,
+    }
+  })
+
+  // 행 높이가 칸 너비를 따라간다. 고정된 180이 아니다.
+  expect(measured.cellWidth).toBeGreaterThan(104)
+  expect(measured.rowHeight).toBeGreaterThan(180)
 })
 
 test('R-276 · 좁은 창에서도 격자는 격자로 남는다', async ({ page }) => {

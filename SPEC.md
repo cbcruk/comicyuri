@@ -716,27 +716,33 @@ reader/story "picking a thumbnail jumps there and closes the grid"
 **R-275 · 북마크된 페이지는 그리드에서 테두리로 구분된다**
 📖 ❓
 
-**R-276 · 한 행에 서는 칸의 수가 창 너비를 따라간다**
-칸의 너비는 104px로 고정이고, 그 폭에 몇 칸이 들어가는지를 세어 행을 나눈다. 칸을
-늘리지 않는 이유는 늘려 봐야 같은 네 칸이 서로 멀어지기만 하고 썸네일은 그대로 작기
-때문이다. 아무리 좁아도 두 칸은 세운다 — 한 칸씩 늘어서면 격자가 아니라 목록이다.
+**R-276 · 격자가 창 너비를 따라간다**
+잰 너비 하나에서 셋이 갈라져 나온다 — 한 행에 설 칸의 수, 칸의 너비, 행의 높이다.
+따로 두면 어긋난 채로 그려지고, 그러면 보이지 않는 썸네일을 뽑거나 보이는 자리를
+비워 둔다.
 
-행은 그 칸들이 차지하는 너비로 묶여 가운데 선다. 남는 자리를 칸에 나눠 주면 마지막
-줄의 두어 칸이 화면을 반씩 차지하므로, 남는 자리는 양쪽 여백으로 둔다.
+먼저 104px를 최소로 삼아 몇 칸이 들어가는지 센다. 그 다음 남는 자리를 그 칸들이
+고르게 나눠 가지므로 행은 폭을 남김없이 쓴다. 행의 높이는 칸의 너비를 따라간다 —
+인쇄된 만화 한 쪽의 비(1.5)에 페이지 번호가 설 24px을 더한 것이다.
+
+그래서 칸은 104px과 그 두 배 사이에 머문다. 그보다 넓어지면 한 칸이 더 들어갔어야
+한다. 넓은 창이 늘 큰 썸네일을 주지는 않는다 — 좁은 창은 열이 적어서 오히려 칸이
+크다. 아무리 좁아도 두 칸은 세운다. 한 칸씩 늘어서면 격자가 아니라 목록이다.
 
 너비는 격자를 열 때 한 번 재고, 열려 있는 동안 창이 바뀌면 다시 잰다. 가상 리스트는
-높이만 재어 주므로 너비는 `MeasureThumbsWidth`가 묻는다. 이 수는 그리는 데만이 아니라
-어느 페이지가 창에 들어오는지 셈하는 데도 쓰이므로(`R-272`), 둘이 어긋나면 보이지 않는
-썸네일을 뽑거나 보이는 자리를 비워 둔다.
+높이만 재어 주므로 너비는 `MeasureThumbsWidth`가 묻는다. 잰 뒤에는 리스트가 쥔
+`rowHeightPx`에도 새 값을 먹인다 — 리스트는 행의 자리를 그 값으로 셈하므로, 그리는
+높이와 어긋나면 행이 겹치거나 벌어진다.
 ✅ thumbs "a wider window stands more of them", "however narrow, the grid never falls to a
-single column", "a row is as wide as the columns it holds, and no wider", "a row of one
-column is just that column",
+single column", "the columns fill the row they stand in", "a column never gets narrower
+than the width that decided the count", "a wider window makes the thumbnails bigger, not
+just more of them", "a row is as tall as its columns are wide, with room for the number",
+"a column stays between one column wide and two",
 reader/story "a wider window stands more thumbnails in a row, a narrow one fewer",
 "however narrow the window, the grid never falls to a single column",
 e2e "R-276 · 넓은 창에는 더 많은 칸이 선다", "R-276 · 격자가 한쪽으로 몰리지 않는다",
-"R-276 · 좁은 창에서도 격자는 격자로 남는다"
-⚠️ 행 높이는 180px로 고정이다. 가상 리스트가 행을 그 높이로 셈하므로, 칸이 넓어져도
-썸네일이 함께 커지지는 않는다.
+"R-276 · 칸이 넓어지면 행도 그만큼 높아진다", "R-276 · 좁은 창에서도 격자는 격자로
+남는다"
 
 ### 2.9 북마크
 
@@ -1085,7 +1091,6 @@ reported rather than thrown", "an open that errors is reported as a failure to o
 
 | ID    | 내용                                                                                                                                            |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| L-601 | 썸네일 그리드의 행 높이가 180px 고정이다. 한 행의 칸 수는 창을 따라가지만(`R-276`) 칸이 넓어져도 썸네일은 커지지 않는다                         |
 | L-610 | Runtime 전체를 부팅하는 테스트가 불가능하다 — vitest + happy-dom에서 `Runtime.run`이 아무것도 렌더링하지 않는다 (최소 Foldkit 앱으로 대조 확인) |
 | L-611 | 프로덕션 배포 시 `/book/:id` 직접 접근에는 SPA 폴백 설정이 필요하다                                                                             |
 

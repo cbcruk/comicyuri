@@ -6,7 +6,9 @@ import {
   THUMBS_PER_ROW_MIN,
   THUMB_GAP,
   THUMB_INSET,
+  THUMB_LABEL_HEIGHT,
   THUMB_OVERSCAN,
+  THUMB_RATIO,
   THUMB_WIDTH,
 } from './constant.ts'
 import type { Panel } from './model.ts'
@@ -43,13 +45,27 @@ export const perRowFor = (width: number): number =>
   )
 
 /**
- * 그 수의 칸이 차지하는 너비(픽셀). 마지막 칸 뒤에는 사이 여백이 없다.
+ * 그 폭에서 칸 하나가 차지할 너비(픽셀).
  *
- * 행을 이 너비로 묶어 가운데 두면 칸이 격자의 열로 선다. 남는 자리를 칸에
- * 나눠 주면 마지막 줄의 두어 칸이 화면을 반씩 차지한다.
+ * 몇 칸이 설지를 먼저 정하고, 남는 자리를 그 칸들이 고르게 나눠 갖는다. 그래서
+ * 칸은 {@linkcode THUMB_WIDTH}보다 좁아지지 않고, 한 칸이 더 들어갈 만큼
+ * 넓어지지도 않는다. 행은 폭을 남김없이 쓴다.
  */
-export const rowWidthFor = (perRow: number): number =>
-  perRow * (THUMB_WIDTH + THUMB_GAP) - THUMB_GAP
+export const cellWidthFor = (width: number): number => {
+  const perRow = perRowFor(width)
+  const room = Math.max(THUMB_WIDTH * perRow, width - THUMB_INSET - (perRow - 1) * THUMB_GAP)
+  return Math.floor(room / perRow)
+}
+
+/**
+ * 그 폭에서 행 하나가 차지할 높이(픽셀).
+ *
+ * 칸의 너비를 따라간다. 고정해 두면 넓어진 칸 안에서 썸네일만 그대로 작게 선다.
+ * 가상 리스트가 이 값으로 행의 자리를 셈하므로, 폭이 바뀌면 리스트에도 새 값을
+ * 먹여야 한다.
+ */
+export const rowHeightFor = (width: number): number =>
+  Math.round(cellWidthFor(width) * THUMB_RATIO) + THUMB_LABEL_HEIGHT
 
 /** 격자의 각 행에 들어갈 페이지들. */
 export const rowsFor = (
