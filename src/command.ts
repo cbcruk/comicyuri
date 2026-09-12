@@ -169,10 +169,20 @@ export const SaveSettings = Command.define('SaveSettings', {
     saveSettings(settings).pipe(Effect.as(Message.CompletedSaveSettings())),
 })
 
+/** 브라우저 UI에 알려 줄 바탕색. `styles.css`의 `--color-bg`와 같은 값이다. */
+const THEME_COLOUR: Record<Theme, string> = {
+  dark: '#14141a',
+  light: '#f4f2f7',
+}
+
 /**
  * 테마는 Model이 이끄는 클래스가 아니라 문서 요소의 `data-theme` 속성이다.
  * Tailwind의 variant와 `color-scheme`이 둘 다 루트 요소를 보는데, 그 요소는
  * 어떤 뷰의 것도 아니기 때문이다.
+ *
+ * `theme-color`도 함께 옮긴다. 그것은 문서가 아니라 브라우저가 자기 UI를 칠하는
+ * 데 쓰는 값이라 CSS 변수가 닿지 않는다. `index.html`도 첫 페인트 전에 같은 일을
+ * 하므로(`S-144`), 두 값이 같은 자리에서 갈린다.
  */
 export const ApplyTheme = Command.define('ApplyTheme', {
   args: { theme: Theme },
@@ -180,6 +190,9 @@ export const ApplyTheme = Command.define('ApplyTheme', {
   execute: ({ theme }) =>
     Effect.sync(() => {
       document.documentElement.dataset['theme'] = theme
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', THEME_COLOUR[theme])
     }).pipe(Effect.as(Message.CompletedApplyTheme())),
 })
 
