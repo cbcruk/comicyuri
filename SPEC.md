@@ -177,6 +177,25 @@ reader/scene "a book that could not be opened offers the way back"
 ManagedResource가 Model 상태에 따라 해제한다.
 📖 ❓ 메모리 해제는 브라우저에서만 관찰 가능
 
+**R-205 · ZIP 리더가 읽는 것과 거절하는 것**
+중앙 디렉터리를 파싱해 엔트리를 적힌 순서대로 세우고, 페이지는 필요할 때 하나씩
+뽑는다. 그대로 저장된 엔트리(method 0)는 잘라 쓰고, deflate 된 엔트리(method 8)는
+플랫폼의 `DecompressionStream`으로 푼다. 그 밖의 방식은 이름을 대며 거절한다.
+
+데이터가 시작하는 자리는 **로컬 헤더**에서 읽는다. 중앙 디렉터리에는 로컬 헤더의
+extra 길이가 없고, 두 헤더의 extra는 흔히 다르다.
+
+EOCD는 뒤에서부터 찾으므로 주석이 붙은 아카이브도 열린다. ZIP이 아닌 바이트는
+빈 아카이브가 아니라 실패다.
+✅ zip "every entry is listed in the order the directory wrote them", "an entry carries the
+sizes and the method the directory recorded", "a trailing comment does not hide the
+directory", "an empty archive opens with nothing in it", "bytes that are not a ZIP fail
+rather than opening empty", "a stored entry comes back byte for byte", "a deflated entry
+comes back unpacked", "each entry reads its own bytes, not its neighbour's", "the local
+header decides where the data starts, not the directory", "a method this reader does not
+know is refused by name"
+⚠️ zip64도, 암호 걸린 아카이브도, rar·7z·lzh도 읽지 않는다
+
 ### 2.2 페이지 넘기기
 
 **R-211 · Next / Previous / First / Last**
@@ -937,7 +956,7 @@ URL이 어느 책인지 말하고, 어느 자리에서 열지는 `R-2B5`가 정�
 | L-606 | 부팅 시 라이트 테마 사용자에게 어두운 첫 프레임이 보일 수 있다                                                                                  |
 | L-607 | 책장을 다시 읽을 때마다 모든 표지의 object URL을 새로 만든다 — 한 권을 임포트해도 나머지 표지가 다시 그려진다                                   |
 | L-608 | 페이지 이미지에 로딩 표시가 없다. 큰 페이지는 "Loading…" 뒤에 갑자기 나타난다                                                                   |
-| L-609 | `src/db.ts`·`src/zip.ts`를 직접 겨냥한 테스트가 없다. 이 계층은 update를 통해서만 간접 검증된다                                                 |
+| L-609 | `src/db.ts`를 직접 겨냥한 테스트가 없다. 이 계층은 update를 통해서만 간접 검증된다 (`src/zip.ts`는 `R-205`가 덮는다)                            |
 | L-610 | Runtime 전체를 부팅하는 테스트가 불가능하다 — vitest + happy-dom에서 `Runtime.run`이 아무것도 렌더링하지 않는다 (최소 Foldkit 앱으로 대조 확인) |
 | L-611 | 프로덕션 배포 시 `/book/:id` 직접 접근에는 SPA 폴백 설정이 필요하다                                                                             |
 | L-612 | 설정 패널이 리더 안에만 있다. 책장에서는 테마 말고 아무것도 바꿀 수 없다                                                                        |
