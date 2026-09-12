@@ -64,12 +64,16 @@ const withOperationEnded = (model: Model): Model =>
     Busy: () => evo(model, { notice: () => Notice.Idle() }),
   })
 
+/** 지금 화면에 걸려 있는 표지들. 다시 읽어도 그대로 쓰이도록 넘겨 준다. */
+const coversOnScreen = (model: Model): ReadonlyArray<Book.Cover> =>
+  Book.coversOf(Option.getOrElse(AsyncData.getData(model.shelf), Array.empty))
+
 /** 책장을 다시 읽는다. 읽는 동안 화면의 책들은 그대로 둔다. */
 const reloadShelf = (model: Model): UpdateReturn => ({
   model: evo(model, {
     shelf: (shelf) => Option.getOrElse(AsyncData.revalidate(shelf), () => Shelf.Loading()),
   }),
-  commands: [LoadShelf()],
+  commands: [LoadShelf({ have: coversOnScreen(model) })],
 })
 
 const foldFileDropOutMessage = FileDrop.OutMessage.match<
@@ -240,10 +244,14 @@ export const update = (model: Model, message: Message) =>
         maybePendingDelete: (pending) =>
           Option.filter(pending, (id) => Array.some(books, (book) => book.id === id)),
       }),
-      // 새 표지가 Model에 들어왔으니 앞서 읽은 표지들에는 이제 닿을 수 없다.
+      // 새 책장이 밀어낸 표지만 놓아 준다. 그대로 남은 책의 표지는 같은 URL을
+      // 계속 쥐고 있으므로 카드가 다시 그려지지 않는다.
       commands: [
         RevokeCoverUrls({
-          urls: Book.coverUrls(AsyncData.getData(model.shelf).pipe(Option.getOrElse(Array.empty))),
+          urls: Book.droppedCoverUrls(
+            Option.getOrElse(AsyncData.getData(model.shelf), Array.empty),
+            books,
+          ),
         }),
       ],
     }),

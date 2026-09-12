@@ -95,7 +95,20 @@ story "picking files imports them and refreshes the shelf"
 
 **S-117 · 임포트가 끝나면 책장이 다시 읽히되, 기존 책은 화면에 남는다**
 `Refreshing` 상태라 그리드가 비었다가 다시 그려지지 않는다.
-✅ story "picking files imports them and refreshes the shelf"
+
+표지도 그대로 남는다. 책장을 다시 읽는 쪽이 지금 쥐고 있는 표지를 함께 받아서,
+그대로 남은 책에는 새 object URL을 만들지 않고 받은 것을 되돌려 준다. 다시 만들면
+카드마다 `src`가 바뀌어서 한 권을 들여왔을 뿐인데 나머지 표지가 전부 다시 그려진다.
+
+놓아 주는 것은 밀려난 URL뿐이다 — 두 책장에 다 있는 URL은 아직 화면의 `img`가
+쥐고 있다.
+✅ story "picking files imports them and refreshes the shelf", "a reload that keeps a book
+keeps its cover as it was", "a reload is told which covers it can keep",
+book "each cover is paired with the book it belongs to", "a cover that both shelves hold
+is not dropped", "only the cover of a book that left is dropped", "a book whose cover was
+made afresh drops the one it replaced",
+e2e "S-117 · 한 권을 더 들여와도 이미 선 책의 표지 URL이 그대로다", "S-117 · 남은
+표지는 한 권을 지운 뒤에도 그대로다"
 
 **S-118 · 선택창을 취소하면 아무 일도 없다**
 ✅ story "cancelling the picker imports nothing"
@@ -1013,7 +1026,6 @@ URL이 어느 책인지 말하고, 어느 자리에서 열지는 `R-2B5`가 정�
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | L-601 | 썸네일 그리드의 행 높이가 180px 고정이다. 한 행의 칸 수는 창을 따라가지만(`R-276`) 칸이 넓어져도 썸네일은 커지지 않는다                         |
 | L-606 | 부팅 시 라이트 테마 사용자에게 어두운 첫 프레임이 보일 수 있다                                                                                  |
-| L-607 | 책장을 다시 읽을 때마다 모든 표지의 object URL을 새로 만든다 — 한 권을 임포트해도 나머지 표지가 다시 그려진다                                   |
 | L-609 | `src/db.ts`를 직접 겨냥한 테스트가 없다. 이 계층은 update를 통해서만 간접 검증된다 (`src/zip.ts`는 `R-205`가 덮는다)                            |
 | L-610 | Runtime 전체를 부팅하는 테스트가 불가능하다 — vitest + happy-dom에서 `Runtime.run`이 아무것도 렌더링하지 않는다 (최소 Foldkit 앱으로 대조 확인) |
 | L-611 | 프로덕션 배포 시 `/book/:id` 직접 접근에는 SPA 폴백 설정이 필요하다                                                                             |

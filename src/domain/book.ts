@@ -53,6 +53,34 @@ export const fromRecord = (record: Record, maybeCoverUrl: Option.Option<string>)
 export const coverUrls = (books: ReadonlyArray<BookSummary>): ReadonlyArray<string> =>
   Array.getSomes(Array.map(books, ({ maybeCoverUrl }) => maybeCoverUrl))
 
+/** 표지 하나가 어느 책의 것인지. 책장을 다시 읽을 때 그대로 이어 쓰려고 붙인다. */
+export type Cover = Readonly<{ id: string; url: string }>
+
+/**
+ * 지금 쥐고 있는 표지들을 책과 짝지어 모은다.
+ *
+ * 책장을 다시 읽는 Command가 이것을 받아, 그대로 남은 책에는 새 URL을 만들지
+ * 않고 여기 적힌 것을 되돌려 준다.
+ */
+export const coversOf = (books: ReadonlyArray<BookSummary>): ReadonlyArray<Cover> =>
+  Array.getSomes(
+    Array.map(books, ({ id, maybeCoverUrl }) => Option.map(maybeCoverUrl, (url) => ({ id, url }))),
+  )
+
+/**
+ * 새 책장이 밀어낸 표지 URL. 두 책장에 다 있는 URL은 아직 화면에 걸려 있다.
+ *
+ * 이것이 없으면 책장을 다시 읽을 때마다 모든 표지를 놓아 주고 다시 만들어서,
+ * 한 권을 들여와도 나머지 표지가 전부 다시 그려진다.
+ */
+export const droppedCoverUrls = (
+  before: ReadonlyArray<BookSummary>,
+  after: ReadonlyArray<BookSummary>,
+): ReadonlyArray<string> => {
+  const kept = coverUrls(after)
+  return Array.filter(coverUrls(before), (url) => !Array.contains(kept, url))
+}
+
 /**
  * 책장 순서에서 이웃한 책. 앞으로 한 칸이면 `1`, 뒤로 한 칸이면 `-1`이다.
  *
