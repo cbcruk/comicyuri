@@ -34,7 +34,10 @@ export const Message = defineMessageUnion({
   SucceededImportFiles: {},
   FailedImportFiles: { text: Schema.String },
 
+  /** 🗑을 눌렀다. 지우는 것이 아니라 지울지 묻는 것이다. */
   ClickedDeleteBook: { id: Schema.String },
+  ClickedConfirmDeleteBook: { id: Schema.String },
+  ClickedCancelDeleteBook: {},
   SucceededDeleteBook: {},
   FailedDeleteBook: { text: Schema.String },
 

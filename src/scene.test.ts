@@ -51,6 +51,7 @@ const shelfModel = (
   shelf,
   notice,
   fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
+  maybePendingDelete: Option.none(),
   maybeReader: Option.none(),
 })
 
@@ -188,6 +189,9 @@ describe('interaction', () => {
     scene(
       program,
       given(shelfModel(Shelf.Success({ data: [book('gone::1', 'Gone')] }))),
+      click(role('button', { name: 'Remove Gone from shelf…' })),
+      // 🗑은 묻기만 한다. 지우는 것은 그 답이다.
+      expect(text('Remove this book and where you left off?')).toExist(),
       click(role('button', { name: 'Remove Gone from shelf' })),
       Command.resolve(DeleteBook, Message.SucceededDeleteBook()),
       Command.resolve(LoadShelf, Message.SucceededLoadShelf({ books: [] })),
@@ -216,8 +220,23 @@ describe('scoping', () => {
       given(shelfModel(Shelf.Success({ data: [book('a::1', 'Alpha'), book('b::1', 'Beta')] }))),
       expect(role('link', { name: 'Alpha' })).toHaveAttr('href', '/book/a::1'),
       expect(role('link', { name: 'Beta' })).toHaveAttr('href', '/book/b::1'),
-      expect(role('button', { name: 'Remove Alpha from shelf' })).toExist(),
-      expect(role('button', { name: 'Remove Beta from shelf' })).toExist(),
+      expect(role('button', { name: 'Remove Alpha from shelf…' })).toExist(),
+      expect(role('button', { name: 'Remove Beta from shelf…' })).toExist(),
+    )
+  })
+
+  test('the question stands on one card only, and keeping it puts the bin back', () => {
+    scene(
+      program,
+      given(shelfModel(Shelf.Success({ data: [book('a::1', 'Alpha'), book('b::1', 'Beta')] }))),
+      click(role('button', { name: 'Remove Alpha from shelf…' })),
+      expect(role('group', { name: 'Remove Alpha?' })).toExist(),
+      // 옆의 책은 묻지 않은 채로 남는다.
+      expect(role('group', { name: 'Remove Beta?' })).not.toExist(),
+      expect(role('button', { name: 'Remove Beta from shelf…' })).toExist(),
+      click(role('button', { name: 'Keep Alpha' })),
+      expect(role('group', { name: 'Remove Alpha?' })).not.toExist(),
+      expect(role('button', { name: 'Remove Alpha from shelf…' })).toExist(),
     )
   })
 })

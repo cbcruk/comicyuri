@@ -123,7 +123,57 @@ const coverView = (book: Book.BookSummary, h: HtmlBuilder<Message>): Html =>
  * 링크가 접근 가능한 이름을 갖도록 제목을 링크 안에 둔다. 삭제 버튼은 그 이름에
  * 섞이지 않게 형제로 둔다.
  */
-const cardView = (book: Book.BookSummary, h: HtmlBuilder<Message>): Html =>
+const cornerButtonClassName =
+  'cursor-pointer rounded-md bg-bg/80 px-2 py-1 text-xs transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-accent'
+
+/**
+ * 지울지 묻는 자리. 카드 위에 덮여서, 답하기 전에는 그 카드로 들어갈 수 없다.
+ *
+ * 물음과 답을 같은 자리에 두지 않는다. 🗑이 있던 곳에 "Remove"가 서면 두 번째
+ * 누름이 첫 번째와 같은 동작처럼 보이고, 그 자리는 손이 이미 가 있는 자리다.
+ */
+const confirmDeleteView = (book: Book.BookSummary, h: HtmlBuilder<Message>): Html =>
+  h.div(
+    [
+      h.Class(
+        'absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-bg/90 p-2 text-center backdrop-blur-sm',
+      ),
+      h.Role('group'),
+      h.AriaLabel(`Remove ${book.title}?`),
+    ],
+    [
+      h.p([h.Class('text-xs text-muted')], ['Remove this book and where you left off?']),
+      h.div(
+        [h.Class('flex gap-2')],
+        [
+          buttonView(
+            {
+              label: 'Remove',
+              message: Message.ClickedConfirmDeleteBook({ id: book.id }),
+              className: clsx(cornerButtonClassName, 'text-danger'),
+              attributes: [h.AriaLabel(`Remove ${book.title} from shelf`)],
+            },
+            h,
+          ),
+          buttonView(
+            {
+              label: 'Keep',
+              message: Message.ClickedCancelDeleteBook(),
+              className: cornerButtonClassName,
+              attributes: [h.AriaLabel(`Keep ${book.title}`)],
+            },
+            h,
+          ),
+        ],
+      ),
+    ],
+  )
+
+const cardView = (
+  book: Book.BookSummary,
+  isPendingDelete: boolean,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.keyed('li')(
     book.id,
     [h.Class('group relative')],
@@ -142,16 +192,20 @@ const cardView = (book: Book.BookSummary, h: HtmlBuilder<Message>): Html =>
           h.span([h.Class('text-xs text-muted')], [Book.pageCountLabel(book)]),
         ],
       ),
-      buttonView(
-        {
-          label: '🗑',
-          message: Message.ClickedDeleteBook({ id: book.id }),
-          className:
-            'absolute top-2 right-2 cursor-pointer rounded-md bg-bg/80 px-2 py-1 text-xs opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent',
-          attributes: [h.AriaLabel(`Remove ${book.title} from shelf`)],
-        },
-        h,
-      ),
+      isPendingDelete
+        ? confirmDeleteView(book, h)
+        : buttonView(
+            {
+              label: '🗑',
+              message: Message.ClickedDeleteBook({ id: book.id }),
+              className: clsx(
+                cornerButtonClassName,
+                'absolute top-2 right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+              ),
+              attributes: [h.AriaLabel(`Remove ${book.title} from shelf…`)],
+            },
+            h,
+          ),
     ],
   )
 
@@ -175,27 +229,35 @@ const emptyView = (h: HtmlBuilder<Message>): Html =>
     ],
   )
 
-const gridView = (books: ReadonlyArray<Book.BookSummary>, h: HtmlBuilder<Message>): Html =>
+const gridView = (
+  books: ReadonlyArray<Book.BookSummary>,
+  maybePendingDelete: Option.Option<string>,
+  h: HtmlBuilder<Message>,
+): Html =>
   Array.match(books, {
     onEmpty: () => emptyView(h),
     onNonEmpty: (books) =>
       h.ul(
         [h.Class('grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] content-start gap-5')],
-        Array.map(books, (book) => cardView(book, h)),
+        Array.map(books, (book) => cardView(book, Option.contains(maybePendingDelete, book.id), h)),
       ),
   })
 
 const placeholderView = (text: string, h: HtmlBuilder<Message>): Html =>
   h.p([h.Class('m-auto text-sm text-muted')], [text])
 
-const shelfContentView = (shelf: Shelf, h: HtmlBuilder<Message>): Html =>
+const shelfContentView = (
+  shelf: Shelf,
+  maybePendingDelete: Option.Option<string>,
+  h: HtmlBuilder<Message>,
+): Html =>
   AsyncData.match(shelf, {
     onIdle: () => placeholderView('Opening your shelf…', h),
     onLoading: () => placeholderView('Opening your shelf…', h),
-    onRefreshing: (books) => gridView(books, h),
-    onSuccess: (books) => gridView(books, h),
+    onRefreshing: (books) => gridView(books, maybePendingDelete, h),
+    onSuccess: (books) => gridView(books, maybePendingDelete, h),
     onFailure: (error) => placeholderView(`Couldn't open your shelf — ${error}`, h),
-    onStale: ({ data }) => gridView(data, h),
+    onStale: ({ data }) => gridView(data, maybePendingDelete, h),
   })
 
 /** 책장을 그린다. 헤더, 상태 줄, 그리고 임포트를 받는 드롭 존 안의 책 격자. */
@@ -225,7 +287,7 @@ export const shelfView = (model: Model, h: HtmlBuilder<Message>): Html =>
                   'm-4 flex flex-1 flex-col overflow-y-auto rounded-xl border-2 border-dashed border-transparent p-4 transition-colors data-drag-over:border-accent data-drag-over:bg-accent/5',
                 ),
               ],
-              [shelfContentView(model.shelf, h)],
+              [shelfContentView(model.shelf, model.maybePendingDelete, h)],
             ),
         },
         toParentMessage: (message) => Message.GotFileDropMessage({ message }),

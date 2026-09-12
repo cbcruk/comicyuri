@@ -50,6 +50,7 @@ export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (
       shelf: Shelf.Loading(),
       notice: Notice.Idle(),
       fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
+      maybePendingDelete: Option.none(),
       // 책으로 바로 들어온 링크도 저장된 위치가 먼저다.
       maybeReader: Option.none(),
     },
