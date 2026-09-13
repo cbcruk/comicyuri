@@ -1,0 +1,48 @@
+# main에 들어온 것을 GitHub Pages에 올린다. 앱은 `https://cbcruk.github.io/comicyuri/`
+# 에 놓이므로 `github-pages` 모드로 빌드한다 — 자산과 라우트가 저장소 이름 아래를
+# 가리키고, 없는 경로를 받아 줄 `404.html`이 함께 나간다.
+#
+# e2e는 여기서 돌리지 않는다. 브라우저를 받는 데 드는 시간에 비해 얻는 것이 적고,
+# 로컬의 `vp run e2e`가 이 번들을 Pages처럼 내주는 서버 위에서 시험한다.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1.20.0
+        with:
+          node-version: '24'
+          cache: true
+      - run: vp check
+      - run: vp test
+      - run: vp run build:pages
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist-pages
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
