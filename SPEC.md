@@ -1138,7 +1138,7 @@ reported rather than thrown", "an open that errors is reported as a failure to o
 | ID    | 내용                                                                                                                                            |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | L-610 | Runtime 전체를 부팅하는 테스트가 불가능하다 — vitest + happy-dom에서 `Runtime.run`이 아무것도 렌더링하지 않는다 (최소 Foldkit 앱으로 대조 확인) |
-| L-611 | 프로덕션 배포 시 `/book/:id` 직접 접근에는 SPA 폴백 설정이 필요하다                                                                             |
+| L-611 | GitHub Pages로는 배포되지 않는다. base 경로와 `404.html` 복사가 더 필요하다 — Cloudflare Pages·Netlify·Vercel용 폴백 설정은 저장소에 있다       |
 
 ---
 

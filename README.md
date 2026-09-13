@@ -114,6 +114,38 @@ state to decide which pages to extract — so a five-hundred-page book draws a
 grid without unpacking five hundred images. Pages the grid is showing are
 added to what a page turn keeps loaded, or turning would blank it.
 
+## Deploying
+
+`vp build` writes a static bundle to `dist/`. There is no server: books live in
+the reader's own browser, in IndexedDB, and never leave it. Any static host will
+do.
+
+The one thing a host must be told is what to serve for `/book/<id>`. No file
+sits at that path — routing happens in the browser — so the answer is always
+`index.html`. Two config files in this repository say so:
+
+| File                | Read by                   |
+| ------------------- | ------------------------- |
+| `public/_redirects` | Cloudflare Pages, Netlify |
+| `vercel.json`       | Vercel                    |
+
+Asset paths in the built `index.html` are absolute (`/assets/…`), so the
+document works when it is served at a nested path. That is what makes the
+fallback enough on its own.
+
+Deploying is then one command against a host you are signed in to. For
+Cloudflare Pages:
+
+```sh
+vp build
+npx wrangler pages deploy dist
+```
+
+GitHub Pages is not set up. It would need two more things: a `base` path in the
+Vite config, because the site lives under `/<repo>/` rather than at the root,
+and a copy of `index.html` at `404.html`, because Pages has no rewrite rule and
+serves that file for unknown paths instead.
+
 ## Development
 
 This project uses [Vite+](https://viteplus.dev/). With the `vp` CLI:

@@ -3,6 +3,8 @@
  * 읽지 않는다는 것은 모두 브라우저에서만 드러난다.
  */
 
+import { readFileSync } from 'node:fs'
+
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
@@ -79,6 +81,30 @@ test('N-404 · 링크 클릭은 페이지를 다시 읽지 않는다', async ({ 
   // 새로고침은 새 문서다. 표가 사라지는 것이 그 증거다.
   await page.reload()
   expect(await markSurvives(page)).toBe(false)
+})
+
+/**
+ * N-406 · 배포된 곳에서도 `/book/<id>`로 곧장 들어올 수 있어야 한다.
+ *
+ * 그 경로에는 파일이 없으므로 호스트가 무엇을 내줄지 알아야 한다. 미리보기
+ * 서버는 그것을 스스로 해 주지만 배포처는 아니라서, 저장소가 설정을 지고 나간다.
+ * 여기서 보는 것은 그 설정이 빌드 결과에 실려 있는지다 — 이 하네스가 방금 그
+ * 빌드를 만들었다.
+ */
+test('N-406 · 빌드 결과가 SPA 폴백 설정을 지고 나간다', async () => {
+  const redirects = readFileSync('dist/_redirects', 'utf8')
+
+  // 무엇이 오든 `index.html`이고, 리다이렉트가 아니라 그 자리에서 내준다.
+  expect(redirects).toMatch(/^\/\*\s+\/index\.html\s+200$/m)
+
+  // 폴백으로 내준 문서가 중첩 경로에서도 제 자산을 찾으려면 절대 경로여야 한다.
+  const html = readFileSync('dist/index.html', 'utf8')
+  const assets = Array.from(html.matchAll(/(?:src|href)="([^"]*assets\/[^"]+)"/g))
+
+  expect(assets.length).toBeGreaterThan(0)
+  for (const [, path] of assets) {
+    expect(path).toMatch(/^\//)
+  }
 })
 
 test('N-405 · 없는 주소는 안내와 함께 돌아갈 길을 준다', async ({ page }) => {
