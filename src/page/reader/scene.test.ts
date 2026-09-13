@@ -306,6 +306,38 @@ describe('layout controls', () => {
   })
 })
 
+describe('zooming from the toolbar', () => {
+  /** `#reader-page`에 걸린 `transform`. 확대와 이동이 그 문자열 하나에 실린다. */
+  const stageTransform = selector('#reader-page')
+
+  test('the + control zooms in a step, and the − control comes back', () => {
+    scene(
+      program,
+      given(readingModel()),
+      // 처음에는 확대되지 않은 채다.
+      expect(stageTransform).toHaveStyle('transform', 'translate(0px, 0px) scale(1) rotate(0deg)'),
+      // 확대는 배치를 바꾸지 않는다. 같은 이미지를 그대로 늘릴 뿐이라 뽑을 것이 없다.
+      click(role('button', { name: 'Zoom in' })),
+      expect(stageTransform).toHaveStyle(
+        'transform',
+        'translate(0px, 0px) scale(1.25) rotate(0deg)',
+      ),
+      click(role('button', { name: 'Zoom out' })),
+      expect(stageTransform).toHaveStyle('transform', 'translate(0px, 0px) scale(1) rotate(0deg)'),
+    )
+  })
+
+  // 축소는 원래 크기에서 멈춘다. 화면보다 작아질 이유가 없다.
+  test('zooming out from where it started changes nothing', () => {
+    scene(
+      program,
+      given(readingModel()),
+      click(role('button', { name: 'Zoom out' })),
+      expect(stageTransform).toHaveStyle('transform', 'translate(0px, 0px) scale(1) rotate(0deg)'),
+    )
+  })
+})
+
 describe('the bookmark list', () => {
   const bookmarksOnly = (model: Model): Model => ({ ...model, showsBookmarksOnly: true })
 
@@ -335,6 +367,17 @@ describe('the bookmark list', () => {
       program,
       given(bookmarksOnly(measuredThumbs(readingModel()))),
       expect(text('Nothing is bookmarked in this book yet')).toExist(),
+    )
+  })
+
+  // 어느 페이지가 북마크된 것인지 격자에서 바로 읽힌다.
+  test('a bookmarked page is marked out from the rest in the grid', () => {
+    scene(
+      program,
+      given(measuredThumbs({ ...readingModel(), bookmarks: [1] })),
+      expect(role('button', { name: 'Go to page 2' })).toHaveClass('border-accent'),
+      expect(role('button', { name: 'Go to page 1' })).not.toHaveClass('border-accent'),
+      expect(role('button', { name: 'Go to page 1' })).toHaveClass('border-transparent'),
     )
   })
 
