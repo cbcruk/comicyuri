@@ -1,3 +1,8 @@
+# `msgpackr-extract`는 `effect`가 끌어오는 msgpackr의 선택적 네이티브 가속이다.
+# 빌드하지 않아도 msgpackr는 JS 구현으로 돈다. pnpm 11은 정하지 않은 빌드
+# 스크립트를 CI에서 오류로 멈추므로, 돌리지 않는다고 적어 둔다.
+allowBuilds:
+  msgpackr-extract: false
 catalog:
   vite: npm:@voidzero-dev/vite-plus-core@latest
   vite-plus: latest
