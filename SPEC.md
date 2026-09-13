@@ -599,8 +599,10 @@ e2e "R-247 · 앞으로 넘겨 온 긴 페이지는 첫 줄부터 보인다", "R
 "a double tap zooms in, and the next pair zooms back out"
 
 **R-238 · 툴바의 −/+ 버튼으로도 확대·축소**
-화면 중앙을 기준으로 1.25배씩.
-📖 ❓
+화면 중앙을 기준으로 1.25배씩. 배치를 바꾸는 것이 아니라 같은 이미지를 늘리는
+것이라, 눌러도 페이지를 다시 뽑지 않는다. 축소는 원래 크기에서 멈춘다(`R-231`).
+✅ reader/scene "the + control zooms in a step, and the − control comes back",
+"zooming out from where it started changes nothing"
 
 ### 2.5 탭과 스와이프
 
@@ -742,7 +744,8 @@ reader/story "picking a thumbnail jumps there and closes the grid"
 ✅ reader/story "a page turn does not release pages the grid is showing"
 
 **R-275 · 북마크된 페이지는 그리드에서 테두리로 구분된다**
-📖 ❓
+북마크된 칸은 강조색 테두리를 두르고, 나머지는 테두리가 없다.
+✅ reader/scene "a bookmarked page is marked out from the rest in the grid"
 
 **R-276 · 격자가 창 너비를 따라간다**
 잰 너비 하나에서 셋이 갈라져 나온다 — 한 행에 설 칸의 수, 칸의 너비, 행의 높이다.
@@ -928,7 +931,12 @@ e2e "R-2B5 · 기본값은 조용히 읽던 자리로 간다" 외 5개
 **R-2A2 · 토글**
 `d` 방향 · `v` 한/두 장 · `s` 묶기 뒤집기 · `r` 세우기 · `p` 슬라이드쇼 · `t` 썸네일 ·
 `,` 설정 · `b` 북마크 · `f` 전체화면 · `+`/`-` 줌.
-📖
+
+키는 같은 일을 하는 버튼이 보내는 Message로 풀린다. 그래서 키와 버튼이 서로 어긋날
+수 없다 — 버튼의 동작을 고치면 키도 함께 간다.
+✅ keys `"d" is the same thing the ClickedToggleDirection control does` 외 10개,
+"Home and End are the ends of the book, whichever way it reads", "the bracket keys are the
+bookmarks either side"
 
 **R-2A3 · Escape는 한 겹씩 벗긴다**
 설정 → 썸네일 → 슬라이드쇼 → 전체화면 → 책장.
@@ -943,7 +951,9 @@ e2e "R-2B5 · 기본값은 조용히 읽던 자리로 간다" 외 5개
 쓰는 유일한 수정키다(`R-2A5`).
 ✅ reader/story "an unbound key changes nothing",
 subscription "a key held with a modifier belongs to the browser",
-"everything else falls through to the browser"
+"everything else falls through to the browser",
+keys "a letter it has no use for goes to the browser", "a key held with a modifier is the
+browser's, not the reader's", "Shift is the one it keeps for itself"
 
 **R-2A5 · Shift는 넘김 키를 크게 만든다**
 넘김 키와 함께 누르면 한 장이 아니라 열 장을 건너뛴다. 방향은 그대로 눈에 보이는
