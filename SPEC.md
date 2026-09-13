@@ -1011,21 +1011,29 @@ the app"
 ## 4. 주소와 이동
 
 **N-401 · 책장은 `/`, 리더는 `/book/<id>`**
-✅ story "a url change moves the route and asks for the saved position"
+탭 제목도 그것을 따라간다 — 책장은 `comicyuri`, 리더는 `comicyuri — <id>`.
+✅ story "a url change moves the route and asks for the saved position",
+e2e "N-401 · 책장은 `/`, 리더는 `/book/<id>`"
 
 **N-402 · 뒤로 가기가 책에서 나온다**
-📖 ❓
+앞으로 가기는 도로 들어간다. 나올 때 리더는 화면에서 내려간다.
+✅ e2e "N-402 · 뒤로 가기가 책에서 나오고, 앞으로 가기가 도로 들어간다"
 
 **N-403 · 새로고침해도 읽던 책으로 돌아온다**
 URL이 어느 책인지 말하고, 어느 자리에서 열지는 `R-2B5`가 정한다. 기본값은 읽던
 자리다.
-📖 ❓
+✅ e2e "N-403 · 새로고침해도 읽던 책으로 돌아온다"
 
 **N-404 · 링크 클릭은 페이지를 다시 읽지 않는다**
-✅ story "an internal link click navigates instead of loading the page"
+문서가 그대로 남는지로 가른다. 문서에 표를 꽂아 두고 링크를 누르면 표가 살아
+있고, 새로고침하면 사라진다.
+✅ story "an internal link click navigates instead of loading the page",
+e2e "N-404 · 링크 클릭은 페이지를 다시 읽지 않는다"
 
 **N-405 · 없는 주소는 안내와 함께 돌아갈 길을 준다**
-📖
+"Nothing here"와 찾다 못 찾은 경로, 그리고 책장으로 가는 링크. 탭 제목은
+`comicyuri — not found`.
+✅ e2e "N-405 · 없는 주소는 안내와 함께 돌아갈 길을 준다"
 
 **N-406 · 이름에 공백이나 한글이 있는 책도 열린다**
 책 id는 파일 이름을 그대로 담으므로, 경로에 실을 때 인코딩하고 읽을 때 되돌린다.
