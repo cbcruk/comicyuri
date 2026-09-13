@@ -82,8 +82,21 @@ e2e "S-112 · \"Open files\"가 여러 개를 고를 수 있는 선택창을 연
 
 **S-114 · 아카이브는 각각 한 권, 낱장 이미지는 묶어서 한 권**
 `.cbz`/`.zip`은 파일마다 한 권이고 제목은 확장자를 뗀 파일명. 낱장 이미지는 전부
-한 권으로 묶이며, 폴더에서 왔으면 폴더명이 제목이 된다.
-📖
+한 권으로 묶이며, 폴더에서 왔으면 폴더명이 제목이 된다. 둘이 섞여 있으면 둘 다
+나온다.
+
+페이지가 될 수 있는 것은 `jpg`·`jpeg`·`png`·`gif`·`webp`·`avif`·`bmp`이고 대소문자를
+가리지 않는다. 그 밖의 것은 고른 목록에 섞여 있어도 그냥 빠지고, 남는 것이 하나도
+없을 때만 실패한다.
+
+책장에 서는 순서는 이름순이다. `Intl.Collator`에 `numeric`을 주므로 10이 2 뒤에
+온다 — 고른 순서가 아니라 읽을 순서다.
+✅ loader "each archive is a book of its own, titled without the extension", "loose images
+are one book, in name order", "images from a folder take the folder name", "archives and
+loose images chosen together make both kinds", "anything that is neither is left out",
+"choosing nothing importable is a failure, not an empty shelf", "the image formats this
+viewer can stand a page on", "what is not a page", "an archive is a .cbz or a .zip,
+whatever the case"
 
 **S-115 · 같은 파일을 다시 열면 같은 책이다**
 책 id는 `제목::바이트크기`. 그래서 다시 임포트해도 읽던 위치와 북마크가 살아 있다.
@@ -126,7 +139,13 @@ e2e "S-117 · 한 권을 더 들여와도 이미 선 책의 표지 URL이 그대
 JPEG는 EXIF 회전을 반영해 브라우저가 그릴 모양대로 잰다. 알아보지 못한 형식은
 실패가 아니라 크기를 모르는 페이지로 남는다. 잰 값은 책 레코드에 들어가므로
 `R-226`이 읽는 도중에 다시 재지 않는다.
+한 장이 무너뜨리는 것은 그 한 자리뿐이다. 알아보지 못한 형식이든 아예 뽑지 못한
+페이지든 `null`로 남고, 나머지는 그대로 재어진다 — 555장짜리 책이 한 장 때문에
+들어오지 못하면 곤란하다.
 ✅ imageSize "a PNG is measured from its IHDR" 외 14개,
+loader "a page whose header is read comes back with its size", "a page in a format this
+viewer does not know leaves a hole", "a page that cannot even be read leaves a hole, not a
+failure",
 e2e "S-121 · 잰 크기는 새로고침을 넘겨 남는다"
 ⚠️ 이 동작이 생기기 전에 들여온 책에는 크기가 없다. 다시 들여와야 재어진다.
 
@@ -244,8 +263,17 @@ scene "a reader route whose position is still loading says so"
 reader/scene "a book that could not be opened offers the way back"
 
 **R-203 · 이미지가 없는 아카이브는 그렇게 말한다**
-`No images found in "<제목>"`.
-📖
+`No images found in "<제목>"`. 바이트를 잃은 레코드도 같은 말을 한다. ZIP이 아닌
+바이트는 아카이브의 실패(`F-507`)로 나온다.
+
+아카이브 안에서 페이지가 되는 것은 이름이 이미지인 엔트리뿐이고, macOS가 남기는
+`__MACOSX` 아래는 그 이름을 하고 있어도 빠진다. 페이지의 이름은 폴더를 뗀 것이다 —
+카운터 아래에 서는 것이 그 이름이다(`R-217`).
+✅ loader "an archive with no images says so rather than opening empty", "a record that
+lost its bytes says the same", "bytes that are not an archive fail as an archive would",
+"the images inside stand as pages, in name order, by their own names", "what macOS leaves
+in an archive is not a page", "loose images keep the order and the names they were stored
+with"
 
 **R-204 · 책을 떠나면 아카이브와 모든 페이지 URL이 해제된다**
 ManagedResource가 Model 상태에 따라 해제한다.
