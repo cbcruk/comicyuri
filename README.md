@@ -133,7 +133,33 @@ Asset paths in the built `index.html` are absolute (`/assets/…`), so the
 document works when it is served at a nested path. That is what makes the
 fallback enough on its own.
 
-Deploying is then one command against a host you are signed in to. For
+### GitHub Pages
+
+The live copy is at <https://cbcruk.github.io/comicyuri/>. Every push to `main`
+deploys it through `.github/workflows/pages.yml`, after `vp check` and `vp test`
+pass.
+
+Pages needs two things the other hosts do not, and the `github-pages` build mode
+supplies both:
+
+- **A base path.** The site lives under `/comicyuri/`, not at the root. The mode
+  sets Vite's `base`, so assets point there, and the router strips it before
+  matching a route and adds it back when building a link.
+- **A `404.html`.** Pages has no rewrite rule; it serves `404.html` for any path
+  with no file. The mode writes a copy of `index.html` under that name. The
+  response carries status 404, but the browser loads the app all the same.
+
+```sh
+vp run build:pages   # writes dist-pages/
+```
+
+`vp run e2e` builds this bundle too and serves it from a small server that
+behaves like Pages (`e2e/fixture/pages-host.ts`), so a missing `404.html` or a
+route that ignores the base path fails a test rather than a deploy.
+
+### Other hosts
+
+Deploying elsewhere is one command against a host you are signed in to. For
 Cloudflare Pages:
 
 ```sh
@@ -141,10 +167,8 @@ vp build
 npx wrangler pages deploy dist
 ```
 
-GitHub Pages is not set up. It would need two more things: a `base` path in the
-Vite config, because the site lives under `/<repo>/` rather than at the root,
-and a copy of `index.html` at `404.html`, because Pages has no rewrite rule and
-serves that file for unknown paths instead.
+Vercel and Netlify need only the repository connected; the config files above
+are already in it.
 
 ## Development
 

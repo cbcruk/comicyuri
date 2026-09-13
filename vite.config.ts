@@ -1,14 +1,34 @@
+import { copyFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { defineConfig } from 'vite-plus'
+import type { Plugin } from 'vite-plus'
 
 import { foldkit } from '@foldkit/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 
 // `repos/`에는 다른 프로젝트를 참고용으로 받아 둘 때 그 체크아웃이 들어간다.
 // 그래서 이 프로젝트가 자기 코드에 돌리는 모든 검사에서 빼 둔다.
-const VENDORED = ['repos/**', 'dist/**']
+const VENDORED = ['repos/**', 'dist/**', 'dist-pages/**']
 
-export default defineConfig({
-  plugins: [tailwindcss(), foldkit({ devToolsMcpPort: 9988 })],
+// GitHub Pages는 `https://cbcruk.github.io/comicyuri/`에 앱을 놓는다. 이 모드로
+// 빌드하면 자산과 라우트가 그 경로 아래를 가리킨다.
+const GITHUB_PAGES = 'github-pages'
+
+// GitHub Pages에는 재작성 규칙이 없다. 대신 없는 경로에 `404.html`을 내주므로,
+// `index.html`과 같은 문서를 그 이름으로 하나 더 둔다. 상태 코드는 404로 나가지만
+// 브라우저는 개의치 않고 앱을 띄운다.
+const pagesFallback = (): Plugin => ({
+  name: 'comicyuri:github-pages-fallback',
+  apply: (_, { mode }) => mode === GITHUB_PAGES,
+  writeBundle: ({ dir = 'dist' }) => {
+    copyFileSync(join(dir, 'index.html'), join(dir, '404.html'))
+  },
+})
+
+export default defineConfig(({ mode }) => ({
+  base: mode === GITHUB_PAGES ? '/comicyuri/' : '/',
+  plugins: [tailwindcss(), foldkit({ devToolsMcpPort: 9988 }), pagesFallback()],
   optimizeDeps: {
     entries: ['src/entry.ts'],
   },
@@ -82,4 +102,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

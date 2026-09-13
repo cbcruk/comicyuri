@@ -8,6 +8,8 @@ import { defineConfig, devices } from '@playwright/test'
  * 프로덕션 빌드를 미리보기로 띄워 시험한다. 개발 서버가 아니라 실제로 나가는
  * 번들이어야 `import.meta.hot`으로 갈리는 동작(R-245 탭 표시)까지 사실대로 나온다.
  */
+const PAGES_SPEC = /github-pages\.spec\.ts/
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -22,15 +24,32 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: PAGES_SPEC,
       // 탭과 스와이프, 핀치가 터치로 도착해야 하므로 터치를 켠 채로 둔다.
       use: { ...devices['Desktop Chrome'], hasTouch: true },
     },
+    {
+      // 저장소 이름 아래에 놓인 번들을 GitHub Pages처럼 내주는 서버를 본다.
+      name: 'github-pages',
+      testMatch: PAGES_SPEC,
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:4174' },
+    },
   ],
-  webServer: {
-    // `vp`는 전역 CLI지만 여기서는 확실히 이 저장소의 것을 쓰도록 경로로 부른다.
-    command: 'node_modules/.bin/vp build && node_modules/.bin/vp preview --port 4173 --strictPort',
-    url: 'http://localhost:4173',
-    reuseExistingServer: !process.env['CI'],
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      // `vp`는 전역 CLI지만 여기서는 확실히 이 저장소의 것을 쓰도록 경로로 부른다.
+      command:
+        'node_modules/.bin/vp build && node_modules/.bin/vp preview --port 4173 --strictPort',
+      url: 'http://localhost:4173',
+      reuseExistingServer: !process.env['CI'],
+      timeout: 120_000,
+    },
+    {
+      command:
+        'node_modules/.bin/vp build --mode github-pages --outDir dist-pages && node e2e/fixture/pages-host.ts dist-pages 4174',
+      url: 'http://localhost:4174/comicyuri/',
+      reuseExistingServer: !process.env['CI'],
+      timeout: 120_000,
+    },
+  ],
 })

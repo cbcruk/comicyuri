@@ -1,4 +1,4 @@
-import { Schema, pipe } from 'effect'
+import { Option, Schema, pipe } from 'effect'
 import { Route } from 'foldkit'
 import { defineRouteUnion, literal, slash, string } from 'foldkit/route'
 import type { Url } from 'foldkit/url'
@@ -13,8 +13,20 @@ export const AppRoute = defineRouteUnion({
 /** {@linkcode AppRoute} 유니온의 디코딩된 값. */
 export type AppRoute = typeof AppRoute.Type
 
-/** 루트 경로의 책장. 돌아가는 길이기도 하다 — 호출하면 `/`를 만든다. */
-export const shelfRouter = pipe(Route.root, Route.mapTo(AppRoute.Shelf))
+/**
+ * 앱이 놓인 경로. 끝의 슬래시는 뗀다 — 루트에 놓이면 `''`, GitHub Pages처럼
+ * 저장소 이름 아래에 놓이면 `/comicyuri`다.
+ *
+ * 라우트는 이것을 모른다. 경로를 만들 때 앞에 붙이고, 읽기 전에 떼어 낸다.
+ */
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+
+const underBase = (path: string): string => `${BASE}${path}`
+
+const shelfRoute = pipe(Route.root, Route.mapTo(AppRoute.Shelf))
+
+/** 책장의 경로를 만든다. 앱이 놓인 곳의 루트이고, 리더에서 돌아가는 길이기도 하다. */
+export const shelfRouter = (): string => underBase(shelfRoute())
 
 const readerRoute = pipe(literal('book'), slash(string('id')), Route.mapTo(AppRoute.Reader))
 
@@ -33,9 +45,10 @@ const encodeSegment = (value: string): string => encodeURIComponent(value).repla
  * 되돌린다. 인코딩하지 않으면 브라우저가 대신 인코딩해 버리고, 그렇게 들어온
  * `%20`은 저장된 id와 다른 id가 되어 책을 찾지 못한다.
  */
-export const readerRouter = (id: string): string => readerRoute({ id: encodeSegment(id) })
+export const readerRouter = (id: string): string =>
+  underBase(readerRoute({ id: encodeSegment(id) }))
 
-const routeParser = Route.oneOf(readerRoute, shelfRouter)
+const routeParser = Route.oneOf(readerRoute, shelfRoute)
 
 const parseUrl = Route.parseUrlWithFallback(routeParser, AppRoute.NotFound)
 
@@ -52,12 +65,32 @@ const decodeSegment = (segment: string): string => {
 }
 
 /**
- * URL을 라우트로 읽는다. 읽지 못하면 던지지 않고 그 경로를 담은 `NotFound`로
- * 답한다.
+ * URL에서 앱이 놓인 경로를 떼어 낸다. 그 아래가 아니면 `None`이다.
+ *
+ * `/comicyuri`처럼 끝의 슬래시 없이 온 것도 앱의 루트로 친다.
+ */
+const withoutBase = (url: Url): Option.Option<Url> => {
+  if (url.pathname === BASE) {
+    return Option.some({ ...url, pathname: '/' })
+  }
+  return url.pathname.startsWith(`${BASE}/`)
+    ? Option.some({ ...url, pathname: url.pathname.slice(BASE.length) })
+    : Option.none()
+}
+
+/**
+ * URL을 라우트로 읽는다. 읽지 못하면 던지지 않고 `NotFound`로 답한다.
+ *
+ * `NotFound`에 담기는 경로는 주소창에 보이는 그대로다. 앱이 놓인 경로를 떼지
+ * 않는다.
  */
 export const urlToAppRoute = (url: Url): AppRoute =>
-  AppRoute.match<AppRoute>(parseUrl(url), {
-    Reader: ({ id }) => AppRoute.Reader({ id: decodeSegment(id) }),
-    Shelf: () => AppRoute.Shelf(),
-    NotFound: ({ path }) => AppRoute.NotFound({ path }),
+  Option.match(withoutBase(url), {
+    onNone: () => AppRoute.NotFound({ path: url.pathname }),
+    onSome: (inside) =>
+      AppRoute.match<AppRoute>(parseUrl(inside), {
+        Reader: ({ id }) => AppRoute.Reader({ id: decodeSegment(id) }),
+        Shelf: () => AppRoute.Shelf(),
+        NotFound: () => AppRoute.NotFound({ path: url.pathname }),
+      }),
   })
