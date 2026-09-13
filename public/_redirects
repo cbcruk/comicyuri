@@ -1,0 +1,6 @@
+# 이 뷰어는 주소로 책을 가리킨다(`N-401`). `/book/<id>`로 곧장 들어오면 그 경로에
+# 해당하는 파일이 없으므로, 정적 호스트는 무엇을 내줄지 알아야 한다. 라우팅은
+# 브라우저에서 일어나니 언제나 `index.html`이다.
+#
+# Cloudflare Pages와 Netlify가 이 파일을 읽는다. Vercel은 `vercel.json`을 본다.
+/*  /index.html  200
