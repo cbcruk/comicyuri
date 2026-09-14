@@ -11,6 +11,7 @@ import clsx from 'clsx'
 import type { FitMode } from '../../../types.ts'
 import { PAGE_ID, STAGE_ID } from '../constant.ts'
 import { ZOOM_MIN } from '../gesture.ts'
+import type { Point } from '../gesture.ts'
 import type { Message } from '../message.ts'
 import { sideOf } from '../half.ts'
 import { SpreadState, onScreen } from '../model.ts'
@@ -123,6 +124,9 @@ const tapFlashView = (flash: TapFlash, h: HtmlBuilder<Message>): Html =>
     h.AriaHidden(true),
   ])
 
+/** 페이지 상자에 걸린 배율과 이동. 화면에 걸린 스프레드를 그릴 때의 값이다. */
+type Transform = Readonly<{ zoom: number; pan: Point }>
+
 /**
  * 페이지를 담는 상자의 클래스. 맞춤 모드와 세운 각도, 들어선 쪽이 여기서 풀린다.
  *
@@ -139,7 +143,7 @@ const tapFlashView = (flash: TapFlash, h: HtmlBuilder<Message>): Html =>
  * 시작을 아래로 뒤집으므로, 넘치는 쪽에 붙는 자리도 함께 뒤집힌다 — 화면에
  * 들어가는 페이지는 그대로 가운데다.
  */
-const pageBoxClassName = (model: Model, entry: PageEntry): string =>
+const pageBoxClassName = (model: Model, entry: PageEntry, { zoom, pan }: Transform): string =>
   clsx('flex items-center-safe justify-center gap-1 [container-type:size]', {
     // 눕힌 상자는 가로와 세로가 맞바뀐다. 그래야 세운 페이지에 맞춤 모드가 화면
     // 크기대로 걸린다.
@@ -149,7 +153,7 @@ const pageBoxClassName = (model: Model, entry: PageEntry): string =>
     'flex-wrap-reverse': entry === 'end',
     // 확대를 풀고 제자리로 돌아가는 것은 애니메이션할 값이 있지만, 끌고 있는 중도,
     // 굴려서 페이지를 움직이는 중도 아니다.
-    'transition-transform': model.zoom === ZOOM_MIN && model.pan.x === 0 && model.pan.y === 0,
+    'transition-transform': zoom === ZOOM_MIN && pan.x === 0 && pan.y === 0,
   })
 
 /** 화면에 걸린 스프레드가 반씩 읽히는 중이면, 그 페이지의 비와 보고 있는 쪽. */
@@ -202,11 +206,12 @@ const lateLoadingView = (page: number, h: HtmlBuilder<Message>): Html =>
  * 있어야 한다.
  *
  * 그리는 것은 Model의 `page`가 아니라 화면에 걸린 스프레드다. 넘긴 뒤 다음 것이 그릴
- * 수 있게 될 때까지는 이전 스프레드가 그대로 남는다(`R-207`).
+ * 수 있게 될 때까지는 이전 스프레드가 그 배율 그대로 남는다(`R-207`).
  */
 export const stageView = (model: Model, layout: Layout, h: HtmlBuilder<Message>): Html => {
-  const { spread, zoom, pan, rotation } = model
+  const { spread, rotation } = model
   const maybeShown = onScreen(model)
+  const { zoom, pan }: Transform = Option.getOrElse(maybeShown, () => model)
 
   return h.div(
     [
@@ -232,6 +237,7 @@ export const stageView = (model: Model, layout: Layout, h: HtmlBuilder<Message>)
             pageBoxClassName(
               model,
               Option.match(maybeShown, { onNone: () => model.entry, onSome: ({ entry }) => entry }),
+              { zoom, pan },
             ),
           ),
           // 세우는 것이 맨 오른쪽이라 먼저 걸린다. 그래서 확대와 이동은 세운 뒤에도

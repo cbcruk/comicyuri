@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, readBook, stage } from './fixture/app.ts'
+import { control, readBook, stage, zoomOf } from './fixture/app.ts'
 
 /**
  * 디코딩이 한 프레임을 넘기는 페이지. 단색이라 만들기는 빠르지만 픽셀이 많아서
@@ -44,4 +44,38 @@ test('R-207 · 멀리 건너뛰어도, 빠르게 넘겨도 화면이 비는 프�
   await expect(stage(page).getByRole('img', { name: 'Page 5' })).toBeVisible()
 
   expect(await blankFrames(page)).toBe(0)
+})
+
+/** 매 프레임 1페이지가 화면에 그려진 너비를 적어 두기 시작한다. 가장 작았던 값을 남긴다. */
+const recordNarrowestFirstPage = (page: Page) =>
+  page.evaluate(() => {
+    const narrowest = { width: Infinity }
+    Object.assign(window, { narrowest })
+    const sample = () => {
+      const image = document.querySelector('#reader-page img[alt="Page 1"]')
+      if (image !== null) {
+        narrowest.width = Math.min(narrowest.width, image.getBoundingClientRect().width)
+      }
+      requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  })
+
+const narrowestFirstPage = (page: Page): Promise<unknown> =>
+  page.evaluate(() => Reflect.get(Reflect.get(window, 'narrowest'), 'width'))
+
+test('R-207 · 확대해 둔 페이지는 다음 페이지가 설 때까지 확대된 채 남는다', async ({ page }) => {
+  await readBook(page, HEAVY_BOOK)
+  await expect(stage(page).getByRole('img', { name: 'Page 1' })).toBeVisible()
+  await control.zoomIn(page).click()
+  await control.zoomIn(page).click()
+  await expect.poll(() => zoomOf(page)).toBeGreaterThan(1.5)
+  const zoomed = await stage(page).getByRole('img', { name: 'Page 1' }).boundingBox()
+  await recordNarrowestFirstPage(page)
+
+  // 미리 읽지 않은 곳으로 건너뛰어 기다리는 틈을 만든다.
+  await control.last(page).click()
+  await expect(stage(page).getByRole('img', { name: 'Page 8' })).toBeVisible()
+
+  expect(await narrowestFirstPage(page)).toBeGreaterThanOrEqual((zoomed?.width ?? Infinity) - 1)
 })

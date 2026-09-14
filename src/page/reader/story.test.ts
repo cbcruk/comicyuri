@@ -1580,6 +1580,8 @@ describe('turning onto a page that is not ready yet', () => {
               panels: [{ page: 0, url: 'blob:0' }],
               entry: 'start',
               half: 'first',
+              zoom: ZOOM_MIN,
+              pan: ORIGIN,
             }),
           }),
         )
@@ -1610,6 +1612,42 @@ describe('turning onto a page that is not ready yet', () => {
       }),
       ...settle(2),
     )
+  })
+
+  test('a zoomed page stays zoomed until the next one can be drawn', () => {
+    // 넘기면 Model의 배율은 곧바로 풀린다. 이전 페이지는 확대해 둔 그대로 남아야 한다.
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ClickedZoomIn()),
+      message(Message.ClickedNext()),
+      model((model) => {
+        expect(model.zoom).toBe(ZOOM_MIN)
+        expect(model.spread).toMatchObject({
+          _tag: 'Loading',
+          maybeOnScreen: Option.some({ page: 0, zoom: 1.25, pan: ORIGIN }),
+        })
+      }),
+      ...settle(1),
+    )
+  })
+
+  test('a scroll before it arrives does not move the page on its way', () => {
+    // 확대해 둔 이전 페이지에는 굴릴 거리가 있다. 그 거리로 굴리면 확대하지 않은
+    // 다음 페이지가 엉뚱한 자리에 앉는다.
+    const zoomed = update(onPage0(), Message.ClickedZoomIn()).model
+    const turned = update(zoomed, Message.ClickedNext()).model
+    const scrolled = update(
+      turned,
+      Message.ScrolledStage({
+        delta: { x: 0, y: 50 },
+        room: { up: 0, down: 300, left: 0, right: 0 },
+        device: 'trackpad',
+      }),
+    ).model
+
+    expect(scrolled.pan).toStrictEqual(ORIGIN)
   })
 
   test('turning again before it arrives keeps the page that is still on screen', () => {
