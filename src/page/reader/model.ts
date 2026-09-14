@@ -112,6 +112,8 @@ export const Gesture = defineTaggedUnion({
 export type Gesture = typeof Gesture.Type
 
 /**
+ * 책 한 권을 열어 둔 리더의 상태.
+ *
  * 위치의 기준은 스프레드 번호가 아니라 `page`다. 한 장/두 장을 바꿔도 살아남고,
  * 저장되는 것도 이 값이다. 스프레드는 매번 그릴 때 이 값과 페이지 수, 설정에서
  * 이끌어 낸다.

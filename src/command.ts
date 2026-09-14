@@ -72,7 +72,9 @@ export const SelectFiles = Command.define('SelectFiles', {
 })
 
 /**
- * NOTE: `File.selectMultiple`은 디렉터리를 요구하지 못해서 직접 만들었다. 화면
+ * 폴더를 고르는 선택기를 열고, 그 안의 파일을 모두 받는다.
+ *
+ * `File.selectMultiple`은 디렉터리를 요구하지 못해서 직접 만들었다. 화면
  * 밖의 input을 만들고 `change`와 `cancel` 양쪽에서 치우는 그 함수의 모양을
  * 그대로 따르되, `webkitdirectory`를 더했다.
  */
@@ -176,6 +178,8 @@ const THEME_COLOUR: Record<Theme, string> = {
 }
 
 /**
+ * 고른 테마를 문서 루트의 `data-theme`과 브라우저의 `theme-color`에 건다.
+ *
  * 테마는 Model이 이끄는 클래스가 아니라 문서 요소의 `data-theme` 속성이다.
  * Tailwind의 variant와 `color-scheme`이 둘 다 루트 요소를 보는데, 그 요소는
  * 어떤 뷰의 것도 아니기 때문이다.

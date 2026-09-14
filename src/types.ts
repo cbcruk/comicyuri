@@ -72,6 +72,8 @@ const DEFAULTS = {
 } as const
 
 /**
+ * 전역 읽기 설정. `localStorage`에 저장된다.
+ *
  * 모든 필드가 기본값을 지고 있다. 그래서 예전 빌드가 써 둔 값도 실패하거나
  * 구멍을 남기지 않고 온전한 설정으로 디코딩된다.
  */
@@ -143,10 +145,7 @@ export const Settings = Schema.Struct({
 /** {@linkcode Settings} 스키마의 디코딩된 값. */
 export type Settings = typeof Settings.Type
 
-/**
- * 아무것도 바꾼 적 없는 사람이 받는 설정. 만화 순서, 한 번에 한 장, 통째로
- * 맞춤, 어두운 테마, 표지는 혼자, 책 끝에서 다음 권으로, 설정은 모든 책이 함께.
- */
+/** 아무것도 바꾼 적 없는 사람이 받는 설정. */
 export const defaultSettings: Settings = DEFAULTS
 
 /**

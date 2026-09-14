@@ -218,7 +218,6 @@ export const update = (model: Model, message: Message) =>
         Reader: ({ id }) => {
           if (id !== bookId) return { model }
 
-          // 저장된 자리로 곧장 갈지, 처음부터 볼지, 물어볼지는 설정이 정한다.
           const opening = Reading.opening(model.settings, page)
 
           return {

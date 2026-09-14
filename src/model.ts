@@ -10,6 +10,8 @@ import { AppRoute } from './route.ts'
 import { Settings } from './types.ts'
 
 /**
+ * IndexedDB에서 읽어 온 책장. 읽는 중과 실패, 다시 읽는 중을 함께 지닌다.
+ *
  * 책장은 원격 데이터라서 읽는 중과 실패 상태를 스스로 지고 다닌다. 핵심은
  * `Refreshing`이다. 임포트나 삭제 뒤에 다시 읽을 때 격자를 비우지 않고 이미
  * 화면에 있는 책들을 남겨 둔다.

@@ -97,8 +97,12 @@ class ZipPage implements Page {
       this.url = null
     }
   }
-  // deflate는 앞부분만 풀 수 없으므로 엔트리를 통째로 편다. 재는 일은 임포트할
-  // 때 한 번뿐이라 그 값을 치를 만하다.
+  /**
+   * 엔트리를 풀어 페이지 크기를 잰다.
+   *
+   * deflate는 앞부분만 풀 수 없으므로 엔트리를 통째로 편다. 재는 일은 임포트할
+   * 때 한 번뿐이라 그 값을 치를 만하다.
+   */
   measure(): Effect.Effect<Option.Option<ImageSize>, ArchiveError> {
     return this.archive.extract(this.entry).pipe(Effect.map(imageSize))
   }

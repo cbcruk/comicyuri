@@ -282,7 +282,7 @@ export const shelfView = (model: Model, h: HtmlBuilder<Message>): Html =>
         model: model.fileDrop,
         view: FileDrop.view,
         viewInputs: {
-          // NOTE: 컴포넌트의 숨은 file input을 일부러 그리지 않고, 그 input의
+          // 컴포넌트의 숨은 file input을 일부러 그리지 않고, 그 input의
           // 모양만 정하는 `accept`/`multiple`도 함께 뺐다. 드롭은 전적으로 루트
           // 요소가 받는다. 그 input은 `label for`로 눌러서 고르는 방식을 위한
           // 것인데 이 책장은 그 방식을 쓰지 않는다 — 드롭 존이 페이지 전체라서

@@ -35,6 +35,29 @@ const isOnStage = (event: Event): boolean =>
   event.target instanceof Element && event.target.closest(`#${STAGE_ID}`) !== null
 
 /**
+ * 페이지가 굴러다닐 수 있는 자리의 화면 좌표. 스테이지에서 여백을 뺀 안쪽이다.
+ *
+ * 스테이지의 상자를 쓰면 다 굴린 페이지가 여백을 8px 덮고 선다. 페이지를 담은
+ * 상자는 스테이지를 꽉 채우고 스테이지가 `relative`이므로, 그 offset 상자가 곧
+ * 여백을 뺀 자리다 — 그리고 transform이 걸리지 않는 값이라 굴리는 동안에도
+ * 움직이지 않는다.
+ */
+const viewOnStage = (
+  stage: HTMLElement,
+  page: HTMLElement,
+): Readonly<{ top: number; left: number; bottom: number; right: number }> => {
+  const stageBox = stage.getBoundingClientRect()
+  const top = stageBox.top + page.offsetTop
+  const left = stageBox.left + page.offsetLeft
+  return {
+    top,
+    left,
+    bottom: top + page.offsetHeight,
+    right: left + page.offsetWidth,
+  }
+}
+
+/**
  * 지금 걸려 있는 페이지가 화면 밖으로 나가 있는 몫. 굴림이 어디까지 갈 수 있는지가
  * 곧 이 값이다.
  *
@@ -53,20 +76,7 @@ const roomOnStage = (): Room => {
   const boxes = Array.from(page.children, (child) => child.getBoundingClientRect())
   if (boxes.length === 0) return NO_ROOM
 
-  // 페이지가 갈 수 있는 자리는 스테이지의 상자가 아니라 그 안쪽, 여백을 뺀
-  // 자리다. 상자를 쓰면 다 굴린 페이지가 여백을 8px 덮고 선다. 담는 상자는
-  // 스테이지를 꽉 채우고 스테이지가 `relative`이므로, 그 offset 상자가 곧
-  // 여백을 뺀 자리다 — 그리고 transform이 걸리지 않는 값이라 굴리는 동안에도
-  // 움직이지 않는다.
-  const stageBox = stage.getBoundingClientRect()
-  const top = stageBox.top + page.offsetTop
-  const left = stageBox.left + page.offsetLeft
-  const view = {
-    top,
-    left,
-    bottom: top + page.offsetHeight,
-    right: left + page.offsetWidth,
-  }
+  const view = viewOnStage(stage, page)
 
   const room = (edge: number): number => Math.max(0, edge)
 
