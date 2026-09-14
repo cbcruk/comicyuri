@@ -1,42 +1,23 @@
 import { Array, Option } from 'effect'
 import { AsyncData } from 'foldkit'
-import type { Attribute, Html, HtmlBuilder } from 'foldkit/html'
+import type { Html, HtmlBuilder } from 'foldkit/html'
 
-import { Button, FileDrop } from '@foldkit/ui'
+import { FileDrop } from '@foldkit/ui'
 import clsx from 'clsx'
 
 import { Book } from '../domain/index.ts'
 import { Message } from '../message.ts'
 import { Model, Notice, Shelf } from '../model.ts'
 import { readerRouter } from '../route.ts'
+import { controlLookClassName, controlView } from './control.ts'
 import { settingsView } from './settings.ts'
 import type { Theme } from '../types.ts'
 
-const buttonClassName =
-  'cursor-pointer rounded-lg border border-edge bg-surface-2 px-3.5 py-2 text-sm font-medium text-ink transition-colors hover:border-accent/60 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+/** 책장 헤더의 버튼. 리더 툴바보다 한 단계 크다. */
+const headerButtonClassName = clsx(controlLookClassName, 'px-3.5 py-2')
 
 const primaryButtonClassName =
   'border-transparent bg-accent text-accent-ink hover:bg-accent/90 hover:text-accent-ink'
-
-type ButtonConfig = Readonly<{
-  label: string
-  message: Message
-  className: string
-  attributes?: ReadonlyArray<Attribute<Message>>
-}>
-
-const buttonView = (config: ButtonConfig, h: HtmlBuilder<Message>): Html =>
-  Button.view(
-    {
-      onClick: config.message,
-      toView: (attributes) =>
-        h.button(
-          [...attributes.button, h.Class(config.className), ...(config.attributes ?? [])],
-          [config.label],
-        ),
-    },
-    h,
-  )
 
 /** 토글은 지금 있는 곳이 아니라 데려갈 곳을 말한다. */
 const themeToggleLabel = (theme: Theme): string =>
@@ -50,36 +31,36 @@ const headerView = (theme: Theme, isSettingsOpen: boolean, h: HtmlBuilder<Messag
         [h.Class('mr-auto text-xl font-semibold tracking-tight')],
         ['comic', h.span([h.Class('text-accent')], ['yuri'])],
       ),
-      buttonView(
+      controlView(
         {
           label: 'Open files',
           message: Message.ClickedOpenFiles(),
-          className: clsx(buttonClassName, primaryButtonClassName),
+          className: clsx(headerButtonClassName, primaryButtonClassName),
         },
         h,
       ),
-      buttonView(
+      controlView(
         {
           label: 'Open folder',
           message: Message.ClickedOpenFolder(),
-          className: buttonClassName,
+          className: headerButtonClassName,
         },
         h,
       ),
-      buttonView(
+      controlView(
         {
           label: '◐',
           message: Message.ClickedToggleTheme(),
-          className: buttonClassName,
+          className: headerButtonClassName,
           attributes: [h.Title(themeToggleLabel(theme)), h.AriaLabel(themeToggleLabel(theme))],
         },
         h,
       ),
-      buttonView(
+      controlView(
         {
           label: '⚙',
           message: Message.ClickedToggleSettings(),
-          className: buttonClassName,
+          className: headerButtonClassName,
           attributes: [h.AriaLabel('Reading settings'), h.AriaExpanded(isSettingsOpen)],
         },
         h,
@@ -154,7 +135,7 @@ const confirmDeleteView = (book: Book.BookSummary, h: HtmlBuilder<Message>): Htm
       h.div(
         [h.Class('flex gap-2')],
         [
-          buttonView(
+          controlView(
             {
               label: 'Remove',
               message: Message.ClickedConfirmDeleteBook({ id: book.id }),
@@ -163,7 +144,7 @@ const confirmDeleteView = (book: Book.BookSummary, h: HtmlBuilder<Message>): Htm
             },
             h,
           ),
-          buttonView(
+          controlView(
             {
               label: 'Keep',
               message: Message.ClickedCancelDeleteBook(),
@@ -212,7 +193,7 @@ const cardView = (
       ),
       isPendingDelete
         ? confirmDeleteView(book, h)
-        : buttonView(
+        : controlView(
             {
               label: '🗑',
               message: Message.ClickedDeleteBook({ id: book.id }),
