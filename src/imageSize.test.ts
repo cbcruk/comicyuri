@@ -151,6 +151,20 @@ describe('avif and its relatives', () => {
     ]
     expect(measured(head)).toStrictEqual({ width: 1600, height: 2400 })
   })
+
+  test('an avif cut off inside its ispe box is unknown rather than a crash', () => {
+    // 높이가 들어갈 4바이트가 없다. 이름은 찾았지만 값을 읽을 자리가 파일 밖이다.
+    const head = [
+      ...u32be(20),
+      ...ascii('ftypavif'),
+      ...zeros(8),
+      ...u32be(20),
+      ...ascii('ispe'),
+      ...u32be(0),
+      ...u32be(1600),
+    ]
+    expect(imageSize(new Uint8Array(head))._tag).toBe('None')
+  })
 })
 
 describe('bytes that say nothing', () => {
