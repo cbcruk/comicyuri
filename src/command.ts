@@ -201,6 +201,28 @@ export const ApplyTheme = Command.define('ApplyTheme', {
 })
 
 /**
+ * 들여온 책을 브라우저가 스스로 지우지 않도록 영구 저장을 요청한다.
+ *
+ * 요청하지 않은 저장소는 best-effort라서, 디스크가 모자라면 브라우저가 알리지 않고
+ * 이 출처의 IndexedDB를 통째로 비울 수 있다. 서재는 원본 바이트의 사본이라(`P-301`)
+ * 그렇게 사라지면 되찾을 길이 없다.
+ *
+ * Chromium은 사람에게 묻지 않고 방문 이력 같은 신호로 정한다. 이미 영구라면 다시
+ * 요청하지 않는다. 거절되거나 API가 없어도 실패가 아니다 — 지금처럼 쓰면 된다.
+ */
+export const RequestPersistentStorage = Command.define('RequestPersistentStorage', {
+  messages: [Message.CompletedRequestPersistentStorage],
+  execute: Effect.tryPromise(async () => {
+    const storage: StorageManager | undefined = navigator.storage
+    if (storage === undefined) return false
+    return (await storage.persisted()) || (await storage.persist())
+  }).pipe(
+    Effect.orElseSucceed(() => false),
+    Effect.map((isPersisted) => Message.CompletedRequestPersistentStorage({ isPersisted })),
+  ),
+})
+
+/**
  * 책장이 더 이상 그리지 않는 표지 object URL을 놓아 준다.
  *
  * 이것이 없으면 새 책장에서 빠진 책, 곧 지운 책의 표지 URL이 샌다. 남은 책의

@@ -46,3 +46,30 @@ test('P-303 · 설정은 남고 다음 책에도 적용된다', async ({ page })
   await expect(control.direction(page)).toHaveText('LTR')
   await expect(control.view(page)).toHaveText('Two')
 })
+
+test('P-307 · 책을 들여오면 브라우저에 서재를 지워지지 않게 해 달라고 요청한다', async ({
+  page,
+}) => {
+  // 영구 저장을 허락할지는 브라우저가 방문 이력 같은 신호로 정하므로, 시험 브라우저에서
+  // 결과는 그때그때 다르다. 여기서 고정하는 것은 앱이 요청하는지다.
+  await page.addInitScript(() => {
+    const calls: string[] = []
+    Object.assign(window, { persistCalls: calls })
+    navigator.storage.persisted = async () => {
+      calls.push('persisted')
+      return false
+    }
+    navigator.storage.persist = async () => {
+      calls.push('persist')
+      return true
+    }
+  })
+
+  await openShelf(page)
+  expect(await page.evaluate(() => Reflect.get(window, 'persistCalls'))).toStrictEqual([])
+
+  await importBook(page)
+  await expect
+    .poll(() => page.evaluate(() => Reflect.get(window, 'persistCalls')))
+    .toStrictEqual(['persisted', 'persist'])
+})

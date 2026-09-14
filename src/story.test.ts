@@ -16,6 +16,7 @@ import {
   ImportFiles,
   LoadShelf,
   NavigateInternal,
+  RequestPersistentStorage,
   RevokeCoverUrls,
   SaveSettings,
   WaitBeforeClearingNotice,
@@ -165,8 +166,31 @@ describe('import', () => {
       }),
       Command.resolve(LoadShelf, Message.SucceededLoadShelf({ books: [book('new::1', 'New')] })),
       Command.resolve(RevokeCoverUrls, Message.CompletedRevokeCoverUrls()),
+      Command.resolve(
+        RequestPersistentStorage,
+        Message.CompletedRequestPersistentStorage({ isPersisted: true }),
+      ),
       model((model) => {
         expect(titlesOf(model.shelf)).toStrictEqual(['New'])
+      }),
+    )
+  })
+
+  test('a finished import asks the browser to keep the shelf', () => {
+    story(
+      update,
+      given(shelfModel()),
+      message(Message.SucceededImportFiles()),
+      Command.expectExact(LoadShelf({ have: [] }), RequestPersistentStorage()),
+      Command.resolve(LoadShelf, Message.SucceededLoadShelf({ books: [] })),
+      Command.resolve(RevokeCoverUrls, Message.CompletedRevokeCoverUrls()),
+      // 거절되어도 책장은 그대로 쓴다. 알릴 것도 없다.
+      Command.resolve(
+        RequestPersistentStorage,
+        Message.CompletedRequestPersistentStorage({ isPersisted: false }),
+      ),
+      model((model) => {
+        expect(model.notice._tag).toBe('Idle')
       }),
     )
   })
@@ -222,6 +246,10 @@ describe('notice', () => {
       }),
       Command.resolve(LoadShelf, Message.SucceededLoadShelf({ books: [] })),
       Command.resolve(RevokeCoverUrls, Message.CompletedRevokeCoverUrls()),
+      Command.resolve(
+        RequestPersistentStorage,
+        Message.CompletedRequestPersistentStorage({ isPersisted: true }),
+      ),
     )
   })
 
