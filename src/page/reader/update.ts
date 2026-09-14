@@ -944,6 +944,20 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       }),
     }),
 
+    // 숨은 툴바로 Tab이 들어오면 툴바를 되부른다. 보이지 않는 버튼에 초점이 앉아
+    // 있게 두지 않는다.
+    FocusEnteredChrome: () => ({
+      model: evo(withActivity(model), { isFocusInChrome: () => true }),
+    }),
+
+    // 포인터가 떠날 때와 같은 이유로 대기를 다시 시작한다.
+    FocusLeftChrome: () => ({
+      model: evo(model, {
+        isFocusInChrome: () => false,
+        activityToken: (token) => token + 1,
+      }),
+    }),
+
     // 지금의 활동을 위해 시작된 대기만 툴바를 숨길 수 있다.
     ElapsedChromeIdle: ({ token }) =>
       token === model.activityToken

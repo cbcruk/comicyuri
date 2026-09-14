@@ -12,13 +12,29 @@ test('R-251 · 3초 동안 아무 일도 없으면 툴바가 사라지고, 다�
 
   await expect(header).toHaveAttribute('aria-hidden', 'false')
   await expect(header).toHaveAttribute('aria-hidden', 'true', { timeout: 6_000 })
-  // 사라진 툴바는 탭 순서에서도 빠진다.
+  // 사라진 툴바는 포인터를 받지 않는다.
   await expect(header).toHaveClass(/pointer-events-none/)
 
   // 숨은 툴바는 접근성 트리에서도 빠지므로 버튼으로는 부를 수 없다. 화면 가운데를
   // 탭하는 것이 툴바를 다시 부르는 길이다.
   const box = await stage(page).boundingBox()
   await page.touchscreen.tap(640, (box?.y ?? 0) + (box?.height ?? 0) / 2)
+  await expect(header).toHaveAttribute('aria-hidden', 'false')
+})
+
+test('R-251 · 숨은 툴바에 Tab으로 들어오면 툴바가 돌아오고, 초점이 있는 동안 머문다', async ({
+  page,
+}) => {
+  await readBook(page)
+  const header = page.locator('header')
+  await expect(header).toHaveAttribute('aria-hidden', 'true', { timeout: 6_000 })
+
+  await page.keyboard.press('Tab')
+  await expect(header).toHaveAttribute('aria-hidden', 'false')
+  expect(await header.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+
+  // 보이지 않는 버튼에 초점이 남는 일이 없도록, 초점이 안에 있는 동안에는 숨지 않는다.
+  await page.waitForTimeout(4_500)
   await expect(header).toHaveAttribute('aria-hidden', 'false')
 })
 

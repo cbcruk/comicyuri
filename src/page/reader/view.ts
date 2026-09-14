@@ -54,17 +54,29 @@ const NO_ENLARGE_CLASS: Record<FitMode, string> = {
 const fitClassName = (fit: FitMode, enlargeToFit: boolean): string =>
   clsx(FIT_CLASS[fit], { [NO_ENLARGE_CLASS[fit]]: !enlargeToFit && NO_ENLARGE_CLASS[fit] !== '' })
 
-/** 툴바는 읽는 동안 사라지고, 탭 순서에서도 함께 빠진다. */
+/** 툴바는 읽는 동안 흐려지고 포인터를 받지 않는다. */
 const chromeClassName = (isVisible: boolean): string =>
   clsx('transition-opacity', { 'pointer-events-none opacity-0': !isVisible })
 
 /**
- * 툴바 위에 머무는 포인터는 아직 쓰고 있다는 뜻이므로, 포인터가 있는 동안에는
- * 툴바를 숨기는 대기를 붙잡아 둔다.
+ * 툴바와 푸터가 함께 거는 속성.
+ *
+ * 숨긴 툴바에도 초점은 들어올 수 있고, 들어오면 툴바가 돌아온다. 키보드로 읽는
+ * 사람에게는 Tab이 툴바를 부르는 길이다 — 리더 키는 모두 저마다 하는 일이 있어서,
+ * 툴바를 막아 두면 그것만 부를 키가 없다.
+ *
+ * 포인터가 위에 머물거나 키보드 초점이 안에 있는 것은 아직 쓰고 있다는 뜻이므로,
+ * 그동안에는 툴바를 숨기는 대기를 붙잡아 둔다.
  */
-const chromeHoverAttributes = (h: HtmlBuilder<Message>): ReadonlyArray<Attribute<Message>> => [
+const chromeAttributes = (
+  isVisible: boolean,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Attribute<Message>> => [
+  h.AriaHidden(!isVisible),
   h.OnMouseEnter(Message.EnteredChrome()),
   h.OnMouseLeave(Message.LeftChrome()),
+  h.OnFocusEnter(Message.FocusEnteredChrome()),
+  h.OnFocusLeave(Message.FocusLeftChrome()),
 ]
 
 const counterLabel = (pages: ReadonlyArray<number>, pageCount: number): string => {
@@ -147,8 +159,7 @@ const toolbarView = (
           chromeClassName(isVisible),
         ),
       ),
-      h.AriaHidden(!isVisible),
-      ...chromeHoverAttributes(h),
+      ...chromeAttributes(isVisible, h),
     ],
     [
       controlView({ label: '← Shelf', message: Message.ClickedExit() }, h),
@@ -642,8 +653,7 @@ const turnView = (model: Model, isVisible: boolean, h: HtmlBuilder<Message>): Ht
           chromeClassName(isVisible),
         ),
       ),
-      h.AriaHidden(!isVisible),
-      ...chromeHoverAttributes(h),
+      ...chromeAttributes(isVisible, h),
     ],
     [
       controlView({ label: 'First', message: Message.ClickedFirst() }, h),

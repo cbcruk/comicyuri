@@ -162,6 +162,15 @@ describe('a pointer resting on the chrome', () => {
     ).toBe(false)
   })
 
+  test('keyboard focus inside the chrome holds the wait the same way', () => {
+    expect(
+      subscriptions.chromeIdle.modelToDependencies({
+        ...reading,
+        isFocusInChrome: true,
+      }).isWaiting,
+    ).toBe(false)
+  })
+
   test('and the wait resumes once it leaves', () => {
     expect(
       subscriptions.chromeIdle.modelToDependencies({
