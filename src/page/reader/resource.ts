@@ -12,7 +12,7 @@ import type { Model } from './model.ts'
 /**
  * 리더가 열어 둔 책을 가리키는 ManagedResource 태그.
  *
- * 열린 책은 파싱된 ZIP 아카이브와 그 페이지들이 내주는 object URL이다. 둘 다
+ * 열린 책은 페이지들이 내주는 object URL이고, ZIP이면 파싱된 아카이브도 함께다. 둘 다
  * Model에 살 수 없고 리더가 닫힐 때 놓아 주어야 하는데, Model 상태를 키로 삼는
  * ManagedResource가 정확히 그 일을 한다. 페이지가 필요한 Command는
  * `OpenBook.get`으로 닿는다.

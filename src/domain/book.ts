@@ -4,8 +4,8 @@ import { BookSource } from '../types.ts'
 
 /**
  * 책장이 책 한 권을 그리는 데 필요한 것. 아카이브 바이트는 IndexedDB에 남고,
- * 표지는 `img`에 그대로 넘길 수 있고 책장을 다시 그릴 때 놓아 줄 수 있는
- * object URL로 온다.
+ * 표지는 `img`에 그대로 넘길 수 있는 object URL로 온다. 책장을 다시 읽어도 그대로
+ * 남은 책은 같은 URL을 이어 쓰고, 밀려난 것만 놓아 준다.
  */
 export const BookSummary = Schema.Struct({
   id: Schema.String,
@@ -26,15 +26,15 @@ export type Record = Readonly<{
   title: string
   /** 페이지가 어디서 왔는지. */
   source: BookSource
-  /** 아카이브를 한 번 열기 전까지는 없다. */
+  /** 들여올 때 센 페이지 수. 저장하기 전의 레코드에는 없다. */
   pageCount?: number | undefined
 }>
 
 /**
  * 저장 레코드를 책장용으로 요약한다.
  *
- * 표지는 여기서 읽지 않고 받아 온다. object URL은 그것을 가진 Command가 만들고
- * 놓아 주며, 이 함수는 순수하게 남는다.
+ * 표지는 여기서 읽지 않고 받아 온다. object URL을 만들고 놓아 주는 일은 Command가
+ * 맡고, 이 함수는 순수하게 남는다.
  */
 export const fromRecord = (record: Record, maybeCoverUrl: Option.Option<string>): BookSummary => ({
   id: record.id,
@@ -44,13 +44,8 @@ export const fromRecord = (record: Record, maybeCoverUrl: Option.Option<string>)
   maybeCoverUrl,
 })
 
-/**
- * 지금 쥐고 있는 표지 URL 전부. 한 번에 놓아 주려고 모은다.
- *
- * 표지가 없는 책은 그냥 빠지므로, 결과는 구멍 뚫린 목록이 아니라 놓아 줄 것
- * 그 자체다.
- */
-export const coverUrls = (books: ReadonlyArray<BookSummary>): ReadonlyArray<string> =>
+/** 책들이 지닌 표지 URL. 표지가 없는 책은 빠진다. */
+const coverUrls = (books: ReadonlyArray<BookSummary>): ReadonlyArray<string> =>
   Array.getSomes(Array.map(books, ({ maybeCoverUrl }) => maybeCoverUrl))
 
 /** 표지 하나가 어느 책의 것인지. 책장을 다시 읽을 때 그대로 이어 쓰려고 붙인다. */
@@ -100,8 +95,8 @@ export const neighbour = (
   )
 
 /**
- * 카드가 분량을 말하는 방식. 한 장이면 단수로, 여럿이면 복수로, 아직 아카이브를
- * 열어 보지 않은 책이면 모른다고 적는다.
+ * 카드가 분량을 말하는 방식. 한 장이면 단수로, 여럿이면 복수로, 페이지 수가 없는
+ * 레코드면 모른다고 적는다.
  */
 export const pageCountLabel = (book: BookSummary): string =>
   Option.match(book.maybePageCount, {

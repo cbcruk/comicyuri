@@ -12,7 +12,7 @@ import { ORIGIN, Point, Side, ZOOM_MIN } from './gesture.ts'
 import { Half } from './half.ts'
 
 /**
- * 아카이브를 여는 일이 어디까지 왔는지.
+ * 책을 여는 일이 어디까지 왔는지.
  *
  * `Ready`가 페이지 비를 지고 있는 이유는 스프레드 묶기가 그것을 보기 때문이다.
  * 넓은 페이지는 짝을 짓지 않으므로, 페이지 수만으로는 무엇이 한 화면인지 정할
@@ -26,7 +26,7 @@ export const OpenState = defineTaggedUnion({
     /** 페이지별 가로세로비. 임포트할 때 재지 못한 페이지는 없음이다. */
     ratios: Schema.Array(Schema.Option(Schema.Number)),
     /**
-     * 페이지별 파일 이름. 아카이브 안에서의 이름이고, 폴더는 떼어 낸 것이다.
+     * 페이지별 파일 이름. 폴더는 떼어 낸 것이다.
      *
      * 정렬이 이상할 때 그것을 알아볼 유일한 단서다 — 화면에 걸린 것이 몇 번째
      * 페이지인지는 카운터가 말해 주지만, 그 번호가 왜 그 그림인지는 파일 이름만이
@@ -115,12 +115,12 @@ export type Gesture = typeof Gesture.Type
  * 책 한 권을 열어 둔 리더의 상태.
  *
  * 위치의 기준은 스프레드 번호가 아니라 `page`다. 한 장/두 장을 바꿔도 살아남고,
- * 저장되는 것도 이 값이다. 스프레드는 매번 그릴 때 이 값과 페이지 수, 설정에서
- * 이끌어 낸다.
+ * 저장되는 것도 이 값이다. 스프레드는 매번 그릴 때 이 값과 페이지 수, 페이지 비,
+ * 묶기 교정, 설정에서 이끌어 낸다.
  *
  * 페이지 이미지 URL은 일부러 여기에 두지 않았다. 그것들은 열린 책 리소스가 쥔
- * `Page` 객체 안에 살면서 캐시되고 놓이므로, Model은 지금 화면에 걸린 몇 장만
- * 지고 있으면 된다.
+ * `Page` 객체 안에 살면서 캐시되고 놓이므로, Model은 지금 화면에 걸린 몇 장과
+ * 격자가 열려 있는 동안 뽑아 둔 썸네일만 지고 있으면 된다.
  */
 export const Model = Schema.Struct({
   bookId: Schema.String,
@@ -165,7 +165,10 @@ export const Model = Schema.Struct({
 
   /** 슬라이드쇼가 돌고 있는지. 돌면 정해 둔 시간마다 스스로 넘어간다. */
   isPlaying: Schema.Boolean,
-  /** 툴바는 읽는 동안 스스로 숨고, 무슨 일이든 있으면 돌아온다. */
+  /**
+   * 툴바는 읽는 동안 스스로 숨고, 컨트롤을 쓰면 돌아온다. 화면을 누르는 것만으로는
+   * 돌아오지 않는다.
+   */
   isChromeVisible: Schema.Boolean,
   /** 포인터가 툴바 위에 머무는 동안에는 시간이 흐르지 않는다. */
   isPointerOverChrome: Schema.Boolean,
@@ -201,8 +204,8 @@ export const Model = Schema.Struct({
 export type Model = typeof Model.Type
 
 /**
- * {@linkcode init}이 책을 열기 위해 필요한 것. 어느 책인지, 그리고 어디까지
- * 읽었는지.
+ * {@linkcode init}이 책을 열기 위해 필요한 것. 어느 책을 어디에 걸지, 그리고 그
+ * 책에 남아 있는 북마크·교정·설정.
  */
 export type InitConfig = Readonly<{
   /** 어느 책을 열지. 진행 상태를 저장하는 키이기도 하다. */
@@ -227,7 +230,7 @@ export type InitConfig = Readonly<{
 }>
 
 /**
- * 저장된 페이지에 이미 가 있는 리더를 만든다. 책은 그 뒤에서 아직 열리는 중이다.
+ * `config.page`에 가 있는 리더를 만든다. 책은 그 뒤에서 아직 열리는 중이다.
  *
  * 슬라이더에는 아직 범위가 없다 — 페이지 수는 책과 함께 도착한다 — 그래서 그때가
  * 오기 전까지는 아무것도 끌 수 없다.

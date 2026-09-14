@@ -203,8 +203,8 @@ export const ApplyTheme = Command.define('ApplyTheme', {
 /**
  * 책장이 더 이상 그리지 않는 표지 object URL을 놓아 준다.
  *
- * 이것이 없으면 책장을 새로 읽을 때마다 직전에 읽은 표지들이 샌다. 표지가 큰
- * 책장이라면 무시할 수 없는 메모리다.
+ * 이것이 없으면 새 책장에서 빠진 책, 곧 지운 책의 표지 URL이 샌다. 남은 책의
+ * 표지는 `LoadShelf`가 같은 URL을 다시 쓰므로 여기 오지 않는다.
  */
 export const RevokeCoverUrls = Command.define('RevokeCoverUrls', {
   args: { urls: Schema.Array(Schema.String) },

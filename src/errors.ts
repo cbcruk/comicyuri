@@ -2,19 +2,22 @@
  * 앱이 복구하거나 알릴 수 있는 모든 실패. Effect의 태그드 에러로 쓴다.
  *
  * 실패를 에러 채널에 두면 `Effect.Effect<A, AppError>`가 호출부에서 무엇을
- * 다뤄야 하는지 그대로 말해 준다. 실패를 책장 상태 줄의 문장으로 바꾸는 곳은
+ * 다뤄야 하는지 그대로 말해 준다. 실패를 읽는 사람에게 보일 문장으로 바꾸는 곳은
  * `describe` 한 군데뿐이다.
  */
 
 import { Array, Data, Match, Predicate } from 'effect'
 
-/** IndexedDB가 작업을 거절했다(`op`는 실패한 스토어 호출). */
+/** IndexedDB가 작업을 거절했다(`op`는 실패한 호출 — `open`이거나 스토어 호출). */
 export class DbError extends Data.TaggedError('DbError')<{
   readonly op: string
   readonly cause: unknown
 }> {}
 
-/** `.cbz` / `.zip`을 파싱하거나 읽거나 풀지 못했다. */
+/**
+ * 페이지 바이트를 읽지 못했다. `.cbz` / `.zip`의 파싱·풀기 실패와 낱장 이미지 읽기
+ * 실패가 여기 든다.
+ */
 export class ArchiveError extends Data.TaggedError('ArchiveError')<{
   readonly reason: string
   readonly cause?: unknown
@@ -69,7 +72,10 @@ const APP_ERROR_TAGS = [
 const isAppError = (error: unknown): error is AppError =>
   Array.some(APP_ERROR_TAGS, (tag) => Predicate.isTagged(error, tag))
 
-/** 책장 상태 줄에 그대로 걸 수 있는 문장. */
+/**
+ * 읽는 사람에게 그대로 보여 줄 수 있는 문장. 책장 상태 줄과 리더의 실패 화면이
+ * 함께 쓴다.
+ */
 export const describe: (error: AppError) => string = Match.type<AppError>().pipe(
   Match.tag('DbError', (e) => `Shelf storage is unavailable (${e.op})`),
   Match.tag('ArchiveError', (e) => e.reason),

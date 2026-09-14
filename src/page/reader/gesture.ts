@@ -14,7 +14,10 @@ export type Point = typeof Point.Type
 /** 오프셋이 전혀 없는 자리. 줌이 돌아올 때 pan도 여기로 돌아온다. */
 export const ORIGIN: Point = { x: 0, y: 0 }
 
-/** 페이지가 맞춰진 크기. 이 배율에서는 옮길 것이 없다. */
+/**
+ * 페이지가 맞춰진 크기. 끌어서 옮기는 것은 이보다 클 때뿐이고, 화면보다 큰 페이지를
+ * 굴려 옮기는 것은 이 배율에서도 한다.
+ */
 export const ZOOM_MIN = 1
 /** 핀치와 휠과 툴바가 들어갈 수 있는 끝. */
 export const ZOOM_MAX = 6
@@ -35,7 +38,10 @@ export const MIN_PINCH_SPAN = 24
 /** 이보다 짧은 간격의 두 탭은 더블 탭이다. */
 export const DOUBLE_TAP_MILLIS = 300
 
-/** 더블 탭이 확대하는 배율, 그리고 한 번 더 탭하면 벗어나는 배율. */
+/**
+ * 더블 탭이 확대하는 배율. 이미 확대되어 있으면 배율이 얼마든 더블 탭은 맞춘
+ * 크기로 돌아간다.
+ */
 export const DOUBLE_TAP_ZOOM = 2.5
 
 /** 배율을 {@linkcode ZOOM_MIN}과 {@linkcode ZOOM_MAX} 사이에 붙잡아 둔다. */
@@ -68,7 +74,10 @@ export const zoomAround = (pan: Point, zoom: number, nextZoom: number, anchor: P
   }
 }
 
-/** 배율이 1이면 옮길 것이 없으므로 오프셋은 원점으로 돌아간다. */
+/**
+ * 배율이 1로 돌아오면 오프셋을 원점으로 되돌린다. 굴려서 옮겨 둔 자리도 함께
+ * 사라진다.
+ */
 export const panForZoom = (pan: Point, zoom: number): Point => (zoom === ZOOM_MIN ? ORIGIN : pan)
 
 /** 제스처가 화면의 어느 부분에 속하는지. */
@@ -76,7 +85,10 @@ export const Side = Schema.Literals(['Left', 'Middle', 'Right'])
 /** {@linkcode Side} 스키마의 디코딩된 값. */
 export type Side = typeof Side.Type
 
-/** 탭 존. 바깥쪽 1/3은 페이지를 넘기고, 가운데는 툴바를 보인다. */
+/**
+ * 탭 존. 바깥쪽 1/3은 페이지를 넘기고, 가운데는 한 번 탭하면 툴바를 토글하고 두 번
+ * 탭하면 확대한다.
+ */
 export const zoneAt = (x: number, width: number): Side => {
   if (x < -width / 6) return 'Left'
   if (x > width / 6) return 'Right'

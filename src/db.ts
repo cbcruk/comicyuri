@@ -12,11 +12,17 @@ import type { BookSource } from './types.ts'
 export interface StoredBook {
   /** 같은 파일을 다시 들여와도 같다. 그래야 진행 상태가 제 책을 찾는다. */
   id: string
-  /** 확장자를 뗀 파일 또는 폴더 이름. */
+  /**
+   * 아카이브는 확장자를 뗀 파일 이름, 폴더는 그 폴더 이름, 낱장 이미지 묶음은
+   * `Imported images`다.
+   */
   title: string
   /** 세 가지 임포트 방식 중 어느 것이 이 레코드를 만들었는지. */
   source: BookSource
-  /** 읽는 순서대로의 이름들. {@linkcode StoredBook.blobs}와 번호가 맞물린다. */
+  /**
+   * {@linkcode StoredBook.blobs}와 번호가 맞물리는 이름. 낱장 이미지면 읽는 순서대로의
+   * 경로이고, 아카이브면 그 파일 이름 하나다.
+   */
   names: string[]
   /** 아카이브 하나를 담은 blob, 또는 낱장 이미지마다 하나씩. */
   blobs: Blob[]
@@ -24,7 +30,10 @@ export interface StoredBook {
   createdAt: number
   /** 들여올 때 만들어 둔 작은 표지 썸네일(없을 수 있다). */
   cover?: Blob
-  /** 아카이브를 열어 봐야 알 수 있으므로, 갓 들여온 레코드에는 없다. */
+  /**
+   * 들여올 때 한 번 열어 센 페이지 수. `storedBooksFromFiles`가 막 만들어 아직
+   * 저장하지 않은 레코드에는 없다.
+   */
   pageCount?: number
   /**
    * 들여올 때 재어 둔 페이지별 픽셀 크기. 이 책을 열었을 때 나오는 페이지

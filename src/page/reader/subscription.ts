@@ -368,7 +368,7 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
       activityToken: Schema.Number,
     },
     {
-      // 썸네일 격자가 열려 있거나 포인터가 그 위에 머무는 동안에는 툴바의 시간이
+      // 썸네일 격자가 열려 있거나 포인터가 툴바 위에 머무는 동안에는 툴바의 시간이
       // 흐르지 않는다. 둘 다 아직 쓰고 있다는 뜻이다.
       modelToDependencies: (model) => ({
         isWaiting: model.isChromeVisible && !model.isThumbsOpen && !model.isPointerOverChrome,
@@ -391,9 +391,9 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
 }))
 
 /**
- * 리더가 듣는 모든 것. document의 키보드와 포인터, 전체화면 상태, 툴바를 숨기는
- * 대기, 그리고 슬라이더와 페이지 격자가 필요로 해서 리더 안으로 lift 한 드래그
- * 스트림들.
+ * 리더가 듣는 모든 것. document의 키보드·포인터·휠, 창 너비와 포커스, 전체화면
+ * 상태, 슬라이드쇼와 툴바를 숨기는 대기, 그리고 리더 안으로 lift 한 슬라이더의
+ * 드래그 스트림과 페이지 격자의 컨테이너 스트림.
  */
 export const subscriptions = Subscription.aggregate<Model, Message>()(
   readerSubscriptions,
