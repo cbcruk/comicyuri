@@ -1061,6 +1061,19 @@ the app"
 시크릿 모드처럼 localStorage를 쓸 수 없어도 조용히 넘어간다.
 📖
 
+**P-307 · 책을 들여오면 서재를 지워지지 않게 해 달라고 요청한다**
+요청하지 않은 저장소는 best-effort라서, 디스크가 모자라면 브라우저가 알리지 않고 이
+출처의 IndexedDB를 비울 수 있다. 서재는 원본 바이트의 사본이므로(`P-301`) 그렇게
+사라지면 되찾을 길이 없다. 그래서 임포트가 끝날 때마다 `navigator.storage.persist()`를
+요청한다. 이미 영구면 다시 요청하지 않는다.
+
+허락 여부는 브라우저가 정하고, Chromium은 묻지 않고 방문 이력 같은 신호로 판단한다.
+거절되어도 알리지 않고 지금처럼 쓴다.
+✅ story "a finished import asks the browser to keep the shelf",
+e2e "P-307 · 책을 들여오면 브라우저에 서재를 지워지지 않게 해 달라고 요청한다"
+❓ 실제로 영구가 되었는지 — Chrome의 `chrome://settings/content/all`이나 DevTools
+Application › Storage에서 확인
+
 ---
 
 ## 4. 주소와 이동

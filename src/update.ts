@@ -14,6 +14,7 @@ import {
   LoadProgress,
   LoadShelf,
   NavigateInternal,
+  RequestPersistentStorage,
   RevokeCoverUrls,
   SaveBookSettings,
   SaveProgress,
@@ -288,7 +289,17 @@ export const update = (model: Model, message: Message) =>
         onNonEmpty: (files) => startImport(model, files),
       }),
 
-    SucceededImportFiles: () => reloadShelf(withOperationEnded(model)),
+    /**
+     * 들여온 책이 책장에 섰다. 다시 읽고, 서재를 브라우저가 지우지 않도록 요청한다.
+     * 지킬 것이 생긴 때가 요청할 때다(`P-307`).
+     */
+    SucceededImportFiles: () => {
+      const reloaded = reloadShelf(withOperationEnded(model))
+      return {
+        ...reloaded,
+        commands: Array.append(reloaded.commands ?? [], RequestPersistentStorage()),
+      }
+    },
 
     FailedImportFiles: ({ text }) => failed(model, text),
 
@@ -373,4 +384,5 @@ export const update = (model: Model, message: Message) =>
     CompletedSaveSettings: () => ({ model }),
     CompletedApplyTheme: () => ({ model }),
     CompletedRevokeCoverUrls: () => ({ model }),
+    CompletedRequestPersistentStorage: () => ({ model }),
   })

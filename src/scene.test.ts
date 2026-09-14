@@ -19,6 +19,7 @@ import {
   DeleteBook,
   ImportFiles,
   LoadShelf,
+  RequestPersistentStorage,
   RevokeCoverUrls,
   SaveSettings,
   SelectFiles,
@@ -146,6 +147,10 @@ describe('interaction', () => {
         }),
       ),
       Command.resolve(RevokeCoverUrls, Message.CompletedRevokeCoverUrls()),
+      Command.resolve(
+        RequestPersistentStorage,
+        Message.CompletedRequestPersistentStorage({ isPersisted: true }),
+      ),
       expect(text('Volume 1')).toExist(),
       expect(text('Importing…')).not.toExist(),
     )

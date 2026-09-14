@@ -57,6 +57,7 @@ export const Message = defineMessageUnion({
   CompletedApplyTheme: {},
 
   CompletedRevokeCoverUrls: {},
+  CompletedRequestPersistentStorage: { isPersisted: Schema.Boolean },
   CompletedWaitBeforeClearingNotice: { token: Schema.Number },
 
   GotReaderMessage: { message: Reader.Message },
