@@ -171,3 +171,25 @@ describe('a pointer resting on the chrome', () => {
     ).toBe(true)
   })
 })
+
+describe('what the slideshow wait is tied to', () => {
+  const playing = {
+    ...init({
+      bookId: 'volume-1::42',
+      page: 3,
+      maybeResumePage: Option.none(),
+      bookmarks: [],
+      marks: [],
+      rotation: 0,
+      maybeBookSettings: Option.none(),
+      settings: { ...defaultSettings, splitWide: true },
+    }),
+    isPlaying: true,
+  }
+
+  test('moving to the other half of a page starts the wait again', () => {
+    expect(
+      subscriptions.slideshow.modelToDependencies({ ...playing, half: 'second' }),
+    ).not.toStrictEqual(subscriptions.slideshow.modelToDependencies(playing))
+  })
+})

@@ -978,7 +978,8 @@ e2e "R-2A5 · Shift와 함께 누른 넘김 키가 열 장을 건너뛴다", "R-
 고른다(기본 5초).
 
 기다림은 페이지에 매여 있다. 넘어간 순간부터 다시 세므로, 사람이 손으로 넘긴 뒤에도
-꽉 찬 시간을 받는다 — 넘어가자마자 또 넘어가는 일이 없다.
+꽉 찬 시간을 받는다 — 넘어가자마자 또 넘어가는 일이 없다. 넓은 페이지를 반씩 읽는
+중이면(`R-229`) 반쪽이 한 번의 넘김이다.
 
 **더 갈 곳이 없으면 스스로 멈춘다.** 책 끝 동작(`R-212`)이 `stop`이면 마지막 장에서
 멈추고, `wrap`이면 계속 돌고, `next`면 이웃한 책이 열리며 그 책은 멈춘 채로 시작한다.
@@ -987,7 +988,9 @@ e2e "R-2A5 · Shift와 함께 누른 넘김 키가 열 장을 건너뛴다", "R-
 동안 화면에는 페이지만 남는다. Escape는 전체화면을 벗기기 전에 슬라이드쇼를 먼저
 멈춘다(`R-2A3`).
 ✅ reader/story "each turn of the wait moves a page on", "it stops itself where it can go
-no further", "escape stops it before it leaves anything else",
+no further", "escape stops it before it leaves anything else", "a wide page read in halves
+gives each half a turn of the wait",
+reader/subscription "moving to the other half of a page starts the wait again",
 e2e "R-2C1 · 슬라이드쇼가 스스로 페이지를 넘긴다"
 
 ---
