@@ -924,6 +924,11 @@ describe('using a control keeps the chrome up', () => {
     ['fullscreen', Message.ClickedToggleFullscreen()],
     ['zoom in', Message.ClickedZoomIn()],
     ['zoom out', Message.ClickedZoomOut()],
+    ['go to page', Message.SubmittedGoToPage({ text: '5' })],
+    ['cover alone', Message.ToggledCoverAlone({ isChecked: false })],
+    ['split wide', Message.ToggledSplitWide({ isChecked: true })],
+    ['stretch small pages', Message.ToggledEnlargeToFit({ isChecked: false })],
+    ['remember for each book', Message.ToggledRememberBookSettings({ isChecked: true })],
   ]
 
   for (const [name, control] of controls) {
