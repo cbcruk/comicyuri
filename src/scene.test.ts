@@ -50,6 +50,7 @@ const shelfModel = (
   settings: defaultSettings,
   shelf,
   notice,
+  nextNoticeToken: 0,
   fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
   maybePendingDelete: Option.none(),
   isSettingsOpen: false,

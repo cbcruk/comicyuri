@@ -37,14 +37,13 @@ type UpdateReturn = Update.Return<Model, Message, Reader.OpenBookService>
  * 무효로 만들어, 이 메시지가 화면에 제 시간을 온전히 쓰도록 한다.
  */
 const failed = (model: Model, text: string): UpdateReturn => {
-  const token = Notice.match(model.notice, {
-    Idle: () => 0,
-    Busy: () => 0,
-    Failed: ({ token }) => token + 1,
-  })
+  const token = model.nextNoticeToken
 
   return {
-    model: evo(model, { notice: () => Notice.Failed({ text, token }) }),
+    model: evo(model, {
+      notice: () => Notice.Failed({ text, token }),
+      nextNoticeToken: () => token + 1,
+    }),
     commands: [WaitBeforeClearingNotice({ token })],
   }
 }
