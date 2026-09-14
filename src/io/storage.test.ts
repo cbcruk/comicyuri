@@ -8,8 +8,8 @@ import {
   saveProgress,
   saveSettings,
 } from './storage.ts'
-import { defaultSettings } from './types.ts'
-import type { BookProgress, BookSettings } from './types.ts'
+import { defaultSettings } from '../types.ts'
+import type { BookProgress, BookSettings } from '../types.ts'
 
 const run = <A>(effect: Effect.Effect<A>): A => Effect.runSync(effect)
 

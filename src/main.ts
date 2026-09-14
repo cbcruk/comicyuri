@@ -10,7 +10,7 @@ import { FILE_DROP_ID } from './constant.ts'
 import { Message } from './message.ts'
 import { Model, Notice, Shelf } from './model.ts'
 import { AppRoute, urlToAppRoute } from './route.ts'
-import { loadSettings } from './storage.ts'
+import { loadSettings } from './io/storage.ts'
 import { Settings } from './types.ts'
 
 // FLAGS

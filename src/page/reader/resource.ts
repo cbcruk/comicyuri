@@ -1,10 +1,10 @@
 import { Array, Effect, Option, Schema } from 'effect'
 import { ManagedResource } from 'foldkit'
 
-import { getAllBooks } from '../../db.ts'
+import { getAllBooks } from '../../io/db.ts'
 import { MissingBookError, describeUnknown } from '../../errors.ts'
 import type { AppError } from '../../errors.ts'
-import { bookFromStored } from '../../loader.ts'
+import { bookFromStored } from '../../io/loader.ts'
 import type { LoadedBook } from '../../types.ts'
 import { Message } from './message.ts'
 import type { Model } from './model.ts'

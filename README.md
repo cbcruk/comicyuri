@@ -53,7 +53,7 @@ Everything runs client-side — your files never leave the browser.
 
 ## How CBZ files are read
 
-CBZ archives are ZIP files. `src/zip.ts` parses the central directory and
+CBZ archives are ZIP files. `src/io/zip.ts` parses the central directory and
 extracts pages lazily; deflated entries are inflated with the platform's native
 `DecompressionStream`, so there is no third-party ZIP dependency.
 
@@ -77,6 +77,7 @@ src/view/        the shelf, and the root view that dispatches on the route
 src/page/reader/ the reader Submodel: its own Model, Messages, Commands,
                  ManagedResource and keyboard Subscription
 src/domain/      BookSummary and the pure operations on it
+src/io/          IndexedDB, localStorage, ZIP reading, image headers, covers
 ```
 
 Everything that can fail — IndexedDB, `localStorage`, ZIP parsing, image
@@ -86,7 +87,7 @@ type rather than in a `catch` block:
 - `src/errors.ts` declares the tagged errors (`DbError`, `ArchiveError`,
   `EmptyBookError`, `NoComicFilesError`, `CoverError`) and the single
   `describe` function that turns one into shelf status text.
-- `src/db.ts` holds each IndexedDB connection in a scope, so it is closed
+- `src/io/db.ts` holds each IndexedDB connection in a scope, so it is closed
   however the operation ends.
 - Settings and reading progress are **decoded** through a schema
   (`src/types.ts`) instead of cast, so a corrupt or stale `localStorage` entry

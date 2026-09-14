@@ -8,7 +8,7 @@
  */
 
 import { Effect } from 'effect'
-import { ArchiveError } from './errors.ts'
+import { ArchiveError } from '../errors.ts'
 
 /** 중앙 디렉터리에 적힌 파일 하나. 자리는 찾았지만 아직 읽지는 않았다. */
 export interface ZipEntry {

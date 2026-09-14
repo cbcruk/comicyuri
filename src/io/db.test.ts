@@ -1,5 +1,5 @@
 /**
- * `src/db.ts`를 직접 겨냥한다. happy-dom에는 `indexedDB`가 없으므로, 이 계층이
+ * `src/io/db.ts`를 직접 겨냥한다. happy-dom에는 `indexedDB`가 없으므로, 이 계층이
  * 실제로 지는 위험만 재현할 만큼의 가짜를 세워 둔다.
  *
  * 가짜가 대신하는 것은 저장소이고, 재는 것은 저장소가 아니다 — 어느 스토어를
@@ -12,7 +12,7 @@ import { afterEach, describe, expect, test } from 'vite-plus/test'
 
 import { deleteBook, getAllBooks, putBook } from './db.ts'
 import type { StoredBook } from './db.ts'
-import { DbError } from './errors.ts'
+import { DbError } from '../errors.ts'
 
 /** 가짜 저장소가 받은 요청 한 건. */
 type Call = Readonly<{ op: string; mode: string }>
