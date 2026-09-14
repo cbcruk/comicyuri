@@ -5,6 +5,8 @@
  * 막힌 것으로 그려진 버튼이 눌리거나, 눌리는 버튼이 막힌 것으로 그려진다.
  */
 
+import { Number } from 'effect'
+
 /** 넓은 페이지 판정 문턱을 한 번에 옮기는 폭. */
 export const THRESHOLD_STEP = 0.02
 /**
@@ -28,8 +30,10 @@ export const SLIDE_MAX = 30
  * 0.02씩 더한 값이 `0.7400000001`이 되지 않도록 소수 둘째 자리에서 끊는다.
  */
 export const nudgedThreshold = (threshold: number, by: number): number =>
-  Math.round(Math.min(THRESHOLD_MAX, Math.max(THRESHOLD_MIN, threshold + by)) * 100) / 100
+  Math.round(
+    Number.clamp(threshold + by, { minimum: THRESHOLD_MIN, maximum: THRESHOLD_MAX }) * 100,
+  ) / 100
 
 /** 슬라이드쇼 간격을 한 걸음 옮긴다. 범위 밖으로는 나가지 않는다. */
 export const nudgedSlideSeconds = (seconds: number, by: number): number =>
-  Math.max(SLIDE_MIN, Math.min(SLIDE_MAX, Math.round(seconds + by)))
+  Number.clamp(Math.round(seconds + by), { minimum: SLIDE_MIN, maximum: SLIDE_MAX })
