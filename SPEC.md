@@ -371,9 +371,15 @@ e2e "R-217 · 카운터 아래에 아카이브 안의 파일 이름이 보인다
 넘기기 직전의 스프레드가 그대로 걸려 있고, 새 스프레드가 준비되면 한 번에 바뀐다.
 그 페이지들의 URL도 새 스프레드가 설 때까지 놓지 않는다(`R-215`의 해제 범위 밖이어도).
 
-남아 있는 페이지는 그것을 그릴 때의 `entry`와 반쪽으로 그린다. 넘기는 순간 Model은
-이미 다음 페이지의 값을 쥐고 있어서, 그것으로 그리면 이전 페이지가 끝에 붙거나
-반쪽이 바뀌어 한 번 튄다. 답이 오기 전에 다시 넘겨도 화면에 걸린 것이 남는다.
+남아 있는 페이지는 그것을 그릴 때의 `entry`, 반쪽, 배율과 이동으로 그린다. 넘기는
+순간 Model은 이미 다음 페이지의 값을 쥐고 있어서, 그것으로 그리면 이전 페이지가 끝에
+붙거나 반쪽이 바뀌거나 확대가 풀려 한 번 튄다. 답이 오기 전에 다시 넘겨도 화면에
+걸린 것이 남는다.
+
+기다리는 동안 휠로 굴려도 페이지를 옮기지 않는다(`R-240`). 화면에서 잰 남은 거리는
+남아 있는 이전 페이지의 것이라, 확대해 둔 이전 페이지의 거리로 굴리면 확대하지 않은
+다음 페이지가 엉뚱한 자리에 앉는다. 그동안은 갈 곳이 없는 것으로 쳐서, 마우스 휠은
+한 장 더 넘기고 트랙패드는 멈춘다.
 
 늦을 때만 스테이지 모서리에 "Loading…"(`role="status"`)이 선다. 나타나는 것은
 CSS가 300ms 미루므로, 미리 읽어 둔 이웃으로 넘길 때는 보일 일이 없다. 책을 막 열어
@@ -389,14 +395,17 @@ CSS가 300ms 미루므로, 미리 읽어 둔 이웃으로 넘길 때는 보일 �
 | 남겨 둘 때 | 0         |
 
 ✅ reader/story "the page on screen stays until the next one can be drawn", "it keeps what
-it drew with, not what the next page will use", "turning again before it arrives keeps the
-page that is still on screen", "a jump holds on to the page on screen instead of releasing
-it",
-reader/scene "the page on screen stays while the next one is on its way", "with nothing on
-screen yet, the stage says it is loading",
-e2e "R-207 · 멀리 건너뛰어도, 빠르게 넘겨도 화면이 비는 프레임이 없다"
-⚠️ 확대해 둔 페이지에서 넘기면 기다리는 동안 이전 페이지가 맞춘 크기로 돌아가 있다.
-넘기면 배율이 풀리는데(`goToPage`), 그 값이 이전 페이지에도 곧바로 걸리기 때문이다.
+it drew with, not what the next page will use", "a zoomed page stays zoomed until the next
+one can be drawn", "a scroll before it arrives does not move the page on its way", "turning
+again before it arrives keeps the page that is still on screen", "a jump holds on to the
+page on screen instead of releasing it",
+reader/scene "the page on screen stays while the next one is on its way", "a zoomed page
+keeps its zoom while the next one is on its way", "with nothing on screen yet, the stage
+says it is loading",
+e2e "R-207 · 멀리 건너뛰어도, 빠르게 넘겨도 화면이 비는 프레임이 없다", "R-207 · 확대해
+둔 페이지는 다음 페이지가 설 때까지 확대된 채 남는다"
+⚠️ 기다리는 동안 핀치나 −/+로 배율을 바꾸면 그 값은 다음 페이지에 걸린다. 남아 있는
+이전 페이지는 움직이지 않다가, 다음 페이지가 서면서 바뀐 배율이 드러난다.
 
 **R-216 · 책의 끝을 넘기면 이웃한 책이 그 자리에서 열린다**
 마지막 장에서 계속 넘기면 책장 순서상 다음 책이, 첫 장에서 뒤로 넘기면 앞 책이

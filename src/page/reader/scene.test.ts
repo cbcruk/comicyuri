@@ -193,6 +193,27 @@ describe('the stage', () => {
     )
   })
 
+  test('a zoomed page keeps its zoom while the next one is on its way', () => {
+    scene(
+      program,
+      given(readingModel()),
+      click(role('button', { name: 'Zoom in' })),
+      click(role('button', { name: 'Next' })),
+      // 기다리는 동안 1페이지는 확대해 둔 그대로다. 맞춘 크기로 한 번 튀지 않는다.
+      expect(role('img', { name: 'Page 1' })).toExist(),
+      expect(selector('#reader-page')).toHaveStyle(
+        'transform',
+        'translate(0px, 0px) scale(1.25) rotate(0deg)',
+      ),
+      ...settleTurn(1),
+      expect(role('img', { name: 'Page 2' })).toExist(),
+      expect(selector('#reader-page')).toHaveStyle(
+        'transform',
+        'translate(0px, 0px) scale(1) rotate(0deg)',
+      ),
+    )
+  })
+
   test('with nothing on screen yet, the stage says it is loading', () => {
     scene(
       program,

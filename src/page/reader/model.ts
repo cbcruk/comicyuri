@@ -64,15 +64,17 @@ export type Panel = typeof Panel.Type
  * 넘기기 직전에 화면에 걸려 있던 스프레드. 다음 것이 그릴 수 있게 될 때까지 그대로
  * 둔다(`R-207`).
  *
- * 그 페이지를 그릴 때 쓰던 `entry`와 `half`를 함께 지닌다. 넘기는 순간 Model의 두
- * 값은 이미 다음 페이지의 것이라, 그것으로 이전 페이지를 그리면 끝에 붙거나 반쪽이
- * 바뀌어 한 번 튄다.
+ * 그 페이지를 그릴 때 쓰던 `entry`, `half`, 배율과 이동을 함께 지닌다. 넘기는 순간
+ * Model의 이 값들은 이미 다음 페이지의 것이라, 그것으로 이전 페이지를 그리면 끝에
+ * 붙거나 반쪽이 바뀌거나 확대가 풀려 한 번 튄다.
  */
 export const OnScreen = Schema.Struct({
   page: Schema.Number,
   panels: Schema.Array(Panel),
   entry: PageEntry,
   half: Half,
+  zoom: Schema.Number,
+  pan: Point,
 })
 
 /** {@linkcode OnScreen} 스키마의 디코딩된 값. */
@@ -238,10 +240,33 @@ export type Model = typeof Model.Type
 export const onScreen = (model: Model): Option.Option<OnScreen> =>
   SpreadState.match(model.spread, {
     Shown: ({ panels }) =>
-      Option.some({ page: model.page, panels, entry: model.entry, half: model.half }),
+      Option.some({
+        page: model.page,
+        panels,
+        entry: model.entry,
+        half: model.half,
+        zoom: model.zoom,
+        pan: model.pan,
+      }),
     Loading: ({ maybeOnScreen }) => maybeOnScreen,
     Failed: () => Option.none(),
   })
+
+/**
+ * 화면에 걸린 스프레드가 Model이 가리키는 페이지와 배율이 아닌지. 넘긴 페이지가 아직
+ * 서지 않아 이전 것이 남아 있을 때다(`R-207`).
+ *
+ * 그동안 화면에서 잰 값은 남아 있는 페이지의 것이라, Model의 페이지에 대한 사실이 아니다.
+ */
+export const holdsEarlierSpread = (model: Model): boolean =>
+  Option.exists(
+    onScreen(model),
+    (shown) =>
+      shown.page !== model.page ||
+      shown.zoom !== model.zoom ||
+      shown.pan.x !== model.pan.x ||
+      shown.pan.y !== model.pan.y,
+  )
 
 /**
  * {@linkcode init}이 책을 열기 위해 필요한 것. 어느 책을 어디에 걸지, 그리고 그

@@ -12,10 +12,10 @@ import { ToggleFullscreen } from './command.ts'
 import { ORIGIN } from './gesture.ts'
 import { messageForKey } from './keys.ts'
 import { Message, OutMessage } from './message.ts'
-import { Model, OpenState, SpreadState } from './model.ts'
+import { Model, OpenState, SpreadState, holdsEarlierSpread } from './model.ts'
 import type { OpenBookService } from './resource.ts'
 import { rotatedRight } from './rotation.ts'
-import { pannedBy, turnFromEdge } from './scroll.ts'
+import { NO_ROOM, pannedBy, turnFromEdge } from './scroll.ts'
 import { flipBinding, indexOfPage, mirrorForDirection, pagesAt, spreadsFor } from './spread.ts'
 import {
   droppedGesture,
@@ -425,9 +425,14 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
      *
      * 끝에 닿기까지 굴린 그 이벤트로는 넘어가지 않는다. 그 이벤트는 남은 거리를
      * 움직이는 데 쓰였고, 읽던 사람은 아직 페이지의 끝을 보지도 못했다.
+     *
+     * 넘긴 페이지가 서기 전에 잰 거리는 남아 있는 이전 페이지의 것이다(`R-207`). 확대해
+     * 둔 이전 페이지의 거리로 굴리면 확대하지 않은 다음 페이지가 엉뚱한 자리에 앉으므로,
+     * 그동안은 갈 곳이 없는 것으로 친다.
      */
-    ScrolledStage: ({ delta, room, device }) => {
+    ScrolledStage: ({ delta, room: measured, device }) => {
       const scrolled = withPress(model)
+      const room = holdsEarlierSpread(model) ? NO_ROOM : measured
       const pan = pannedBy(model.pan, delta, room)
 
       if (pan.x !== model.pan.x || pan.y !== model.pan.y) {
