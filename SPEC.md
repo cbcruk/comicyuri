@@ -283,7 +283,8 @@ ManagedResource가 Model 상태에 따라 해제한다.
 
 **R-205 · ZIP 리더가 읽는 것과 거절하는 것**
 중앙 디렉터리를 파싱해 엔트리를 적힌 순서대로 세우고, 페이지는 필요할 때 하나씩
-뽑는다. 그대로 저장된 엔트리(method 0)는 잘라 쓰고, deflate 된 엔트리(method 8)는
+뽑는다. 아카이브를 통째로 메모리에 올리지 않는다 — 여는 데는 끝부분과 중앙
+디렉터리만, 한 장을 뽑는 데는 그 엔트리의 로컬 헤더와 바이트만 읽는다. 그대로 저장된 엔트리(method 0)는 잘라 쓰고, deflate 된 엔트리(method 8)는
 플랫폼의 `DecompressionStream`으로 푼다. 그 밖의 방식은 이름을 대며 거절한다.
 
 데이터가 시작하는 자리는 **로컬 헤더**에서 읽는다. 중앙 디렉터리에는 로컬 헤더의
@@ -294,10 +295,12 @@ EOCD는 뒤에서부터 찾으므로 주석이 붙은 아카이브도 열린다.
 ✅ zip "every entry is listed in the order the directory wrote them", "an entry carries the
 sizes and the method the directory recorded", "a trailing comment does not hide the
 directory", "an empty archive opens with nothing in it", "bytes that are not a ZIP fail
-rather than opening empty", "a stored entry comes back byte for byte", "a deflated entry
-comes back unpacked", "each entry reads its own bytes, not its neighbour's", "the local
-header decides where the data starts, not the directory", "a method this reader does not
-know is refused by name"
+rather than opening empty", "opening reads the directory, not the pages", "a stored entry
+comes back byte for byte", "a deflated entry comes back unpacked", "each entry reads its
+own bytes, not its neighbour's", "the local header decides where the data starts, not the
+directory", "pulling one entry out reads that entry and nothing else", "an entry that runs
+past the end of the archive fails rather than coming back short", "a method this reader
+does not know is refused by name"
 ⚠️ zip64도, 암호 걸린 아카이브도, rar·7z·lzh도 읽지 않는다
 
 ### 2.2 페이지 넘기기
