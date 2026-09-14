@@ -68,6 +68,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   isPlaying: false,
   isChromeVisible: true,
   isPointerOverChrome: false,
+  isFocusInChrome: false,
   activityToken: 0,
   lastTapAt: 0,
   maybeTapFlash: Option.none(),

@@ -372,10 +372,14 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
       activityToken: Schema.Number,
     },
     {
-      // 썸네일 격자가 열려 있거나 포인터가 툴바 위에 머무는 동안에는 툴바의 시간이
-      // 흐르지 않는다. 둘 다 아직 쓰고 있다는 뜻이다.
+      // 썸네일 격자가 열려 있거나, 포인터가 툴바 위에 머물거나 키보드 초점이 툴바
+      // 안에 있는 동안에는 툴바의 시간이 흐르지 않는다. 모두 아직 쓰고 있다는 뜻이다.
       modelToDependencies: (model) => ({
-        isWaiting: model.isChromeVisible && !model.isThumbsOpen && !model.isPointerOverChrome,
+        isWaiting:
+          model.isChromeVisible &&
+          !model.isThumbsOpen &&
+          !model.isPointerOverChrome &&
+          !model.isFocusInChrome,
         activityToken: model.activityToken,
       }),
       // 무슨 일이든 있으면 토큰이 바뀌고, 그러면 이 대기가 처음부터 다시 간다.

@@ -70,6 +70,8 @@ export const Message = defineMessageUnion({
   ElapsedChromeIdle: { token: Schema.Number },
   EnteredChrome: {},
   LeftChrome: {},
+  FocusEnteredChrome: {},
+  FocusLeftChrome: {},
 
   GotSliderMessage: { message: Slider.Message },
 

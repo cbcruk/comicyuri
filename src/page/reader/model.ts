@@ -172,6 +172,11 @@ export const Model = Schema.Struct({
   isChromeVisible: Schema.Boolean,
   /** 포인터가 툴바 위에 머무는 동안에는 시간이 흐르지 않는다. */
   isPointerOverChrome: Schema.Boolean,
+  /**
+   * 키보드 초점이 툴바 안에 있는 동안에도 시간이 흐르지 않는다. 그러지 않으면 Tab으로
+   * 버튼을 고르던 사람 앞에서 툴바가 사라지고, 초점은 보이지 않는 버튼에 남는다.
+   */
+  isFocusInChrome: Schema.Boolean,
   /** 이 값을 바꾸면 툴바를 숨기는 대기가 처음부터 다시 간다. */
   activityToken: Schema.Number,
   /** 마지막 탭이 떨어진 시각. 다음 탭이 더블인지 알아보는 데 쓴다. */
@@ -254,6 +259,7 @@ export const init = (config: InitConfig): Model => ({
   isPlaying: false,
   isChromeVisible: true,
   isPointerOverChrome: false,
+  isFocusInChrome: false,
   activityToken: 0,
   lastTapAt: 0,
   maybeTapFlash: Option.none(),

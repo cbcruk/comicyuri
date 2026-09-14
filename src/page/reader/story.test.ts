@@ -1945,4 +1945,22 @@ describe('a pointer on the chrome', () => {
       }),
     )
   })
+
+  test('keyboard focus entering brings it back and holds it, and leaving starts the wait over', () => {
+    story(
+      update,
+      given({ ...openingModel(), isChromeVisible: false, activityToken: 3 }),
+      message(Message.FocusEnteredChrome()),
+      model((model) => {
+        expect(model.isChromeVisible).toBe(true)
+        expect(model.isFocusInChrome).toBe(true)
+        expect(model.activityToken).toBe(4)
+      }),
+      message(Message.FocusLeftChrome()),
+      model((model) => {
+        expect(model.isFocusInChrome).toBe(false)
+        expect(model.activityToken).toBe(5)
+      }),
+    )
+  })
 })

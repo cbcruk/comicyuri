@@ -649,16 +649,22 @@ e2e "R-243 · 옆으로 끌면 그 반대쪽 페이지를 부른다"
 ### 2.6 툴바 자동 숨김
 
 **R-251 · 3초 동안 아무 일도 없으면 툴바가 사라진다**
-사라진 툴바는 탭 순서에서도 빠진다. 다음 두 경우에는 시간이 흐르지 않는다 —
-썸네일 그리드가 열려 있을 때(닫았더니 툴바가 없으면 곤란하다), 그리고 포인터가
-툴바 위에 있을 때(아직 쓰는 중이다). 포인터가 벗어나면 대기가 처음부터 다시
-간다.
+사라진 툴바는 흐려지고 포인터를 받지 않는다. 키보드 초점은 여전히 들어올 수 있고,
+Tab으로 들어오면 툴바가 돌아온다 — 리더 키는 모두 저마다 하는 일이 있어서, 키보드로
+읽는 사람이 툴바만 부를 길은 이것이다.
+
+다음 경우에는 시간이 흐르지 않는다 — 썸네일 그리드가 열려 있을 때(닫았더니 툴바가
+없으면 곤란하다), 포인터가 툴바 위에 있을 때, 그리고 키보드 초점이 툴바 안에 있을 때
+(둘 다 아직 쓰는 중이다). 포인터나 초점이 벗어나면 대기가 처음부터 다시 간다.
 ✅ reader/story "the wait for the current activity hides it",
 subscription "waits before it says the reader has gone idle",
 "it does not run out from under an open grid",
-"holds the wait for as long as it is there",
-reader/story "entering holds it, and leaving starts the wait over",
+"holds the wait for as long as it is there", "keyboard focus inside the chrome holds the wait
+the same way",
+reader/story "entering holds it, and leaving starts the wait over", "keyboard focus entering
+brings it back and holds it, and leaving starts the wait over",
 e2e "R-251 · 3초 동안 아무 일도 없으면 툴바가 사라지고, 다시 만지면 돌아온다",
+"R-251 · 숨은 툴바에 Tab으로 들어오면 툴바가 돌아오고, 초점이 있는 동안 머문다",
 "R-251 · 포인터가 툴바 위에 있는 동안에는 시간이 흐르지 않는다"
 ❓ 페이드가 눈에 어떻게 보이는지
 
