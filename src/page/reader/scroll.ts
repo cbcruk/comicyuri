@@ -6,7 +6,7 @@
  * 재어 온다. 여기 있는 것은 재어 온 숫자로 무엇을 할지 정하는 규칙뿐이다.
  */
 
-import { Option, Schema } from 'effect'
+import { Number, Option, Schema } from 'effect'
 
 import type { Point } from './gesture.ts'
 
@@ -72,9 +72,6 @@ export const deviceFor = (wheel: WheelReading): ScrollDevice => {
   return Math.abs(wheel.wheelDeltaY) % 120 === 0 ? 'wheel' : 'trackpad'
 }
 
-const clamp = (value: number, low: number, high: number): number =>
-  Math.max(low, Math.min(high, value))
-
 /**
  * 굴린 만큼 옮긴 자리. 남은 거리보다 더 가지는 않는다.
  *
@@ -82,8 +79,8 @@ const clamp = (value: number, low: number, high: number): number =>
  * `down`이다.
  */
 export const pannedBy = (pan: Point, delta: Point, room: Room): Point => ({
-  x: pan.x + clamp(-delta.x, -room.right, room.left),
-  y: pan.y + clamp(-delta.y, -room.down, room.up),
+  x: pan.x + Number.clamp(-delta.x, { minimum: -room.right, maximum: room.left }),
+  y: pan.y + Number.clamp(-delta.y, { minimum: -room.down, maximum: room.up }),
 })
 
 /**

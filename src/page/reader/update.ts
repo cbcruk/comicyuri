@@ -1,4 +1,4 @@
-import { Array, Match, Option, Order } from 'effect'
+import { Array, Match, Number, Option, Order } from 'effect'
 import { Reading } from '../../domain/index.ts'
 import { Update } from 'foldkit'
 import { evo } from 'foldkit/struct'
@@ -174,7 +174,7 @@ const skip = (model: Model, pages: number): UpdateReturn =>
     Opening: () => ({ model }),
     Failed: () => ({ model }),
     Ready: ({ pageCount }) => {
-      const page = Math.max(0, Math.min(pageCount - 1, model.page + pages))
+      const page = Number.clamp(model.page + pages, { minimum: 0, maximum: pageCount - 1 })
       return page === model.page ? { model } : goToPage(model, page)
     },
   })
@@ -623,8 +623,8 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
         Opening: () => ({ model }),
         Failed: () => ({ model }),
         Ready: ({ pageCount }) => {
-          const page = Number.parseInt(text, 10) - 1
-          return Number.isInteger(page) && page >= 0 && page < pageCount
+          const page = globalThis.Number.parseInt(text, 10) - 1
+          return globalThis.Number.isInteger(page) && page >= 0 && page < pageCount
             ? goToPage(model, page)
             : { model }
         },

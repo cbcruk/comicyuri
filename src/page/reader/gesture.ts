@@ -1,4 +1,4 @@
-import { Schema } from 'effect'
+import { Number, Schema } from 'effect'
 
 /**
  * 리더 자신의 좌표계에서의 위치.
@@ -45,7 +45,8 @@ export const DOUBLE_TAP_MILLIS = 300
 export const DOUBLE_TAP_ZOOM = 2.5
 
 /** 배율을 {@linkcode ZOOM_MIN}과 {@linkcode ZOOM_MAX} 사이에 붙잡아 둔다. */
-export const clampZoom = (zoom: number): number => Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom))
+export const clampZoom = (zoom: number): number =>
+  Number.clamp(zoom, { minimum: ZOOM_MIN, maximum: ZOOM_MAX })
 
 /** 두 점 사이의 거리. 두 포인터라면 핀치가 배율로 삼는 간격이다. */
 export const distance = (a: Point, b: Point): number => Math.hypot(a.x - b.x, a.y - b.y)
