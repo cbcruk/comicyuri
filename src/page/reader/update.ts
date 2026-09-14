@@ -702,7 +702,10 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
      */
     ElapsedSlide: () => {
       const turned = step(model, 1)
-      const moved = turned.model.page !== model.page || turned.outMessage !== undefined
+      const moved =
+        turned.model.page !== model.page ||
+        turned.model.half !== model.half ||
+        turned.outMessage !== undefined
 
       return moved ? turned : { model: evo(model, { isPlaying: () => false }) }
     },

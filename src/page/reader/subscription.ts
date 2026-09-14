@@ -4,6 +4,7 @@ import { Subscription } from 'foldkit'
 import { Slider, VirtualList } from '@foldkit/ui'
 
 import { PAGE_ID, STAGE_ID } from './constant.ts'
+import { Half } from './half.ts'
 import { handlesKeysItself, isReaderKey } from './keys.ts'
 import type { Point } from './gesture.ts'
 import { Message } from './message.ts'
@@ -338,19 +339,22 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
   /**
    * 슬라이드쇼. 정해 둔 시간이 지나면 한 장 넘긴다.
    *
-   * 기다리는 것을 페이지에 매어 둔다. 그래야 넘어간 순간부터 다시 세고, 사람이
-   * 손으로 넘긴 뒤에도 처음부터 센다 — 넘어가자마자 또 넘어가는 일이 없다.
+   * 기다리는 것을 페이지와 반쪽에 매어 둔다. 그래야 넘어간 순간부터 다시 세고, 사람이
+   * 손으로 넘긴 뒤에도 처음부터 센다 — 넘어가자마자 또 넘어가는 일이 없다. 반씩
+   * 읽는 페이지에서 반쪽을 옮기는 것도 넘김이다.
    */
   slideshow: entry(
     {
       isPlaying: Schema.Boolean,
       page: Schema.Number,
+      half: Half,
       seconds: Schema.Number,
     },
     {
       modelToDependencies: (model) => ({
         isPlaying: model.isPlaying,
         page: model.page,
+        half: model.half,
         seconds: model.settings.slideSeconds,
       }),
       dependenciesToStream: ({ isPlaying, seconds }) =>

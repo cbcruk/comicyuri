@@ -1574,6 +1574,26 @@ describe('the slideshow', () => {
     )
   })
 
+  test('a wide page read in halves gives each half a turn of the wait', () => {
+    story(
+      update,
+      given({ ...openingModel({ ...defaultSettings, splitWide: true }), page: 3, isPlaying: true }),
+      ...opened(3, wideAt(3)),
+      message(Message.ElapsedSlide()),
+      model((model) => {
+        expect(model.page).toBe(3)
+        expect(model.half).toBe('second')
+        expect(model.isPlaying).toBe(true)
+      }),
+      message(Message.ElapsedSlide()),
+      model((model) => {
+        expect(model.page).toBe(4)
+        expect(model.isPlaying).toBe(true)
+      }),
+      ...settle(4),
+    )
+  })
+
   test('escape stops it before it leaves anything else', () => {
     story(
       update,
