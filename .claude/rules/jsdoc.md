@@ -120,18 +120,35 @@ supports them before use:
 ## Applying these rules in comicyuri
 
 - This is an application, not a published package. There is no module index, so
-  no `@module` blocks: a file-level note stays a plain block comment, the way
-  `types.ts`, `storage.ts`, and `zip.ts` already write one. The entry point is
+  no `@module` tags: a file-level note is a `/** */` block without one, the way
+  `types.ts`, `storage.ts`, and `zip.ts` already write it. The entry point is
   `src/entry.ts`, and an `@example` has no package specifier to import from —
   use a relative path.
 - This repo has no JSR renderer, so avoid the renderer-dependent syntax above.
   Keep `@example` titles short — they read as a plain line in editor tooltips.
-- Nothing type-checks an `@example`, so they rot silently. Use them sparingly.
-- `@template` is the tag for type parameters. Nothing generic is exported yet, so
-  the first one to need it sets the precedent.
-- `makeCover` is the only place `@param` / `@returns` earn their keep: that
-  `maxSize` is the longest edge of the result, not its size, is a fact the
-  signature cannot state.
+- Nothing type-checks an `@example`, so they rot silently. Use them sparingly,
+  and only with a block that runs when pasted — no names left undefined.
+- The summary line may run to a second short sentence, but the first must say
+  what the symbol is or does. Rationale, `NOTE:`, and history go below the blank
+  line: `ApplyTheme` opens with what it sets, then why the theme lives on the
+  document root.
+- `@param` / `@returns` earn their keep when they state a unit, an encoding, or
+  a sentinel the signature cannot: `maxSize` in `makeCover` is the longest edge,
+  `turnFromEdge` returns `1` or `-1`, `perRowFor` takes pixels. A tag that
+  restates the parameter name does not. When an `Option` return only needs its
+  `None` condition, say it in the body instead.
+- `@template` is the tag for type parameters. The generic view helpers
+  (`controlView`, `settingsView`) take `Msg`, the caller's Message type, and
+  leave it untagged — a name that says everything needs no tag. Tag a type
+  parameter only when its name does not.
+- Document a property when its name and type leave something unsaid: a unit, a
+  sentinel, or why it exists. Self-evident fields such as `bookId`, `x`, and
+  `y` stay bare, even beside documented siblings in the same struct.
+- Do not copy values into prose. A comment that lists what `DEFAULTS` holds
+  falls behind the moment a field is added.
+- A comment that describes a declaration is JSDoc, not `//`, even on a private
+  helper. A `//` block inside an expression that explains several things at once
+  is a sign to extract a named helper and move the explanation to its JSDoc.
 - Verify with `vp check` and `vp test` in the same change.
 
 ## Language
