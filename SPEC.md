@@ -661,10 +661,11 @@ e2e "R-251 · 3초 동안 아무 일도 없으면 툴바가 사라지고, 다시
 ❓ 페이드가 눈에 어떻게 보이는지
 
 **R-252 · 컨트롤을 쓰면 툴바가 다시 나오고 대기가 처음부터 다시 간다**
-툴바·푸터의 버튼, 슬라이더, 썸네일 선택, 키보드가 모두 해당한다. 툴바를 쓰는
+툴바·푸터의 버튼, 번호 입력란, 슬라이더, 썸네일 선택, 설정 패널의 스위치, 키보드가
+모두 해당한다. 툴바를 쓰는
 동안 툴바가 사라지지 않는다. 화면을 누르는 것은 대기만 다시 센다 — 누르기가
 툴바를 부르면 가운데 탭이 언제나 숨김으로 끝나기 때문이다.
-✅ reader/story "the next control restarts the wait" 외 컨트롤 11종,
+✅ reader/story "the next control restarts the wait" 외 컨트롤 18종,
 "a key brings the chrome back",
 reader/scene "using the slider brings the chrome back",
 "a wait from before the last activity does not hide the chrome",

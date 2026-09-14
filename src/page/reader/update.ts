@@ -512,9 +512,10 @@ const foldThumbs = Update.foldChild({
  *
  * 들를 핸들러 목록이 아니라 Message의 이름을 기준으로 삼는다. 쓰고 있는 사람 밑에서
  * 툴바가 사라지게 만든 것이 바로 그 목록이었다. 그 뒤로 더해진 컨트롤마다 목록에
- * 적어 넣기를 기억해야 했고, 아무도 기억하지 않았다. `Clicked*`와 `Selected*`는
- * 이미 사람이 컨트롤에 손댔다는 뜻이므로, 규약대로 이름 붙인 새 컨트롤은 저절로
- * 포함된다.
+ * 적어 넣기를 기억해야 했고, 아무도 기억하지 않았다. `Clicked*`, `Selected*`,
+ * `Toggled*`, `Submitted*`는 이미 사람이 컨트롤에 손댔다는 뜻이므로, 규약대로 이름
+ * 붙인 새 컨트롤은 저절로 포함된다. 새 동사로 이름 붙인 컨트롤이 생기면 여기에
+ * 더한다.
  *
  * 포인터 Message는 일부러 빠져 있다. 누름이 툴바를 보여서는 안 된다. 그러면 툴바를
  * 토글하는 탭이 매번 '숨김'으로 끝난다.
@@ -523,6 +524,8 @@ const isControlUse = (message: Message): boolean =>
   message._tag !== 'ClickedExit' &&
   (message._tag.startsWith('Clicked') ||
     message._tag.startsWith('Selected') ||
+    message._tag.startsWith('Toggled') ||
+    message._tag.startsWith('Submitted') ||
     message._tag === 'PressedKey' ||
     message._tag === 'ScrolledToZoom' ||
     message._tag === 'GotSliderMessage')
