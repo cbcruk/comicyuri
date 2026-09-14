@@ -142,7 +142,7 @@ JPEG는 EXIF 회전을 반영해 브라우저가 그릴 모양대로 잰다. 알
 한 장이 무너뜨리는 것은 그 한 자리뿐이다. 알아보지 못한 형식이든 아예 뽑지 못한
 페이지든 `null`로 남고, 나머지는 그대로 재어진다 — 555장짜리 책이 한 장 때문에
 들어오지 못하면 곤란하다.
-✅ imageSize "a PNG is measured from its IHDR" 외 14개,
+✅ imageSize "a PNG is measured from its IHDR" 외 15개,
 loader "a page whose header is read comes back with its size", "a page in a format this
 viewer does not know leaves a hole", "a page that cannot even be read leaves a hole, not a
 failure",

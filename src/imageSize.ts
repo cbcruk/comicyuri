@@ -170,7 +170,8 @@ const jpegSize = (bytes: Uint8Array): Option.Option<ImageSize> => {
 const ISPE_SEARCH_LIMIT = 4096
 
 const isobmffSize = (bytes: Uint8Array): Option.Option<ImageSize> => {
-  const limit = Math.min(bytes.length - 12, ISPE_SEARCH_LIMIT)
+  // 이름부터 높이까지 16바이트가 파일 안에 들어와야 읽는다.
+  const limit = Math.min(bytes.length - 16, ISPE_SEARCH_LIMIT)
   const view = viewOf(bytes)
 
   for (let at = 0; at <= limit; at++) {
