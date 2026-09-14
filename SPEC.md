@@ -160,7 +160,8 @@ off?"와 함께 "Remove"(이름 "Remove <제목> from shelf")와 "Keep"(이름 "
 묻는 것은 지우는 것이 되돌릴 수 없고 그 책의 읽던 자리까지 함께 가기 때문이다. 🗑은
 카드 위에 떠 있어서 책을 누르려다 스칠 수 있다.
 
-물음은 카드를 통째로 덮으므로 답하기 전에는 그 책이 열리지 않는다. 물음과 답을 같은
+물음은 카드를 통째로 덮고 그동안 링크는 `inert`가 되므로, 답하기 전에는 포인터로도
+키보드로도 그 책이 열리지 않는다. 물음과 답을 같은
 자리에 두지 않는 이유도 같다 — 🗑이 있던 곳에 "Remove"가 서면 두 번째 누름이 첫
 번째와 같은 동작처럼 보이고, 그 자리는 손이 이미 가 있는 자리다.
 
@@ -169,7 +170,8 @@ off?"와 함께 "Remove"(이름 "Remove <제목> from shelf")와 "Keep"(이름 "
 ✅ story "the bin asks rather than deletes", "keeping the book leaves the shelf as it
 was", "leaving the shelf takes the question with it",
 scene "removing a book from the shelf takes it out of the grid", "the question stands on
-one card only, and keeping it puts the bin back",
+one card only, and keeping it puts the bin back", "a card that is being asked about cannot
+be reached from the keyboard",
 e2e "S-131 · 🗑은 묻기만 하고, 지키기를 고르면 책이 남는다", "S-131 · 지우기를 고르면
 책장에서 사라지고 새로고침을 넘겨 돌아오지 않는다", "S-131 · 묻는 동안에는 그 카드로
 들어갈 수 없다", "S-131 · 다른 책을 열었다 돌아오면 묻던 것이 남아 있지 않다"

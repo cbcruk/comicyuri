@@ -134,7 +134,8 @@ const cornerButtonClassName =
   'cursor-pointer rounded-md bg-bg/80 px-2 py-1 text-xs transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-accent'
 
 /**
- * 지울지 묻는 자리. 카드 위에 덮여서, 답하기 전에는 그 카드로 들어갈 수 없다.
+ * 지울지 묻는 자리. 카드 위에 덮이고 링크는 `inert`가 되어, 답하기 전에는 포인터로도
+ * 키보드로도 그 카드에 들어갈 수 없다.
  *
  * 물음과 답을 같은 자리에 두지 않는다. 🗑이 있던 곳에 "Remove"가 서면 두 번째
  * 누름이 첫 번째와 같은 동작처럼 보이고, 그 자리는 손이 이미 가 있는 자리다.
@@ -181,6 +182,9 @@ const confirmDeleteView = (book: Book.BookSummary, h: HtmlBuilder<Message>): Htm
  *
  * 링크의 접근 가능한 이름은 `aria-label`의 제목이다. 🗑과 묻는 자리는 그 이름에
  * 섞이지 않게 링크의 형제로 둔다.
+ *
+ * 묻는 동안에는 링크를 `inert`로 둔다. 물음이 카드를 덮어 포인터는 막지만, Tab으로
+ * 링크에 가서 Enter를 누르는 길은 덮개가 막지 못한다.
  */
 const cardView = (
   book: Book.BookSummary,
@@ -198,6 +202,7 @@ const cardView = (
           ),
           h.Href(readerRouter(book.id)),
           h.AriaLabel(book.title),
+          h.Inert(isPendingDelete),
         ],
         [
           coverView(book, h),
