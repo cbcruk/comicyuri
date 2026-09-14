@@ -38,23 +38,24 @@ const isOnStage = (event: Event): boolean =>
 /**
  * 페이지가 굴러다닐 수 있는 자리의 화면 좌표. 스테이지에서 여백을 뺀 안쪽이다.
  *
- * 스테이지의 상자를 쓰면 다 굴린 페이지가 여백을 8px 덮고 선다. 페이지를 담은
- * 상자는 스테이지를 꽉 채우고 스테이지가 `relative`이므로, 그 offset 상자가 곧
- * 여백을 뺀 자리다 — 그리고 transform이 걸리지 않는 값이라 굴리는 동안에도
- * 움직이지 않는다.
+ * 스테이지의 상자를 쓰면 다 굴린 페이지가 여백을 8px 덮고 선다. 그렇다고 페이지를
+ * 담은 상자로 재면 세운 페이지에서 틀린다. 90도나 270도로 세운 상자는 가로세로가
+ * 맞바뀌어(`R-228`) 스테이지보다 한쪽으로 길고, 그러면 화면에 다 들어가는 페이지도
+ * 그 방향으로 굴러간다. 스테이지 자신은 transform이 걸리지 않으므로, 굴리는 동안에도
+ * 이 자리는 움직이지 않는다.
  */
 const viewOnStage = (
   stage: HTMLElement,
-  page: HTMLElement,
 ): Readonly<{ top: number; left: number; bottom: number; right: number }> => {
-  const stageBox = stage.getBoundingClientRect()
-  const top = stageBox.top + page.offsetTop
-  const left = stageBox.left + page.offsetLeft
+  const box = stage.getBoundingClientRect()
+  const style = getComputedStyle(stage)
+  const top = box.top + stage.clientTop + Number.parseFloat(style.paddingTop)
+  const left = box.left + stage.clientLeft + Number.parseFloat(style.paddingLeft)
   return {
     top,
     left,
-    bottom: top + page.offsetHeight,
-    right: left + page.offsetWidth,
+    bottom: box.top + stage.clientTop + stage.clientHeight - Number.parseFloat(style.paddingBottom),
+    right: box.left + stage.clientLeft + stage.clientWidth - Number.parseFloat(style.paddingRight),
   }
 }
 
@@ -63,8 +64,9 @@ const viewOnStage = (
  * 곧 이 값이다.
  *
  * 재는 것은 페이지를 담은 상자가 아니라 그 안에 놓인 것들이다. 상자는 스테이지만
- * 하게 잡혀 있고 (맞춤 모드가 퍼센트로 풀리려면 그래야 한다) 화면보다 큰 페이지는
- * 그 상자 밖으로 넘쳐 나가므로, 상자를 재면 언제나 갈 곳이 없다고 나온다.
+ * 하게(세웠다면 가로세로를 맞바꾸어) 잡혀 있고 (맞춤 모드가 퍼센트로 풀리려면 그래야
+ * 한다) 화면보다 큰 페이지는 그 상자 밖으로 넘쳐 나가므로, 상자를 재면 언제나 갈
+ * 곳이 없다고 나온다.
  *
  * `getBoundingClientRect`는 transform까지 적용된 자리를 주므로, 확대와 이동이
  * 걸린 값이 그대로 나온다.
@@ -77,7 +79,7 @@ const roomOnStage = (): Room => {
   const boxes = Array.from(page.children, (child) => child.getBoundingClientRect())
   if (boxes.length === 0) return NO_ROOM
 
-  const view = viewOnStage(stage, page)
+  const view = viewOnStage(stage)
 
   const room = (edge: number): number => Math.max(0, edge)
 

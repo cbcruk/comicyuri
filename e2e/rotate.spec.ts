@@ -56,6 +56,32 @@ test('R-228 · 네 번 세우면 제자리로 돌아온다', async ({ page }) =>
   }).toPass()
 })
 
+test('R-228 · 화면에 다 들어가는 세운 페이지는 굴려도 밀리지 않는다', async ({ page }) => {
+  await readBook(page, BOOK)
+  await control.rotate(page).click()
+  await expect(control.fit(page)).toHaveText('Fit')
+
+  const box = await stage(page).boundingBox()
+  if (box === null) throw new Error('스테이지가 없다')
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+
+  // 눕힌 상자는 화면보다 길지만, 그 안에 맞춰진 페이지는 화면 안에 다 들어온다.
+  // 세우는 전환이 끝나기를 기다린다.
+  const room = await roomOf(page)
+  await expect(async () => {
+    const settled = await imageBox(page)
+    expect(settled.width).toBeLessThanOrEqual(room.width + 1)
+    expect(settled.height).toBeLessThanOrEqual(room.height + 1)
+  }).toPass()
+  const before = await imageBox(page)
+
+  // 굴릴 자리를 눕힌 상자로 재면, 들어가 있는 페이지도 옆으로 밀려난다.
+  await page.mouse.wheel(150, 0)
+  await page.waitForTimeout(300)
+  const after = await imageBox(page)
+  expect(after.x).toBeCloseTo(before.x, 0)
+})
+
 test('R-228 · 세워 둔 각도는 그 책에 남는다', async ({ page }) => {
   const title = await readBook(page, BOOK)
   await control.rotate(page).click()
