@@ -17,8 +17,8 @@ test('S-131 · 🗑은 묻기만 하고, 지키기를 고르면 책이 남는다
 
   await bin(page, title).click()
   await expect(page.getByRole('group', { name: `Remove ${title}?` })).toBeVisible()
-  // 아직 아무것도 지워지지 않았다.
-  await expect(page.getByRole('link', { name: title })).toBeVisible()
+  // 아직 아무것도 지워지지 않았다. 묻는 동안 링크는 `inert`라 역할로는 찾을 수 없다.
+  await expect(page.getByTitle(title)).toBeVisible()
 
   await page.getByRole('button', { name: `Keep ${title}` }).click()
   await expect(page.getByRole('group', { name: `Remove ${title}?` })).toHaveCount(0)
@@ -53,7 +53,8 @@ test('S-131 · 묻는 동안에는 그 카드로 들어갈 수 없다', async ({
   await expect(page.getByRole('group', { name: `Remove ${title}?` })).toBeVisible()
 
   // 물음이 카드를 덮는다. 카드 한가운데에서 손에 닿는 것은 링크가 아니다.
-  const box = await page.getByRole('link', { name: title }).boundingBox()
+  const link = page.locator(`a[aria-label="${title}"]`)
+  const box = await link.boundingBox()
   if (box === null) throw new Error('카드가 없다')
 
   const reachesLink = await page.evaluate(
@@ -62,6 +63,10 @@ test('S-131 · 묻는 동안에는 그 카드로 들어갈 수 없다', async ({
   )
 
   expect(reachesLink).toBe(false)
+
+  // 키보드로도 닿지 않는다. 초점을 옮기려 해도 링크에 앉지 않는다.
+  await link.focus()
+  expect(await link.evaluate((element) => element === document.activeElement)).toBe(false)
 })
 
 test('S-131 · 다른 책을 열었다 돌아오면 묻던 것이 남아 있지 않다', async ({ page }) => {

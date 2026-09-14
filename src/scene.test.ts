@@ -270,4 +270,17 @@ describe('scoping', () => {
       expect(role('button', { name: 'Remove Alpha from shelf…' })).toExist(),
     )
   })
+
+  test('a card that is being asked about cannot be reached from the keyboard', () => {
+    scene(
+      program,
+      given(shelfModel(Shelf.Success({ data: [book('a::1', 'Alpha'), book('b::1', 'Beta')] }))),
+      click(role('button', { name: 'Remove Alpha from shelf…' })),
+      // 물음이 포인터는 막지만 Tab은 막지 못한다. 링크 자체를 비활성으로 둔다.
+      expect(role('link', { name: 'Alpha' })).toHaveAttr('inert', 'true'),
+      expect(role('link', { name: 'Beta' })).toHaveAttr('inert', 'false'),
+      click(role('button', { name: 'Keep Alpha' })),
+      expect(role('link', { name: 'Alpha' })).toHaveAttr('inert', 'false'),
+    )
+  })
 })
