@@ -71,7 +71,7 @@ export type Entry = Readonly<{
 }>
 
 /**
- * 압축하지 않은(stored) ZIP. `src/zip.ts`가 읽는 것과 같은 모양이며, 압축을 걸지
+ * 압축하지 않은(stored) ZIP. `src/io/zip.ts`가 읽는 것과 같은 모양이며, 압축을 걸지
  * 않는 이유는 픽스처가 무엇을 만들었는지 그대로 읽히기 때문이다.
  */
 export const zip = (entries: ReadonlyArray<Entry>): Buffer => {

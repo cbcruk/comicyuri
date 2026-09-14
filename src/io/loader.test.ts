@@ -1,5 +1,5 @@
 /**
- * `src/loader.ts`를 직접 겨냥한다. 고른 파일이 책장 레코드가 되는 길과, 그
+ * `src/io/loader.ts`를 직접 겨냥한다. 고른 파일이 책장 레코드가 되는 길과, 그
  * 레코드가 다시 책이 되는 길이다.
  *
  * 아카이브는 테스트 안에서 짓는다. 압축하지 않고 그대로 저장하는 엔트리만 쓰므로
@@ -9,7 +9,7 @@
 import { Effect, Option } from 'effect'
 import { describe, expect, test } from 'vite-plus/test'
 
-import type { ArchiveError, EmptyBookError, NoComicFilesError } from './errors.ts'
+import type { ArchiveError, EmptyBookError, NoComicFilesError } from '../errors.ts'
 import {
   bookFromStored,
   isArchiveName,

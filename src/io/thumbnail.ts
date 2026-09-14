@@ -1,7 +1,7 @@
 /** 이미지 URL을 책장에 쓸 작은 표지 썸네일 blob으로 만든다. */
 
 import { Duration, Effect } from 'effect'
-import { CoverError } from './errors.ts'
+import { CoverError } from '../errors.ts'
 
 /** 끝내 디코딩되지 않는 페이지가 임포트를 영원히 붙잡고 있어서는 안 된다. */
 const DECODE_TIMEOUT = Duration.seconds(15)

@@ -7,8 +7,8 @@
  */
 
 import { Effect, Schema } from 'effect'
-import { BookProgress, defaultSettings, Settings } from './types.ts'
-import type { BookSettings } from './types.ts'
+import { BookProgress, defaultSettings, Settings } from '../types.ts'
+import type { BookSettings } from '../types.ts'
 
 export { defaultSettings }
 

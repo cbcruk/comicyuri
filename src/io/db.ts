@@ -1,9 +1,9 @@
 /** IndexedDB에 얹은 책장. 한 번 연 책이 새로고침을 넘겨 살아남는다. */
 
 import { Effect } from 'effect'
-import { DbError } from './errors.ts'
+import { DbError } from '../errors.ts'
 import type { ImageSize } from './imageSize.ts'
-import type { BookSource } from './types.ts'
+import type { BookSource } from '../types.ts'
 
 /**
  * IndexedDB에 놓인 그대로의 책 한 권. 들여온 바이트와, 그것을 열어 보지 않고도

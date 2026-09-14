@@ -1,7 +1,7 @@
 import { Effect, Option } from 'effect'
 import { describe, expect, test } from 'vite-plus/test'
 
-import { ArchiveError } from './errors.ts'
+import { ArchiveError } from '../errors.ts'
 import { ZipArchive } from './zip.ts'
 
 const u16 = (value: number): number[] => [value & 0xff, (value >> 8) & 0xff]

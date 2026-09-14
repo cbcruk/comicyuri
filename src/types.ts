@@ -1,6 +1,6 @@
 import { Effect, Option, Schema } from 'effect'
 import type { ArchiveError } from './errors.ts'
-import type { ImageSize } from './imageSize.ts'
+import type { ImageSize } from './io/imageSize.ts'
 
 /**
  * 저장되는 모양은 평범한 타입이 아니라 스키마로 선언한다. `localStorage`에서
