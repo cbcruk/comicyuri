@@ -60,9 +60,32 @@ export const Panel = Schema.Struct({
 /** {@linkcode Panel} 스키마의 디코딩된 값. */
 export type Panel = typeof Panel.Type
 
-/** 지금 스프레드에 대해 화면이 보여 주고 있는 것. */
+/**
+ * 넘기기 직전에 화면에 걸려 있던 스프레드. 다음 것이 그릴 수 있게 될 때까지 그대로
+ * 둔다(`R-207`).
+ *
+ * 그 페이지를 그릴 때 쓰던 `entry`와 `half`를 함께 지닌다. 넘기는 순간 Model의 두
+ * 값은 이미 다음 페이지의 것이라, 그것으로 이전 페이지를 그리면 끝에 붙거나 반쪽이
+ * 바뀌어 한 번 튄다.
+ */
+export const OnScreen = Schema.Struct({
+  page: Schema.Number,
+  panels: Schema.Array(Panel),
+  entry: PageEntry,
+  half: Half,
+})
+
+/** {@linkcode OnScreen} 스키마의 디코딩된 값. */
+export type OnScreen = typeof OnScreen.Type
+
+/**
+ * 지금 스프레드에 대해 화면이 보여 주고 있는 것.
+ *
+ * `Loading`은 다음 스프레드를 부르는 중이다. 그동안 보여 줄 이전 스프레드가 있으면
+ * 그것을 지니고, 책을 막 열었을 때처럼 없으면 비어 있다.
+ */
 export const SpreadState = defineTaggedUnion({
-  Loading: {},
+  Loading: { maybeOnScreen: Schema.Option(OnScreen) },
   Shown: { panels: Schema.Array(Panel) },
   Failed: { text: Schema.String },
 })
@@ -209,6 +232,18 @@ export const Model = Schema.Struct({
 export type Model = typeof Model.Type
 
 /**
+ * 지금 화면에 걸려 있는 스프레드. 불러오는 중이면 그동안 남겨 둔 이전 것이고, 실패했으면
+ * 없다.
+ */
+export const onScreen = (model: Model): Option.Option<OnScreen> =>
+  SpreadState.match(model.spread, {
+    Shown: ({ panels }) =>
+      Option.some({ page: model.page, panels, entry: model.entry, half: model.half }),
+    Loading: ({ maybeOnScreen }) => maybeOnScreen,
+    Failed: () => Option.none(),
+  })
+
+/**
  * {@linkcode init}이 책을 열기 위해 필요한 것. 어느 책을 어디에 걸지, 그리고 그
  * 책에 남아 있는 북마크·교정·설정.
  */
@@ -243,7 +278,7 @@ export type InitConfig = Readonly<{
 export const init = (config: InitConfig): Model => ({
   bookId: config.bookId,
   openState: OpenState.Opening(),
-  spread: SpreadState.Loading(),
+  spread: SpreadState.Loading({ maybeOnScreen: Option.none() }),
   page: config.page,
   maybeResumePage: config.maybeResumePage,
   bookmarks: config.bookmarks,

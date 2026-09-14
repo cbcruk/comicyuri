@@ -69,3 +69,16 @@ body {
 .tap-flash {
   animation: tap-flash 260ms ease-out forwards;
 }
+
+/* Shown over the page still on screen only when the next spread is late
+   (`R-207`). The delay lives here so the Model needs no timer. */
+@keyframes loading-late {
+  to {
+    opacity: 1;
+  }
+}
+
+.loading-late {
+  opacity: 0;
+  animation: loading-late 150ms ease-out 300ms forwards;
+}

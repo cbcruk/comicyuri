@@ -15,8 +15,8 @@ import { ORIGIN, ZOOM_MIN } from '../gesture.ts'
 import { halfAfterStep, staysOnPage } from '../half.ts'
 import type { Message } from '../message.ts'
 import { OutMessage } from '../message.ts'
-import { OpenState, SpreadState } from '../model.ts'
-import type { Model, PageEntry } from '../model.ts'
+import { OpenState, SpreadState, onScreen } from '../model.ts'
+import type { Model, OnScreen, PageEntry } from '../model.ts'
 import type { OpenBookService } from '../resource.ts'
 import {
   indexOfPage,
@@ -36,8 +36,18 @@ export type UpdateReturn = Update.ReturnWithOutMessage<Model, Message, OutMessag
 /**
  * 위치나 배치가 바뀐 뒤에 리더가 해야 하는 모든 일. 화면에 걸릴 이미지를 요청하고,
  * 이웃을 데우고, 격자가 쥐지 않은 나머지를 놓아 주고, 진행 상태를 위로 알린다.
+ *
+ * 새 스프레드가 그릴 수 있게 될 때까지 지금 화면에 걸린 것을 남겨 두고(`R-207`), 그
+ * 페이지들의 URL도 놓지 않는다.
+ *
+ * @param current 남겨 둘 스프레드. 부르는 쪽이 Model을 이미 다음 페이지에 맞춰
+ * 고쳤다면, 고치기 전의 Model에서 구해 넘긴다.
  */
-export const showPage = (model: Model, page: number): UpdateReturn =>
+export const showPage = (
+  model: Model,
+  page: number,
+  current: Option.Option<OnScreen> = onScreen(model),
+): UpdateReturn =>
   OpenState.match(model.openState, {
     Opening: () => ({ model: evo(model, { page: () => page }) }),
     Failed: () => ({ model: evo(model, { page: () => page }) }),
@@ -49,7 +59,7 @@ export const showPage = (model: Model, page: number): UpdateReturn =>
       return {
         model: evo(model, {
           page: () => page,
-          spread: () => SpreadState.Loading(),
+          spread: () => SpreadState.Loading({ maybeOnScreen: current }),
         }),
         commands: [
           LoadSpread({ page, pages }),
@@ -57,7 +67,15 @@ export const showPage = (model: Model, page: number): UpdateReturn =>
             warm: neighbourPages(spreads, index),
             // 화면의 썸네일이 바로 이 페이지들의 URL을 쥐고 있으므로, 놓아
             // 주면 격자가 빈다.
-            keep: Array.appendAll(pagesToKeep(spreads, index), loadedPages(model.thumbPanels)),
+            keep: Array.dedupe([
+              ...pagesToKeep(spreads, index),
+              ...loadedPages(model.thumbPanels),
+              // 새 페이지가 설 때까지 화면에 남아 있는 페이지다.
+              ...Option.match(current, {
+                onNone: () => [],
+                onSome: ({ panels }) => Array.map(panels, (panel) => panel.page),
+              }),
+            ]),
           }),
         ],
         outMessage: OutMessage.UpdatedProgress({
@@ -90,6 +108,7 @@ export const goToPage = (model: Model, page: number, entry: PageEntry = 'start')
       half: () => (entry === 'end' ? 'second' : 'first'),
     }),
     page,
+    onScreen(model),
   )
 
 /** 이 걸음이 페이지의 어느 쪽으로 들어서는지. 뒤로 가는 걸음만 끝에서 시작한다. */
