@@ -8,13 +8,11 @@ import clsx from 'clsx'
 import { controlView } from '../../view/control.ts'
 import { settingsView } from '../../view/settings.ts'
 import { GOTO_ID } from './constant.ts'
-import { sideOf } from './half.ts'
 import { Message } from './message.ts'
 import { Model, OpenState } from './model.ts'
-import { indexOfPage, pagesAt, splitRatio, spreadsFor } from './spread.ts'
+import { indexOfPage, pagesAt, spreadsFor } from './spread.ts'
 import { sliderPage } from './update.ts'
 import { stageView } from './view/stage.ts'
-import type { SplitHalf } from './view/stage.ts'
 import { thumbsView } from './view/thumbs.ts'
 import { chromeAttributes, chromeClassName, toolbarView } from './view/toolbar.ts'
 
@@ -176,10 +174,6 @@ export const view = defineView<Model, Message>((model, h): Html =>
       const spreads = spreadsFor(layout, model.settings)
       const index = indexOfPage(spreads, model.page)
       const here = pagesAt(spreads, index)
-      const maybeHalf = Option.map(
-        splitRatio(layout, model.settings, here),
-        (ratio): SplitHalf => ({ ratio, side: sideOf(model.half, model.settings.direction) }),
-      )
 
       return h.main(
         [h.Class('relative flex h-full flex-col'), h.AriaLabel(title)],
@@ -189,7 +183,7 @@ export const view = defineView<Model, Message>((model, h): Html =>
             onNone: () => h.empty,
             onSome: (page) => resumeView(page, h),
           }),
-          stageView(model, maybeHalf, h),
+          stageView(model, layout, h),
           turnView(model, model.isChromeVisible, h),
           model.isThumbsOpen ? thumbsView(model, pageCount, h) : h.empty,
           model.isSettingsOpen

@@ -178,6 +178,30 @@ describe('the stage', () => {
     )
   })
 
+  test('the page on screen stays while the next one is on its way', () => {
+    scene(
+      program,
+      given(readingModel()),
+      click(role('button', { name: 'Next' })),
+      // 다음 페이지는 아직 그릴 수 없다. 화면이 비지 않고 1페이지가 그대로 걸려 있다.
+      expect(role('img', { name: 'Page 1' })).toExist(),
+      expect(role('status')).toHaveText('Loading…'),
+      ...settleTurn(1),
+      expect(role('img', { name: 'Page 2' })).toExist(),
+      expect(role('img', { name: 'Page 1' })).not.toExist(),
+      expect(role('status')).not.toExist(),
+    )
+  })
+
+  test('with nothing on screen yet, the stage says it is loading', () => {
+    scene(
+      program,
+      given({ ...readingModel(), spread: SpreadState.Loading({ maybeOnScreen: Option.none() }) }),
+      expect(role('img')).not.toExist(),
+      expect(within(selector('#reader-page'), text('Loading…'))).toExist(),
+    )
+  })
+
   test('the box the pages sit in fills the stage', () => {
     // 맞춤 모드는 페이지에 퍼센트 크기를 건다. 이 상자가 내용만큼만 커지면 페이지가
     // 자기 크기를 기준으로 자기를 재는 꼴이라 어떤 맞춤 모드도 듣지 않는다.

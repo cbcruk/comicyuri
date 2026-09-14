@@ -1547,6 +1547,108 @@ describe('going to a page by number', () => {
   })
 })
 
+describe('turning onto a page that is not ready yet', () => {
+  /** 0페이지가 화면에 걸린 리더. */
+  const onPage0 = (): Model => {
+    const opening = update(
+      openingModel(),
+      Message.CompletedOpenBook({
+        title: 'Volume 1',
+        pageCount: PAGE_COUNT,
+        ratios: UNMEASURED,
+        names: namesOf(PAGE_COUNT),
+      }),
+    ).model
+    return update(
+      opening,
+      Message.CompletedLoadSpread({ page: 0, panels: [{ page: 0, url: 'blob:0' }] }),
+    ).model
+  }
+
+  test('the page on screen stays until the next one can be drawn', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ClickedNext()),
+      model((model) => {
+        expect(model.page).toBe(1)
+        expect(model.spread).toStrictEqual(
+          SpreadState.Loading({
+            maybeOnScreen: Option.some({
+              page: 0,
+              panels: [{ page: 0, url: 'blob:0' }],
+              entry: 'start',
+              half: 'first',
+            }),
+          }),
+        )
+      }),
+      ...settle(1),
+      model((model) => {
+        expect(model.spread).toStrictEqual(
+          SpreadState.Shown({ panels: [{ page: 1, url: 'blob:1' }] }),
+        )
+      }),
+    )
+  })
+
+  test('it keeps what it drew with, not what the next page will use', () => {
+    // 뒤로 넘기면 Model의 `entry`는 그 순간 `end`가 된다. 이전 페이지는 들어선 그대로
+    // 남아야 한다.
+    story(
+      update,
+      given({ ...openingModel(), page: 3 }),
+      ...opened(3),
+      message(Message.ClickedPrevious()),
+      model((model) => {
+        expect(model.entry).toBe('end')
+        expect(model.spread).toMatchObject({
+          _tag: 'Loading',
+          maybeOnScreen: Option.some({ page: 3, entry: 'start' }),
+        })
+      }),
+      ...settle(2),
+    )
+  })
+
+  test('turning again before it arrives keeps the page that is still on screen', () => {
+    // 첫 넘김의 답이 오기 전에 다시 넘긴다. 화면에는 여전히 0페이지가 걸려 있다.
+    // story는 답하지 않은 Command를 둔 채 다음 Message를 보낼 수 없어서 update를 직접
+    // 부른다.
+    const first = update(onPage0(), Message.ClickedNext()).model
+    const second = update(first, Message.ClickedNext()).model
+
+    expect(second.page).toBe(2)
+    expect(second.spread).toMatchObject({
+      _tag: 'Loading',
+      maybeOnScreen: Option.some({ page: 0 }),
+    })
+  })
+
+  test('a jump holds on to the page on screen instead of releasing it', () => {
+    // 멀리 건너뛰면 떠난 페이지는 쥘 만한 범위 밖이다. 그래도 새 페이지가 설 때까지는
+    // 화면에 걸려 있으므로 그 URL을 놓지 않는다.
+    const shown = update(
+      openingModel(),
+      Message.CompletedOpenBook({
+        title: 'Volume 1',
+        pageCount: PAGE_COUNT,
+        ratios: UNMEASURED,
+        names: namesOf(PAGE_COUNT),
+      }),
+    ).model
+    const onPage0 = update(
+      shown,
+      Message.CompletedLoadSpread({ page: 0, panels: [{ page: 0, url: 'blob:0' }] }),
+    ).model
+    const jumped = update(onPage0, Message.ClickedLast())
+    const preload = jumped.commands?.find((command) => command.name === 'PreloadNeighbours')
+
+    expect(preload).toMatchObject({ args: { keep: expect.arrayContaining([0]) } })
+  })
+})
+
 describe('the slideshow', () => {
   test('each turn of the wait moves a page on', () => {
     story(
