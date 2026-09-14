@@ -152,8 +152,9 @@ export const defaultSettings: Settings = DEFAULTS
  * 책마다 달라질 수 있는 설정.
  *
  * 여기 있는 것은 책의 생김새를 따라가는 것들이다 — 만화인지 서양 코믹스인지,
- * 양면으로 스캔되었는지, 페이지가 얼마나 넓은지. 테마와 책 끝 동작, 그리고 이
- * 기억 자체를 켜고 끄는 스위치는 읽는 사람의 습관이라 전역에 남는다.
+ * 양면으로 스캔되었는지, 페이지가 얼마나 넓은지. 테마, 책 끝 동작, 슬라이드쇼 간격,
+ * 이어 읽기 방식, 그리고 이 기억 자체를 켜고 끄는 스위치는 읽는 사람의 습관이라
+ * 전역에 남는다.
  */
 export const BookSettings = Schema.Struct({
   direction: ReadingDirection,
@@ -200,7 +201,10 @@ export const Rotation = Schema.Literals([0, 90, 180, 270])
 /** {@linkcode Rotation} 스키마의 디코딩된 값. */
 export type Rotation = typeof Rotation.Type
 
-/** 책마다 저장되는 상태. 읽던 자리와 북마크, 손으로 고친 묶기, 세운 각도. */
+/**
+ * 책마다 저장되는 상태. 읽던 자리와 북마크, 손으로 고친 묶기, 세운 각도, 이 책에만
+ * 걸린 설정.
+ */
 export const BookProgress = Schema.Struct({
   page: Schema.Number,
   bookmarks: Schema.Array(Schema.Number),
@@ -229,7 +233,7 @@ export type BookProgress = typeof BookProgress.Type
 
 /** 페이지 한 장. 이미지 바이트는 `load()`로 필요할 때 가져온다. */
 export interface Page {
-  /** 아카이브 안에서의 이름. 페이지 순서를 정하는 데 쓴다. */
+  /** 폴더를 뗀 파일 이름. 리더 카운터가 지금 보이는 페이지를 이 이름으로 적는다. */
   readonly name: string
   /** 이미지의 object URL을 만들고 캐시한다. */
   load(): Effect.Effect<string, ArchiveError>

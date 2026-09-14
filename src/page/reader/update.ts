@@ -77,7 +77,7 @@ const nextFit = (fit: FitMode): FitMode =>
 
 /**
  * 위치나 배치가 바뀐 뒤에 리더가 해야 하는 모든 일. 화면에 걸릴 이미지를 요청하고,
- * 이웃을 데우고, 나머지를 놓아 준다.
+ * 이웃을 데우고, 격자가 쥐지 않은 나머지를 놓아 주고, 진행 상태를 위로 알린다.
  */
 const showPage = (model: Model, page: number): UpdateReturn =>
   OpenState.match(model.openState, {
@@ -166,8 +166,8 @@ const beyondBookEnd = (
   )
 
 /**
- * 정해 둔 장수만큼 건너뛴다. 책의 양 끝에서 멈춘다 — 넘기는 것과 달리 건너뛰기는
- * 책을 벗어나는 동작이 아니므로, 끝을 넘어서 이웃한 책을 열지 않는다(`R-212`).
+ * 정해 둔 장수만큼 건너뛴다. 책의 양 끝에서 멈춘다(`R-2A5`) — 책을 벗어나는 것은
+ * 넘김의 일이지(`R-212`) 건너뛰기의 일이 아니다.
  */
 const skip = (model: Model, pages: number): UpdateReturn =>
   OpenState.match(model.openState, {
@@ -458,7 +458,10 @@ export const sliderPage = (model: Model, value: number): number =>
     model.settings.direction,
   )
 
-/** 슬라이더는 페이지를 알려 오고, 그것이 바로 `showPage`가 받는 것이다. */
+/**
+ * 슬라이더는 트랙 위의 값을 알려 온다. `sliderPage`로 페이지로 되돌려 `goToPage`에
+ * 넘기므로, 넘길 때처럼 배율이 풀린다.
+ */
 const foldSliderOutMessage = Slider.OutMessage.match<
   Update.StepWithOutMessage<Model, Message, OutMessage, OpenBookService>
 >({
@@ -734,8 +737,9 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       }
     },
 
-    // 결과는 document가 `ChangedFullscreen`으로 알린다. 브라우저가 거절했을 때나
-    // Escape로 빠져나왔을 때도 마찬가지다.
+    // 바뀐 결과는 document가 `ChangedFullscreen`으로 알린다. Escape로 빠져나올 때도
+    // 마찬가지다. 브라우저가 거절하면 아무것도 오지 않고, 상태도 바뀌지 않았으므로
+    // 그것으로 맞다.
     ClickedToggleFullscreen: () => ({
       model,
       commands: [ToggleFullscreen({ wantFullscreen: !model.isFullscreen })],
@@ -805,8 +809,8 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       fillThumbs(evo(model, { showsBookmarksOnly: (only) => !only })),
 
     /**
-     * 목록에서 북마크 하나를 지운다. 지금 보고 있는 페이지가 아니라 목록이
-     * 가리키는 페이지의 것이므로, 툴바의 ★와 달리 어디로도 가지 않는다.
+     * 목록에서 북마크 하나를 지운다. 툴바의 ★와 달리 지금 보고 있는 페이지가 아니라
+     * 목록이 가리키는 페이지의 것이고, 썸네일을 누를 때와 달리 어디로도 가지 않는다.
      *
      * 지운 자리만큼 목록이 줄어드니 격자를 다시 채운다 — 남은 것들이 앞으로
      * 당겨져서, 창에 새로 들어온 페이지가 생긴다.

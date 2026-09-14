@@ -98,8 +98,8 @@ export const pagesInView = (
 }
 
 /**
- * 필요한 페이지 중 아직 뽑지 않은 것. 그래서 스크롤할 때마다 직전에 가져오지
- * 않은 것만 요청한다.
+ * 필요한 페이지 중 아직 도착하지 않은 것. 요청 중인 페이지는 기록하지 않으므로,
+ * 답이 오기 전에 다시 스크롤하면 같은 페이지를 또 요청한다.
  */
 export const missingFrom = (
   loaded: ReadonlyArray<Panel>,

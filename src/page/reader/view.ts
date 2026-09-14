@@ -694,8 +694,8 @@ const openingView = (text: string, h: HtmlBuilder<Message>): Html =>
   )
 
 /**
- * 리더를 그린다. 화면, 그 위에 얹히는 툴바와 넘김 버튼들, 그리고 열려 있다면
- * 페이지 격자.
+ * 리더를 그린다. 툴바, 이어 가기 줄, 화면, 넘김 버튼 줄을 위에서 아래로 쌓고, 열려
+ * 있다면 페이지 격자와 설정 패널을 더한다.
  */
 export const view = defineView<Model, Message>((model, h): Html =>
   OpenState.match(model.openState, {

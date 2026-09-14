@@ -18,8 +18,8 @@ import { Settings } from './types.ts'
 /**
  * 부팅할 때 `localStorage`에서 읽어 넘기는 값.
  *
- * 테마는 설정이 정한다. `index.html`은 어두운 기본값을 담고 나가므로, 밝은
- * 테마를 고른 사람은 `ApplyTheme`이 닿기 전 한 프레임 동안 어두운 화면을 본다.
+ * 테마는 설정이 정한다. 첫 프레임의 테마는 `index.html`의 인라인 스크립트가 먼저
+ * 세우고(`S-144`), `ApplyTheme`은 같은 값을 다시 건다.
  */
 export const Flags = Schema.Struct({ settings: Settings })
 /** {@linkcode Flags} 스키마의 디코딩된 값. */

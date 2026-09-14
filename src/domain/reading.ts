@@ -45,8 +45,9 @@ export const bookPartOf = (settings: Settings): BookSettings => ({
 /**
  * 이 책을 열 때 리더가 받을 설정.
  *
- * 기억이 꺼져 있으면 전역 기본값 그대로다. 책에 남은 것이 있어도 쓰지 않으므로,
- * 스위치를 껐다 켜는 것만으로 예전에 정해 둔 배치가 돌아온다.
+ * 기억이 꺼져 있으면 전역 기본값 그대로다. 책에 남은 것이 있어도 쓰지 않는다.
+ * 다만 리더에서 스위치를 끄면 그 책에 남은 것은 지워지므로, 다시 켰을 때 돌아오는
+ * 것은 다른 책들이 정해 둔 배치뿐이다.
  */
 export const forBook = (global: Settings, maybeBook: Option.Option<BookSettings>): Settings =>
   global.rememberBookSettings
@@ -60,7 +61,10 @@ export const forBook = (global: Settings, maybeBook: Option.Option<BookSettings>
 export type Split = Readonly<{
   /** `comicyuri:settings`에 쓸 것. */
   global: Settings
-  /** 이 책의 레코드에 쓸 것. 기억이 꺼져 있으면 없음이다. */
+  /**
+   * 이 책의 레코드에 쓸 것. 기억이 꺼져 있으면 없음이고, 그때 레코드의 설정은
+   * 지워진다.
+   */
   maybeBook: Option.Option<BookSettings>
 }>
 

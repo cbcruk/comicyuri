@@ -134,8 +134,8 @@ const foldReaderOutMessage = Reader.OutMessage.match<
       ),
   /**
    * 리더가 쥔 설정은 전역 기본값과 이 책의 것을 합친 결과다. 저장할 때 다시
-   * 갈라야, 어떤 책에서 뒤집은 방향이 전역 기본값이 되어 다음 책까지 따라가지
-   * 않는다.
+   * 갈라야, 책마다 기억하기가 켜진 동안 어떤 책에서 뒤집은 방향이 전역 기본값이
+   * 되어 다음 책까지 따라가지 않는다.
    */
   ChangedSettings:
     ({ bookId, settings }) =>

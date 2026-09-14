@@ -27,7 +27,10 @@ export function isArchiveName(name: string): boolean {
   return ZIP_RE.test(name)
 }
 
-/** 눈에 보이는 파일 이름 기준의 자연 정렬("1, 10, 2"가 아니라 "1, 2, 10"). */
+/**
+ * 경로 문자열 기준의 자연 정렬("1, 10, 2"가 아니라 "1, 2, 10"). 하위 폴더가 있으면
+ * 폴더 이름이 먼저 순서를 가른다.
+ */
 function byName<T>(get: (item: T) => string) {
   return (a: T, b: T) => collator.compare(get(a), get(b))
 }

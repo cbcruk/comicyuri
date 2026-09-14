@@ -3,7 +3,7 @@
  *
  * 중앙 디렉터리를 파싱하고 엔트리는 필요할 때 뽑는다. deflate 된 엔트리는 플랫폼의
  * `DecompressionStream`으로 풀기 때문에 외부 ZIP 의존성이 없다. 압축되지 않은
- * 엔트리는 그대로 잘라 쓴다. 잘렸거나 지원하지 않는 파일을 만날 수 있는 모든
+ * 엔트리는 그대로 잘라 쓴다. 범위를 벗어나거나 지원하지 않는 파일을 만날 수 있는
  * 단계는 던지지 않고 `ArchiveError`로 실패한다.
  */
 
@@ -81,7 +81,7 @@ function readCentralDirectory(buffer: ArrayBuffer, view: DataView, eocd: number)
  * 없이는 아카이브가 존재할 수 없다.
  */
 export class ZipArchive {
-  /** 중앙 디렉터리가 적어 둔 모든 엔트리를, 적힌 순서 그대로. */
+  /** 중앙 디렉터리에서 읽어 낸 엔트리를, 적힌 순서 그대로. */
   readonly entries: ZipEntry[]
   private readonly buffer: ArrayBuffer
 
@@ -93,7 +93,8 @@ export class ZipArchive {
   /**
    * 아카이브를 읽고 중앙 디렉터리를 파싱한다.
    *
-   * blob이 애초에 ZIP이 아니거나, 디렉터리가 잘렸거나 깨졌으면 실패한다.
+   * blob이 애초에 ZIP이 아니거나 디렉터리가 파일 범위를 벗어나면 실패한다. 레코드
+   * 시그니처가 어긋나면 거기서 멈추고, 그 앞까지 읽은 엔트리로 연다.
    */
   static open(blob: Blob): Effect.Effect<ZipArchive, ArchiveError> {
     return Effect.gen(function* () {

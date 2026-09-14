@@ -55,9 +55,8 @@ body {
   height: 100dvh;
 }
 
-/* The side a page turn came from, shown for a moment on the stage. Two pages
-   of a comic can look alike enough that a turn reads as the same image having
-   moved, so the edge it arrived from is worth saying out loud. */
+/* The side a tap-zone page turn came from, shown for a moment on the stage.
+   Drawn in development builds only (`SHOWS_TAP_FLASH`). */
 @keyframes tap-flash {
   from {
     opacity: 0.5;

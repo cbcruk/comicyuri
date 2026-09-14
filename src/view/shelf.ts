@@ -88,8 +88,8 @@ const headerView = (theme: Theme, isSettingsOpen: boolean, h: HtmlBuilder<Messag
   )
 
 /**
- * 할 말이 생기기 전에 live region이 이미 있도록 모든 라우트에서 그린다. 문구와
- * 함께 만들어진 region은 읽히지 않는다.
+ * 할 말이 생기기 전에 live region이 이미 있도록, `Idle`일 때도 빈 채로 책장에
+ * 그려 둔다. 문구와 함께 만들어진 region은 읽히지 않는다.
  */
 const noticeView = (notice: Notice, h: HtmlBuilder<Message>): Html =>
   h.p(
@@ -129,10 +129,7 @@ const coverView = (book: Book.BookSummary, h: HtmlBuilder<Message>): Html =>
       ]),
   })
 
-/**
- * 링크가 접근 가능한 이름을 갖도록 제목을 링크 안에 둔다. 삭제 버튼은 그 이름에
- * 섞이지 않게 형제로 둔다.
- */
+/** 카드 모서리 버튼과 묻는 자리 버튼의 겉모습. */
 const cornerButtonClassName =
   'cursor-pointer rounded-md bg-bg/80 px-2 py-1 text-xs transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-accent'
 
@@ -179,6 +176,12 @@ const confirmDeleteView = (book: Book.BookSummary, h: HtmlBuilder<Message>): Htm
     ],
   )
 
+/**
+ * 책 한 권의 카드. 누르면 리더로 간다.
+ *
+ * 링크의 접근 가능한 이름은 `aria-label`의 제목이다. 🗑과 묻는 자리는 그 이름에
+ * 섞이지 않게 링크의 형제로 둔다.
+ */
 const cardView = (
   book: Book.BookSummary,
   isPendingDelete: boolean,
@@ -287,7 +290,8 @@ export const shelfView = (model: Model, h: HtmlBuilder<Message>): Html =>
           // 요소가 받는다. 그 input은 `label for`로 눌러서 고르는 방식을 위한
           // 것인데 이 책장은 그 방식을 쓰지 않는다 — 드롭 존이 페이지 전체라서
           // label을 두면 책을 누를 때마다 선택기가 열린다. 파일 고르기는 헤더
-          // 버튼이 맡고, 그쪽은 `File.selectMultiple`로 간다.
+          // 버튼이 맡는다. 파일은 `File.selectMultiple`로, 폴더는 `SelectFolder`로
+          // 간다.
           toView: (attributes) =>
             h.main(
               [

@@ -121,8 +121,9 @@ export const MeasureThumbsWidth = Command.define('MeasureThumbsWidth', {
 })
 
 /**
- * Fullscreen API는 브라우저가 거절하면 reject 되는 promise이고, 어느 쪽이든
- * 결과는 document가 자기 이벤트로 알린다. 그래서 이 Command는 묻기만 하면 된다.
+ * Fullscreen API는 브라우저가 거절하면 reject 되는 promise다. 상태가 바뀌면
+ * document가 `fullscreenchange`로 알리고, 거절되면 아무것도 바뀌지 않는다. 그래서
+ * 이 Command는 묻기만 하면 된다.
  */
 export const ToggleFullscreen = Command.define('ToggleFullscreen', {
   args: { wantFullscreen: Schema.Boolean },
