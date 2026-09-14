@@ -1,67 +1,41 @@
-import { Array, Match, Number, Option, Order } from 'effect'
-import { Reading } from '../../domain/index.ts'
+import { Array, Option, Order } from 'effect'
 import { Update } from 'foldkit'
 import { evo } from 'foldkit/struct'
 
+import { Slider } from '@foldkit/ui'
+
+import { Reading } from '../../domain/index.ts'
+import { nudgedSlideSeconds, nudgedThreshold } from '../../settings.ts'
 import type { FitMode } from '../../types.ts'
 import { bookmarkFrom } from './bookmark.ts'
-import {
-  LoadSpread,
-  LoadThumbs,
-  MeasureThumbsWidth,
-  PreloadNeighbours,
-  ToggleFullscreen,
-} from './command.ts'
-import { nudgedSlideSeconds, nudgedThreshold } from '../../settings.ts'
-import {
-  DOUBLE_TAP_MILLIS,
-  DOUBLE_TAP_ZOOM,
-  MIN_PINCH_SPAN,
-  ORIGIN,
-  TAP_SLOP,
-  ZOOM_MIN,
-  clampZoom,
-  distance,
-  midpoint,
-  panForZoom,
-  swipeFrom,
-  translate,
-  zoomAround,
-  zoneAt,
-} from './gesture.ts'
-import type { Point, Side } from './gesture.ts'
-import { Slider, VirtualList } from '@foldkit/ui'
-
+import { ToggleFullscreen } from './command.ts'
+import { ORIGIN } from './gesture.ts'
 import { messageForKey } from './keys.ts'
 import { Message, OutMessage } from './message.ts'
-import { Gesture, Model, OpenState, SpreadState } from './model.ts'
-import type { PageEntry } from './model.ts'
+import { Model, OpenState, SpreadState } from './model.ts'
 import type { OpenBookService } from './resource.ts'
-import { halfAfterStep, staysOnPage } from './half.ts'
 import { rotatedRight } from './rotation.ts'
 import { pannedBy, turnFromEdge } from './scroll.ts'
+import { flipBinding, indexOfPage, mirrorForDirection, pagesAt, spreadsFor } from './spread.ts'
 import {
-  loadedPages,
-  missingFrom,
-  pagesInView,
-  perRowFor,
-  rowHeightFor,
-  shownPages,
-} from './thumbs.ts'
+  droppedGesture,
+  movedPointer,
+  pressedPointer,
+  releasedPointer,
+  withPress,
+  zoomedTo,
+} from './update/gesture.ts'
+import { goToPage, showPage, skip, step } from './update/navigation.ts'
+import type { UpdateReturn } from './update/navigation.ts'
 import {
-  flipBinding,
-  indexOfPage,
-  splitRatio,
-  mirrorForDirection,
-  neighbourPages,
-  pageAfterStep,
-  pageAtEdge,
-  pagesAt,
-  pagesToKeep,
-  spreadsFor,
-} from './spread.ts'
-
-type UpdateReturn = Update.ReturnWithOutMessage<Model, Message, OutMessage, OpenBookService>
+  clickedRemoveBookmark,
+  clickedToggleBookmarksOnly,
+  clickedToggleThumbs,
+  completedLoadThumbs,
+  gotThumbsMessage,
+  measuredThumbsWidth,
+  selectedThumb,
+} from './update/thumbs.ts'
 
 const FIT_ORDER: ReadonlyArray<FitMode> = ['contain', 'width', 'height', 'original']
 
@@ -74,138 +48,6 @@ const nextFit = (fit: FitMode): FitMode =>
     ),
     () => fit,
   )
-
-/**
- * 위치나 배치가 바뀐 뒤에 리더가 해야 하는 모든 일. 화면에 걸릴 이미지를 요청하고,
- * 이웃을 데우고, 격자가 쥐지 않은 나머지를 놓아 주고, 진행 상태를 위로 알린다.
- */
-const showPage = (model: Model, page: number): UpdateReturn =>
-  OpenState.match(model.openState, {
-    Opening: () => ({ model: evo(model, { page: () => page }) }),
-    Failed: () => ({ model: evo(model, { page: () => page }) }),
-    Ready: ({ pageCount, ratios }) => {
-      const spreads = spreadsFor({ pageCount, ratios, marks: model.marks }, model.settings)
-      const index = indexOfPage(spreads, page)
-      const pages = pagesAt(spreads, index)
-
-      return {
-        model: evo(model, {
-          page: () => page,
-          spread: () => SpreadState.Loading(),
-        }),
-        commands: [
-          LoadSpread({ page, pages }),
-          PreloadNeighbours({
-            warm: neighbourPages(spreads, index),
-            // 화면의 썸네일이 바로 이 페이지들의 URL을 쥐고 있으므로, 놓아
-            // 주면 격자가 빈다.
-            keep: Array.appendAll(pagesToKeep(spreads, index), loadedPages(model.thumbPanels)),
-          }),
-        ],
-        outMessage: OutMessage.UpdatedProgress({
-          bookId: model.bookId,
-          page,
-          bookmarks: model.bookmarks,
-          marks: model.marks,
-          rotation: model.rotation,
-        }),
-      }
-    },
-  })
-
-/**
- * 다른 페이지로 옮기면 처음부터 시작한다. pan 오프셋은 떠나는 페이지를 기준으로
- * 잰 값이라 그대로 가져가면 다음 페이지의 엉뚱한 곳에 앉는다 — 이것이 이 뷰어가
- * 대신한 예전 뷰어가 넘길 때와 건너뛸 때마다 초기화한 이유다. 설정을 바꾼 뒤 같은
- * 페이지를 다시 보여 줄 때는 배율을 지킨다.
- *
- * 뒤로 넘겨 온 페이지는 끝에서 시작한다. 슬라이더나 격자로 건너뛴 것은 넘긴 것이
- * 아니므로 언제나 처음이다.
- */
-const goToPage = (model: Model, page: number, entry: PageEntry = 'start'): UpdateReturn =>
-  showPage(
-    evo(model, {
-      zoom: () => ZOOM_MIN,
-      pan: () => ORIGIN,
-      entry: () => entry,
-      // 나뉜 페이지에서 "끝"은 뒤쪽 반이다.
-      half: () => (entry === 'end' ? 'second' : 'first'),
-    }),
-    page,
-  )
-
-/** 이 걸음이 페이지의 어느 쪽으로 들어서는지. 뒤로 가는 걸음만 끝에서 시작한다. */
-const entryFor = (by: number): PageEntry => (by < 0 ? 'end' : 'start')
-
-/**
- * 책의 끝을 넘어서 넘기려 할 때. 원본 뷰어에서 다음 권을 여는 동작이 바로 이
- * 자리였다 — 끝을 넘기는 것이 곧 다음 권을 여는 것이라, 따로 만들면 두 기능이
- * 겹친다.
- *
- * 이웃한 책은 리더가 열 수 없다. 책장 순서를 아는 것은 애플리케이션이므로
- * 올려 보내고, 이웃이 없으면 그쪽에서 아무 일도 일어나지 않는다.
- */
-const beyondBookEnd = (
-  model: Model,
-  spreads: ReadonlyArray<ReadonlyArray<number>>,
-  by: number,
-): UpdateReturn =>
-  Match.value(model.settings.atBookEnd).pipe(
-    Match.when('stop', (): UpdateReturn => ({ model })),
-    Match.when('wrap', (): UpdateReturn =>
-      Option.match(pageAtEdge(spreads, by), {
-        onNone: () => ({ model }),
-        onSome: (page) => goToPage(model, page, entryFor(by)),
-      }),
-    ),
-    Match.when('next', (): UpdateReturn => ({
-      model,
-      outMessage: OutMessage.RequestedNeighbourBook({ bookId: model.bookId, step: by }),
-    })),
-    Match.exhaustive,
-  )
-
-/**
- * 정해 둔 장수만큼 건너뛴다. 책의 양 끝에서 멈춘다(`R-2A5`) — 책을 벗어나는 것은
- * 넘김의 일이지(`R-212`) 건너뛰기의 일이 아니다.
- */
-const skip = (model: Model, pages: number): UpdateReturn =>
-  OpenState.match(model.openState, {
-    Opening: () => ({ model }),
-    Failed: () => ({ model }),
-    Ready: ({ pageCount }) => {
-      const page = Number.clamp(model.page + pages, { minimum: 0, maximum: pageCount - 1 })
-      return page === model.page ? { model } : goToPage(model, page)
-    },
-  })
-
-const step = (model: Model, by: number): UpdateReturn =>
-  OpenState.match(model.openState, {
-    Opening: () => ({ model }),
-    Failed: () => ({ model }),
-    Ready: ({ pageCount, ratios }) => {
-      const layout = { pageCount, ratios, marks: model.marks }
-      const spreads = spreadsFor(layout, model.settings)
-      const here = pagesAt(spreads, indexOfPage(spreads, model.page))
-
-      // 나뉜 페이지에 아직 반쪽이 남아 있으면, 페이지를 넘기기 전에 그쪽부터 본다.
-      // 같은 이미지라서 새로 불러올 것이 없다.
-      if (Option.isSome(splitRatio(layout, model.settings, here)) && staysOnPage(model.half, by)) {
-        return {
-          model: evo(model, {
-            half: () => halfAfterStep(by),
-            zoom: () => ZOOM_MIN,
-            pan: () => ORIGIN,
-          }),
-        }
-      }
-
-      return Option.match(pageAfterStep(spreads, model.page, by), {
-        onNone: () => beyondBookEnd(model, spreads, by),
-        onSome: (page) => goToPage(model, page, entryFor(by)),
-      })
-    },
-  })
 
 /**
  * 리더가 가진 설정이 바뀌었다. 다시 배치하고 애플리케이션에 알린다.
@@ -257,190 +99,6 @@ const withActivity = (model: Model): Model =>
   })
 
 /**
- * 누름은 대기를 다시 시작시키지만 그 자체로 툴바를 보이지는 않는다. 페이지
- * 가운데를 탭하는 것은 툴바를 토글하라는 뜻인데, 누르는 길에 보여 버리면 그
- * 탭들이 하나같이 '숨김'으로 끝난다.
- */
-const withPress = (model: Model): Model => evo(model, { activityToken: (token) => token + 1 })
-
-const zoomedTo = (model: Model, nextZoom: number, anchor: Point): Model => {
-  const zoom = clampZoom(nextZoom)
-  return evo(model, {
-    zoom: () => zoom,
-    pan: () => panForZoom(zoomAround(model.pan, model.zoom, zoom, anchor), zoom),
-  })
-}
-
-/** 누름은 추적을 시작하거나, 이미 있는 추적에 붙어 핀치가 된다. */
-const pressed = (model: Model, pointerId: number, at: Point): Model =>
-  Gesture.match(model.gesture, {
-    Idle: () =>
-      evo(model, {
-        gesture: () =>
-          Gesture.Tracking({
-            pointerId,
-            origin: at,
-            last: at,
-            hasLeftSlop: false,
-          }),
-      }),
-    Tracking: (tracking) =>
-      // 같은 포인터가 다시 눌렀다면 앞선 흐름이 끝내 놓이지 않은 것이지 —
-      // `pointerup`을 놓친 것이다 — 두 번째 손가락이 아니다. 이것을 핀치로 읽으면
-      // 낡은 점과 새 점 사이를 재게 되고, 그 비율이 닿는 아무 데로나 배율이 튄다.
-      tracking.pointerId === pointerId || distance(tracking.last, at) < MIN_PINCH_SPAN
-        ? evo(model, {
-            gesture: () =>
-              Gesture.Tracking({
-                pointerId,
-                origin: at,
-                last: at,
-                hasLeftSlop: false,
-              }),
-          })
-        : evo(model, {
-            gesture: () =>
-              Gesture.Pinching({
-                firstId: tracking.pointerId,
-                secondId: pointerId,
-                first: tracking.last,
-                second: at,
-                startSpan: distance(tracking.last, at),
-                startZoom: model.zoom,
-              }),
-          }),
-    // 세 번째 손가락은 이 리더가 아는 제스처가 아니다.
-    Pinching: () => model,
-  })
-
-/**
- * 가리킨 방향이 눈에 보이는 대로 한 걸음 옮긴다. 오른쪽에서 왼쪽으로 읽으면 다음
- * 페이지가 왼쪽에 있고, 그래서 왼쪽 탭이 만화를 앞으로 넘긴다.
- */
-const stepForSide = (model: Model, side: 'Left' | 'Right'): number => {
-  const forward = model.settings.direction === 'rtl' ? 'Left' : 'Right'
-  return side === forward ? 1 : -1
-}
-
-const moved = (model: Model, pointerId: number, at: Point): Model =>
-  Gesture.match(model.gesture, {
-    Idle: () => model,
-
-    Tracking: (tracking) => {
-      if (tracking.pointerId !== pointerId) return model
-
-      const hasLeftSlop = tracking.hasLeftSlop || distance(tracking.origin, at) > TAP_SLOP
-
-      // 페이지가 화면보다 커야 옮기는 것이 뜻을 갖는다.
-      const panned =
-        model.zoom > ZOOM_MIN
-          ? evo(model, { pan: () => translate(model.pan, tracking.last, at) })
-          : model
-
-      return evo(panned, {
-        gesture: () => Gesture.Tracking({ ...tracking, last: at, hasLeftSlop }),
-      })
-    },
-
-    Pinching: (pinching) => {
-      const first = pinching.firstId === pointerId ? at : pinching.first
-      const second = pinching.secondId === pointerId ? at : pinching.second
-      const span = distance(first, second)
-
-      if (span === 0) return model
-
-      const zoomed = zoomedTo(
-        model,
-        pinching.startZoom * (span / pinching.startSpan),
-        midpoint(first, second),
-      )
-
-      return evo(zoomed, {
-        gesture: () => Gesture.Pinching({ ...pinching, first, second }),
-      })
-    },
-  })
-
-/**
- * 누름이 마침내 뜻을 갖는 자리가 놓음이다. 옮기는 일은 움직이는 동안 이미
- * 적용했으므로, 여기 남는 것은 페이지가 화면에 들어맞을 때 누름이 뜻하는 것 —
- * 스와이프이거나, 세 구역 중 한 곳의 탭이다.
- */
-const released = (
-  model: Model,
-  tracking: typeof Gesture.Tracking.Type,
-  at: Point,
-  timeStamp: number,
-  viewportWidth: number,
-): UpdateReturn => {
-  const settled = evo(model, { gesture: () => Gesture.Idle() })
-
-  // 드래그는 결코 탭이 아니며, 앞선 탭이 열어 둔 짝도 닫는다.
-  if (tracking.hasLeftSlop) {
-    const dragged = evo(settled, { lastTapAt: () => 0 })
-
-    // 확대된 상태에서 움직인 누름은 이동이었고, 이미 적용되어 있다.
-    if (model.zoom > ZOOM_MIN) return { model: dragged }
-
-    const swipe = swipeFrom(tracking.origin, at)
-    return swipe === 'Middle' ? { model: dragged } : step(dragged, stepForSide(dragged, swipe))
-  }
-
-  const zone = zoneAt(at.x, viewportWidth)
-
-  // 바깥쪽 1/3은 페이지를 넘길 뿐 다른 일은 하지 않는다. 그곳을 빠르게 두 번
-  // 탭하는 것은 빨리 읽고 있다는 뜻이고, 그것을 확대 요청으로 읽었기에 트랙패드에서
-  // 두 페이지를 넘긴 것이 확대가 되었다.
-  if (zone !== 'Middle') {
-    const turning = evo(settled, { lastTapAt: () => 0 })
-    return withTapFlash(step(turning, stepForSide(turning, zone)), turning.page, zone)
-  }
-
-  // 가운데가 모드가 사는 곳이다. 한 번은 툴바, 두 번은 줌.
-  if (timeStamp - model.lastTapAt < DOUBLE_TAP_MILLIS) {
-    // 여기서 써 버리므로, 세 번째 탭은 이것을 되돌리지 않고 새 짝을 연다.
-    const consumed = evo(settled, { lastTapAt: () => 0 })
-
-    return {
-      model:
-        model.zoom > ZOOM_MIN
-          ? evo(consumed, { zoom: () => ZOOM_MIN, pan: () => ORIGIN })
-          : zoomedTo(consumed, DOUBLE_TAP_ZOOM, at),
-    }
-  }
-
-  return {
-    model: evo(settled, {
-      lastTapAt: () => timeStamp,
-      isChromeVisible: (visible) => !visible,
-      activityToken: (token) => token + 1,
-    }),
-  }
-}
-
-/**
- * 페이지가 어느 쪽에서 왔는지 표시한다. 다만 실제로 넘어갔을 때만이다. 같은 만화의
- * 두 페이지는 넘김이 같은 이미지가 움직인 것처럼 보일 만큼 닮을 수 있고, 책 끝에서는
- * 일어나지도 않은 넘김을 표시가 주장하게 된다.
- */
-const withTapFlash = (turned: UpdateReturn, pageBefore: number, side: Side): UpdateReturn =>
-  turned.model.page === pageBefore
-    ? turned
-    : {
-        ...turned,
-        model: evo(turned.model, {
-          maybeTapFlash: (flash) =>
-            Option.some({
-              side,
-              token: Option.match(flash, {
-                onNone: () => 0,
-                onSome: ({ token }) => token + 1,
-              }),
-            }),
-        }),
-      }
-
-/**
  * 슬라이더 값에 해당하는 페이지.
  *
  * 슬라이더는 자기 값으로 일하고, 오른쪽에서 왼쪽으로 읽을 때 그 값은 반대로 간다.
@@ -477,33 +135,6 @@ const foldSlider = Update.foldChild({
   write: (model, nextSlider) => evo(model, { slider: () => nextSlider }),
   toParentMessage: (message) => Message.GotSliderMessage({ message }),
   foldOutMessage: foldSliderOutMessage,
-})
-
-/** 격자가 보여 줄 수 있으면서 아직 뽑지 않은 것을 요청한다. */
-const fillThumbs = (model: Model): UpdateReturn => {
-  const pageCount = OpenState.match(model.openState, {
-    Opening: () => 0,
-    Failed: () => 0,
-    Ready: ({ pageCount }) => pageCount,
-  })
-
-  const pages = shownPages(pageCount, model.bookmarks, model.showsBookmarksOnly)
-  const missing = missingFrom(
-    model.thumbPanels,
-    pagesInView(model.thumbs, pages, perRowFor(model.thumbsWidth)),
-  )
-
-  return Array.match(missing, {
-    onEmpty: () => ({ model }),
-    onNonEmpty: (pages) => ({ model, commands: [LoadThumbs({ pages })] }),
-  })
-}
-
-const foldThumbs = Update.foldChild({
-  update: VirtualList.update,
-  read: (model: Model) => Option.some(model.thumbs),
-  write: (model, nextThumbs) => evo(model, { thumbs: () => nextThumbs }),
-  toParentMessage: (message) => Message.GotThumbsMessage({ message }),
 })
 
 /**
@@ -623,8 +254,8 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
         Opening: () => ({ model }),
         Failed: () => ({ model }),
         Ready: ({ pageCount }) => {
-          const page = globalThis.Number.parseInt(text, 10) - 1
-          return globalThis.Number.isInteger(page) && page >= 0 && page < pageCount
+          const page = Number.parseInt(text, 10) - 1
+          return Number.isInteger(page) && page >= 0 && page < pageCount
             ? goToPage(model, page)
             : { model }
         },
@@ -757,85 +388,12 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       model: evo(model, { isFullscreen: () => isFullscreen }),
     }),
 
-    ClickedToggleThumbs: () =>
-      model.isThumbsOpen
-        ? {
-            model: evo(model, {
-              isThumbsOpen: () => false,
-              // 이제 아무도 그것들을 보여 주지 않으므로, 그 출처인 페이지들은
-              // 다음 넘김에 놓아 주어도 된다.
-              thumbPanels: () => [],
-            }),
-          }
-        : {
-            // 폭을 묻기만 하고 뽑지는 않는다. 몇 칸이 서는지가 무엇을 뽑을지도
-            // 정하므로, 여기서 뽑으면 기본값으로 한 번 뽑았다가 잰 값으로 다시
-            // 뽑게 된다. 채우는 일은 잰 답이 돌아올 때 한 번에 한다.
-            model: evo(model, {
-              isThumbsOpen: () => true,
-              isChromeVisible: () => true,
-              activityToken: (token) => token + 1,
-            }),
-            commands: [MeasureThumbsWidth()],
-          },
-
-    GotThumbsMessage: ({ message }) => {
-      const scrolled = foldThumbs(model, message)
-      const filled = fillThumbs(scrolled.model)
-
-      return {
-        model: filled.model,
-        commands: Array.appendAll(scrolled.commands ?? [], filled.commands ?? []),
-      }
-    },
-
-    CompletedLoadThumbs: ({ panels }) => ({
-      model: evo(model, {
-        thumbPanels: (existing) => Array.appendAll(existing, panels),
-      }),
-    }),
-
-    /**
-     * 폭이 바뀌면 칸의 수도, 칸의 너비도, 행의 높이도 바뀐다. 가상 리스트는 행을
-     * 자기가 쥔 높이로 셈하므로 그쪽에도 새 값을 먹인다 — 그러지 않으면 그려진
-     * 행과 리스트가 잡은 자리가 어긋난다.
-     *
-     * 새로 드러난 자리를 채워야 하므로 다시 뽑는다.
-     */
-    MeasuredThumbsWidth: ({ width }) =>
-      fillThumbs(
-        evo(model, {
-          thumbsWidth: () => width,
-          thumbs: (thumbs) => evo(thumbs, { rowHeightPx: () => rowHeightFor(width) }),
-        }),
-      ),
-
-    /** 북마크를 목록으로 보는 것과 책 전체를 보는 것 사이를 오간다. */
-    ClickedToggleBookmarksOnly: () =>
-      fillThumbs(evo(model, { showsBookmarksOnly: (only) => !only })),
-
-    /**
-     * 목록에서 북마크 하나를 지운다. 툴바의 ★와 달리 지금 보고 있는 페이지가 아니라
-     * 목록이 가리키는 페이지의 것이고, 썸네일을 누를 때와 달리 어디로도 가지 않는다.
-     *
-     * 지운 자리만큼 목록이 줄어드니 격자를 다시 채운다 — 남은 것들이 앞으로
-     * 당겨져서, 창에 새로 들어온 페이지가 생긴다.
-     */
-    ClickedRemoveBookmark: ({ page }) => {
-      const bookmarks = Array.filter(model.bookmarks, (bookmark) => bookmark !== page)
-      const filled = fillThumbs(evo(model, { bookmarks: () => bookmarks }))
-
-      return {
-        ...filled,
-        outMessage: OutMessage.UpdatedProgress({
-          bookId: model.bookId,
-          page: model.page,
-          bookmarks,
-          marks: model.marks,
-          rotation: model.rotation,
-        }),
-      }
-    },
+    ClickedToggleThumbs: () => clickedToggleThumbs(model),
+    GotThumbsMessage: ({ message }) => gotThumbsMessage(model, message),
+    CompletedLoadThumbs: ({ panels }) => completedLoadThumbs(model, panels),
+    MeasuredThumbsWidth: ({ width }) => measuredThumbsWidth(model, width),
+    ClickedToggleBookmarksOnly: () => clickedToggleBookmarksOnly(model),
+    ClickedRemoveBookmark: ({ page }) => clickedRemoveBookmark(model, page),
 
     /**
      * 앞뒤 북마크로 건너뛴다. 그쪽에 더 남은 북마크가 없으면 제자리에 머문다 —
@@ -847,59 +405,14 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
         onSome: (page) => goToPage(model, page),
       }),
 
-    SelectedThumb: ({ page }) => {
-      const jumped = goToPage(evo(model, { isThumbsOpen: () => false }), page)
-      return {
-        ...jumped,
-        model: evo(jumped.model, { thumbPanels: () => [] }),
-      }
-    },
+    SelectedThumb: ({ page }) => selectedThumb(model, page),
 
-    PressedPointer: ({ pointerId, at }) => ({
-      model: pressed(withPress(model), pointerId, at),
-    }),
-
-    MovedPointer: ({ pointerId, at }) => ({
-      model: moved(model, pointerId, at),
-    }),
-
+    PressedPointer: ({ pointerId, at }) => pressedPointer(model, pointerId, at),
+    MovedPointer: ({ pointerId, at }) => movedPointer(model, pointerId, at),
     ReleasedPointer: ({ pointerId, at, timeStamp, viewportWidth }) =>
-      Gesture.match(model.gesture, {
-        Idle: () => ({ model }),
-        Tracking: (tracking) =>
-          tracking.pointerId === pointerId
-            ? released(model, tracking, at, timeStamp, viewportWidth)
-            : { model },
-        // 핀치에서 손가락 하나를 떼도 다른 하나는 아직 눌려 있다.
-        Pinching: (pinching) => ({
-          model: evo(model, {
-            gesture: () =>
-              pinching.firstId === pointerId
-                ? Gesture.Tracking({
-                    pointerId: pinching.secondId,
-                    origin: pinching.second,
-                    last: pinching.second,
-                    hasLeftSlop: true,
-                  })
-                : Gesture.Tracking({
-                    pointerId: pinching.firstId,
-                    origin: pinching.first,
-                    last: pinching.first,
-                    hasLeftSlop: true,
-                  }),
-          }),
-        }),
-      }),
-
-    CancelledPointer: () => ({
-      model: evo(model, { gesture: () => Gesture.Idle() }),
-    }),
-
-    // 제스처가 열린 채로 페이지를 만질 수 없게 되었으므로, 그것이 쥐고 있던 것은
-    // 더 이상 사실이 아니다.
-    AbandonedPointer: () => ({
-      model: evo(model, { gesture: () => Gesture.Idle() }),
-    }),
+      releasedPointer(model, pointerId, at, timeStamp, viewportWidth),
+    CancelledPointer: () => droppedGesture(model),
+    AbandonedPointer: () => droppedGesture(model),
 
     ScrolledToZoom: ({ delta, at }) => ({
       model: zoomedTo(model, model.zoom * Math.exp(-delta / 300), at),
