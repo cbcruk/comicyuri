@@ -24,8 +24,6 @@ export type Opening = Readonly<{
  *
  * 첫 장에 멈춰 있던 책은 물을 것이 없다 — 이미 그 자리이므로, `ask`여도 묻지
  * 않고 조용히 연다.
- *
- * @param saved 이 책에 저장되어 있는 페이지.
  */
 export const opening = (settings: Settings, saved: number): Opening => {
   if (settings.resume === 'continue') return { page: saved, maybeOffer: Option.none() }

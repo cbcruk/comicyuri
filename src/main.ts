@@ -16,6 +16,8 @@ import { Settings } from './types.ts'
 // FLAGS
 
 /**
+ * 부팅할 때 `localStorage`에서 읽어 넘기는 값.
+ *
  * 테마는 설정이 정한다. `index.html`은 어두운 기본값을 담고 나가므로, 밝은
  * 테마를 고른 사람은 `ApplyTheme`이 닿기 전 한 프레임 동안 어두운 화면을 본다.
  */
@@ -57,7 +59,6 @@ export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (
     },
     commands: [
       ApplyTheme({ theme: flags.settings.theme }),
-      // 첫 부팅에는 쥐고 있는 표지가 없다.
       LoadShelf({ have: [] }),
       ...AppRoute.match(route, {
         Reader: ({ id }) => [LoadProgress({ bookId: id })],

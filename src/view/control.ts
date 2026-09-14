@@ -22,16 +22,7 @@ export type ControlConfig<Msg> = Readonly<{
   attributes?: ReadonlyArray<Attribute<Msg>>
 }>
 
-/**
- * 버튼을 그린다.
- *
- * @example 툴바의 버튼
- * ```ts
- * import { controlView } from './view/control.ts'
- *
- * controlView({ label: 'Close', message: Message.ClickedToggleSettings() }, h)
- * ```
- */
+/** 버튼을 그린다. */
 export const controlView = <Msg>(config: ControlConfig<Msg>, h: HtmlBuilder<Msg>): Html =>
   Button.view(
     {

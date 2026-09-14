@@ -320,12 +320,6 @@ const panelView = (
   ])
 
 /**
- * 화면이 곧 제스처를 받는 면이다. 그래서 포인터 구독이 찾는 id를 달고, 터치
- * 처리를 브라우저에서 가져온다. 줌과 이동은 안쪽 요소에 걸린 하나의 transform이다.
- * 제스처 계산이 쓰는 중심 기준 좌표가 계속 그 뜻을 지키려면 바깥쪽은 가만히
- * 있어야 한다.
- */
-/**
  * 페이지 넘김 표시를 그릴지. `import.meta.hot`은 Foldkit 런타임 자신이 개발과
  * 프로덕션 빌드를 가르는 방법이고 빌드 때 상수로 바뀌므로, 프로덕션 번들에서는
  * 표시도 그것을 그리는 분기도 사라진다.
@@ -348,12 +342,47 @@ const tapFlashView = (flash: TapFlash, h: HtmlBuilder<Message>): Html =>
     h.AriaHidden(true),
   ])
 
+/**
+ * 페이지를 담는 상자의 클래스. 맞춤 모드와 세운 각도, 들어선 쪽이 여기서 풀린다.
+ *
+ * 맞춤 모드는 페이지에 `h-full`·`w-full`·`max-h-full`을 건다. 퍼센트 크기는 담는
+ * 상자가 크기를 정해 두어야 풀리는데, 이 상자는 스테이지의 flex 자식이라 내버려
+ * 두면 내용만큼만 커진다. 그러면 페이지가 자기 크기를 기준으로 자기를 재는 꼴이라
+ * 어떤 맞춤 모드도 듣지 않는다.
+ *
+ * 세로로 세우는 것은 `items-center-safe`다. 화면에 들어가는 페이지는 가운데에
+ * 놓고, 넘치는 페이지는 잘리는 쪽 대신 시작하는 쪽에 붙인다. 그냥 `items-center`면
+ * 긴 페이지가 위아래로 똑같이 잘려서 첫 줄부터 볼 수 없다.
+ *
+ * 뒤로 넘겨 온 페이지는 끝에서 시작한다(`R-247`). `flex-wrap-reverse`가 교차축의
+ * 시작을 아래로 뒤집으므로, 넘치는 쪽에 붙는 자리도 함께 뒤집힌다 — 화면에
+ * 들어가는 페이지는 그대로 가운데다.
+ */
+const pageBoxClassName = (model: Model): string =>
+  clsx('flex items-center-safe justify-center gap-1 [container-type:size]', {
+    // 눕힌 상자는 가로와 세로가 맞바뀐다. 그래야 세운 페이지에 맞춤 모드가 화면
+    // 크기대로 걸린다.
+    'h-full w-full': !swapsSides(model.rotation),
+    'h-[100cqw] w-[100cqh]': swapsSides(model.rotation),
+    'flex-row-reverse': model.settings.direction === 'rtl',
+    'flex-wrap-reverse': model.entry === 'end',
+    // 확대를 풀고 제자리로 돌아가는 것은 애니메이션할 값이 있지만, 끌고 있는 중도,
+    // 굴려서 페이지를 움직이는 중도 아니다.
+    'transition-transform': model.zoom === ZOOM_MIN && model.pan.x === 0 && model.pan.y === 0,
+  })
+
+/**
+ * 화면이 곧 제스처를 받는 면이다. 그래서 포인터 구독이 찾는 id를 달고, 터치
+ * 처리를 브라우저에서 가져온다. 줌과 이동은 안쪽 요소에 걸린 하나의 transform이다.
+ * 제스처 계산이 쓰는 중심 기준 좌표가 계속 그 뜻을 지키려면 바깥쪽은 가만히
+ * 있어야 한다.
+ */
 const stageView = (
   model: Model,
   maybeHalf: Option.Option<SplitHalf>,
   h: HtmlBuilder<Message>,
 ): Html => {
-  const { settings, spread, zoom, pan, entry, rotation } = model
+  const { settings, spread, zoom, pan, rotation } = model
 
   return h.div(
     [
@@ -366,39 +395,15 @@ const stageView = (
     ],
     [
       // 페이지 번호를 키로 삼아, 넘길 때마다 이 상자를 새로 세운다. 그러지 않으면
-      // 앞 페이지를 굴려 둔 자리에서 새 페이지가 미끄러져 들어온다 — 아래 전환
-      // 애니메이션이 그 transform까지 애니메이션할 값으로 보기 때문이다. 미끄러지는
-      // 동안에는 페이지가 어디까지 왔는지 재는 값도 사실이 아니다.
+      // 앞 페이지를 굴려 둔 자리에서 새 페이지가 미끄러져 들어온다 — 상자에 건
+      // `transition-transform`이 그 transform까지 애니메이션할 값으로 보기
+      // 때문이다. 미끄러지는 동안에는 페이지가 어디까지 왔는지 재는 값도 사실이
+      // 아니다.
       h.keyed('div')(
         String(model.page),
         [
           h.Id(PAGE_ID),
-          h.Class(
-            // 맞춤 모드는 페이지에 `h-full`·`w-full`·`max-h-full`을 건다. 퍼센트
-            // 크기는 담는 상자가 크기를 정해 두어야 풀리는데, 이 상자는 스테이지의
-            // flex 자식이라 내버려 두면 내용만큼만 커진다. 그러면 페이지가 자기
-            // 크기를 기준으로 자기를 재는 꼴이라 어떤 맞춤 모드도 듣지 않는다.
-            //
-            // 세로로 세우는 것은 `items-center-safe`다. 화면에 들어가는 페이지는
-            // 가운데에 놓고, 넘치는 페이지는 잘리는 쪽 대신 시작하는 쪽에 붙인다.
-            // 그냥 `items-center`면 긴 페이지가 위아래로 똑같이 잘려서 첫 줄부터
-            // 볼 수 없다.
-            //
-            // 뒤로 넘겨 온 페이지는 끝에서 시작한다(`R-247`). `flex-wrap-reverse`가
-            // 교차축의 시작을 아래로 뒤집으므로, 넘치는 쪽에 붙는 자리도 함께
-            // 뒤집힌다 — 화면에 들어가는 페이지는 그대로 가운데다.
-            clsx('flex items-center-safe justify-center gap-1 [container-type:size]', {
-              // 눕힌 상자는 가로와 세로가 맞바뀐다. 그래야 세운 페이지에 맞춤
-              // 모드가 화면 크기대로 걸린다.
-              'h-full w-full': !swapsSides(rotation),
-              'h-[100cqw] w-[100cqh]': swapsSides(rotation),
-              'flex-row-reverse': settings.direction === 'rtl',
-              'flex-wrap-reverse': entry === 'end',
-              // 확대를 풀고 제자리로 돌아가는 것은 애니메이션할 값이 있지만,
-              // 끌고 있는 중도, 굴려서 페이지를 움직이는 중도 아니다.
-              'transition-transform': zoom === ZOOM_MIN && pan.x === 0 && pan.y === 0,
-            }),
-          ),
+          h.Class(pageBoxClassName(model)),
           // 세우는 것이 맨 오른쪽이라 먼저 걸린다. 그래서 확대와 이동은 세운 뒤에도
           // 화면 좌표 그대로다 — 제스처가 재는 좌표와 같은 뜻으로 남는다.
           h.Style({

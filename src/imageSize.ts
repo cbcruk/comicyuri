@@ -37,21 +37,21 @@ const matches = (bytes: Uint8Array, at: number, ascii: string): boolean => {
 const startsWith = (bytes: Uint8Array, ...signature: number[]): boolean =>
   signature.length <= bytes.length && signature.every((byte, i) => bytes[i] === byte)
 
-// PNG: 시그니처 8바이트 다음이 곧 IHDR이고, 폭과 높이가 그 앞머리에 있다.
+/** PNG의 크기. 시그니처 8바이트 다음이 곧 IHDR이고, 폭과 높이가 그 앞머리에 있다. */
 const pngSize = (bytes: Uint8Array): Option.Option<ImageSize> => {
   if (bytes.length < 24 || !matches(bytes, 12, 'IHDR')) return Option.none()
   const view = viewOf(bytes)
   return size(view.getUint32(16), view.getUint32(20))
 }
 
-// GIF: 논리 화면 기술자가 시그니처 바로 뒤에 붙는다.
+/** GIF의 크기. 논리 화면 기술자가 시그니처 바로 뒤에 붙는다. */
 const gifSize = (bytes: Uint8Array): Option.Option<ImageSize> => {
   if (bytes.length < 10) return Option.none()
   const view = viewOf(bytes)
   return size(view.getUint16(6, true), view.getUint16(8, true))
 }
 
-// BMP: 아래에서 위로 그리는 그림은 높이가 음수라서 절댓값을 쓴다.
+/** BMP의 크기. 아래에서 위로 그리는 그림은 높이가 음수라서 절댓값을 쓴다. */
 const bmpSize = (bytes: Uint8Array): Option.Option<ImageSize> => {
   if (bytes.length < 26) return Option.none()
   const view = viewOf(bytes)
@@ -185,10 +185,10 @@ const isobmffSize = (bytes: Uint8Array): Option.Option<ImageSize> => {
  * AVIF/HEIF를 알아본다.
  *
  * JPEG는 EXIF 회전을 반영한다. 브라우저가 눕힌 사진을 세워서 그리므로, 화면에
- * 나오는 모양과 여기서 답하는 크기가 어긋나지 않아야 한다.
+ * 나오는 모양과 여기서 답하는 크기가 어긋나지 않아야 한다. 형식을 모르거나
+ * 헤더가 잘렸으면 `None`이다.
  *
  * @param bytes 이미지 파일 전체, 또는 최소한 그 머리.
- * @returns 읽어 낸 크기. 형식을 모르거나 헤더가 잘렸으면 `None`.
  */
 export const imageSize = (bytes: Uint8Array): Option.Option<ImageSize> => {
   if (bytes.length < 16) return Option.none()

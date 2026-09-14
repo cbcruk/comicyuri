@@ -441,6 +441,8 @@ const withTapFlash = (turned: UpdateReturn, pageBefore: number, side: Side): Upd
       }
 
 /**
+ * 슬라이더 값에 해당하는 페이지.
+ *
  * 슬라이더는 자기 값으로 일하고, 오른쪽에서 왼쪽으로 읽을 때 그 값은 반대로 간다.
  * 이 매핑은 스스로의 역함수라서, 같은 호출이 뷰에서는 페이지를 값으로 바꾸고
  * 여기서는 값을 다시 페이지로 되돌린다.
