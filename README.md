@@ -54,7 +54,8 @@ Everything runs client-side — your files never leave the browser.
 ## How CBZ files are read
 
 CBZ archives are ZIP files. `src/io/zip.ts` parses the central directory and
-extracts pages lazily; deflated entries are inflated with the platform's native
+extracts pages lazily, reading only the byte ranges it needs through `Blob.slice`
+rather than loading the whole archive into memory; deflated entries are inflated with the platform's native
 `DecompressionStream`, so there is no third-party ZIP dependency.
 
 ## Architecture

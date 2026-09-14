@@ -68,8 +68,9 @@ const zip = async (entries: ReadonlyArray<Entry>, comment = ''): Promise<Blob> =
       ...u16(localExtra),
       ...ascii(entry.name),
       ...Array.from({ length: localExtra }, () => 0),
-      ...stored,
     )
+    // 큰 페이지를 펼쳐 넘기면 인자 수 한도에 걸린다.
+    for (const byte of stored) bytes.push(byte)
 
     central.push(
       ...u32(0x02014b50),
@@ -139,6 +140,37 @@ const deflated = (name: string, text: string): Entry => ({
   method: 8,
 })
 
+/**
+ * 읽힌 바이트 수를 세는 blob. 리더가 아카이브를 통째로 읽는지, 필요한 구간만 읽는지
+ * 여기서 드러난다.
+ */
+class CountingBlob extends Blob {
+  bytesRead = 0
+
+  override slice(start = 0, end = this.size, contentType?: string): Blob {
+    const from = start < 0 ? Math.max(this.size + start, 0) : Math.min(start, this.size)
+    const to = end < 0 ? Math.max(this.size + end, 0) : Math.min(end, this.size)
+    this.bytesRead += Math.max(to - from, 0)
+    // 잘라 낸 조각이 이 클래스로 만들어지면 그 조각을 읽을 때 한 번 더 센다.
+    return new Blob([super.slice(start, end, contentType)])
+  }
+
+  override arrayBuffer(): Promise<ArrayBuffer> {
+    this.bytesRead += this.size
+    return super.arrayBuffer()
+  }
+}
+
+/** 큰 페이지 하나와 작은 페이지 하나. 큰 쪽을 읽었는지가 바이트 수로 보인다. */
+const bigAndSmall = async (): Promise<CountingBlob> => {
+  const big = new Uint8Array(new ArrayBuffer(300_000))
+  const archive = await zip([
+    { name: 'big.png', body: big, method: 0 },
+    stored('small.png', 'small page'),
+  ])
+  return new CountingBlob([await archive.arrayBuffer()])
+}
+
 describe('reading the directory', () => {
   test('every entry is listed in the order the directory wrote them', async () => {
     const archive = await open(
@@ -169,6 +201,15 @@ describe('reading the directory', () => {
     const archive = await open(await zip([]))
 
     expect(archive.entries).toStrictEqual([])
+  })
+
+  test('opening reads the directory, not the pages', async () => {
+    const blob = await bigAndSmall()
+    const archive = await open(blob)
+
+    expect(archive.entries).toHaveLength(2)
+    // 끝부분(주석이 붙을 수 있는 만큼)과 디렉터리만 읽는다. 큰 페이지는 건드리지 않는다.
+    expect(blob.bytesRead).toBeLessThan(100_000)
   })
 
   test('bytes that are not a ZIP fail rather than opening empty', async () => {
@@ -222,6 +263,26 @@ describe('pulling an entry out', () => {
     const bytes = await Effect.runPromise(archive.extract(archive.entries[0]!))
 
     expect(textOf(bytes)).toBe('the real bytes')
+  })
+
+  test('pulling one entry out reads that entry and nothing else', async () => {
+    const blob = await bigAndSmall()
+    const archive = await open(blob)
+    const before = blob.bytesRead
+
+    const small = archive.entries.find((entry) => entry.name === 'small.png')!
+    const bytes = await Effect.runPromise(archive.extract(small))
+
+    expect(textOf(bytes)).toBe('small page')
+    // 로컬 헤더와 그 엔트리의 바이트뿐이다.
+    expect(blob.bytesRead - before).toBeLessThan(200)
+  })
+
+  test('an entry that runs past the end of the archive fails rather than coming back short', async () => {
+    const archive = await open(await zip([stored('page.png', 'whole page')]))
+    const entry = { ...archive.entries[0]!, compressedSize: 1_000_000 }
+
+    expect(await reasonOf(archive.extract(entry))).toBe('Could not read "page.png"')
   })
 
   test('a method this reader does not know is refused by name', async () => {
