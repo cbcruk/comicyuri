@@ -1103,7 +1103,9 @@ Pages와 Netlify는 `_redirects`를, Vercel은 `vercel.json`을 읽는다. GitHu
 ✅ story "a failure starts a wait carrying its own token"
 
 **F-502 · 새 실패가 앞선 실패의 시간을 잡아먹지 않는다**
-✅ story "a wait started for an older failure is ignored when it lands"
+사이에 임포트가 끼어 상태 줄이 "Importing…"이나 빈 줄을 거쳐도 마찬가지다.
+✅ story "a wait started for an older failure is ignored when it lands", "a failure after
+an import does not reuse the token of the failure before it"
 
 **F-503 · 실패 메시지가 진행 중인 작업 안내를 지우지 않는다**
 ✅ story "a wait that lands after an import took over leaves it alone",

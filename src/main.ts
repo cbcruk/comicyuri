@@ -51,6 +51,7 @@ export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (
       settings: flags.settings,
       shelf: Shelf.Loading(),
       notice: Notice.Idle(),
+      nextNoticeToken: 0,
       fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
       maybePendingDelete: Option.none(),
       isSettingsOpen: false,

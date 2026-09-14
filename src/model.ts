@@ -31,7 +31,7 @@ export const Notice = defineTaggedUnion({
   /**
    * `token`은 이 메시지를 위해 시작된 대기를 가리킨다. 앞선 실패가 시작한 대기는
    * 더 오래된 토큰을 들고 있어서 도착해도 무시되므로, 더 새로운 메시지를 잘라
-   * 먹지 못한다.
+   * 먹지 못한다. 토큰은 {@linkcode Model}의 `nextNoticeToken`에서 받는다.
    */
   Failed: { text: Schema.String, token: Schema.Number },
 })
@@ -45,6 +45,14 @@ export const Model = Schema.Struct({
   settings: Settings,
   shelf: Shelf.schema,
   notice: Notice,
+  /**
+   * 다음 실패가 받을 토큰.
+   *
+   * 상태 줄이 `Busy`나 `Idle`을 거쳐도 되돌아가지 않는다. 그 사이에도 앞선 실패의
+   * 대기는 돌고 있으므로, 토큰을 상태 줄에서 이끌어 내면 뒤의 실패가 같은 토큰을
+   * 받아 앞선 대기에 지워진다.
+   */
+  nextNoticeToken: Schema.Number,
   fileDrop: FileDrop.Model,
   /**
    * 지울지 묻고 있는 책. 묻는 중이 아니면 없음이다.

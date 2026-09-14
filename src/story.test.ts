@@ -46,6 +46,7 @@ const shelfModel = (shelf: Shelf = Shelf.Success({ data: [] })): Model => ({
   settings: defaultSettings,
   shelf,
   notice: Notice.Idle(),
+  nextNoticeToken: 0,
   fileDrop: FileDrop.init({ id: FILE_DROP_ID }),
   maybePendingDelete: Option.none(),
   isSettingsOpen: false,
@@ -256,6 +257,28 @@ describe('notice', () => {
       model((model) => {
         expect(model.notice).toStrictEqual(Notice.Failed({ text: 'Second', token: 1 }))
       }),
+    )
+  })
+
+  test('a failure after an import does not reuse the token of the failure before it', () => {
+    story(
+      update,
+      // 첫 실패의 대기는 아직 돌고 있다. 그것이 들고 있는 토큰은 0이다.
+      given({
+        ...shelfModel(),
+        notice: Notice.Failed({ text: 'First', token: 0 }),
+        nextNoticeToken: 1,
+      }),
+      message(Message.CompletedSelectFiles({ files: [cbz] })),
+      Command.resolve(ImportFiles, Message.FailedImportFiles({ text: 'Second' })),
+      model((model) => {
+        expect(model.notice).toStrictEqual(Notice.Failed({ text: 'Second', token: 1 }))
+      }),
+      Command.expectExact(WaitBeforeClearingNotice({ token: 1 })),
+      Command.resolve(
+        WaitBeforeClearingNotice,
+        Message.CompletedWaitBeforeClearingNotice({ token: 1 }),
+      ),
     )
   })
 
