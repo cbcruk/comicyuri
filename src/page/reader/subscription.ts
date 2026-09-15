@@ -12,9 +12,6 @@ import { Model } from './model.ts'
 import { NO_ROOM, deviceFor } from './scroll.ts'
 import type { Room } from './scroll.ts'
 
-/** 아무 일도 없을 때 툴바가 숨기까지 기다리는 시간. */
-const CHROME_IDLE = Duration.seconds(3)
-
 /**
  * 포인터 위치는 뷰포트 한가운데를 기준으로 전한다. pan 오프셋이 이미 쓰는
  * 원점이라서, update는 페이지 크기를 알 필요가 없다.
@@ -367,43 +364,12 @@ const readerSubscriptions = Subscription.make<Model, Message>()((entry) => ({
           : Stream.empty,
     },
   ),
-
-  chromeIdle: entry(
-    {
-      isWaiting: Schema.Boolean,
-      activityToken: Schema.Number,
-    },
-    {
-      // 썸네일 격자가 열려 있거나, 포인터가 툴바 위에 머물거나 키보드 초점이 툴바
-      // 안에 있는 동안에는 툴바의 시간이 흐르지 않는다. 모두 아직 쓰고 있다는 뜻이다.
-      modelToDependencies: (model) => ({
-        isWaiting:
-          model.isChromeVisible &&
-          !model.isThumbsOpen &&
-          !model.isPointerOverChrome &&
-          !model.isFocusInChrome,
-        activityToken: model.activityToken,
-      }),
-      // 무슨 일이든 있으면 토큰이 바뀌고, 그러면 이 대기가 처음부터 다시 간다.
-      // `Stream.tick`은 곧바로 한 번 흘리고 그다음부터 간격을 두므로, 툴바가
-      // 나타나는 순간 숨겨 버린다. 먼저 자는 것이 곧 대기다.
-      dependenciesToStream: ({ isWaiting, activityToken }) =>
-        isWaiting
-          ? Stream.fromEffect(
-              Effect.as(
-                Effect.sleep(CHROME_IDLE),
-                Message.ElapsedChromeIdle({ token: activityToken }),
-              ),
-            )
-          : Stream.empty,
-    },
-  ),
 }))
 
 /**
  * 리더가 듣는 모든 것. document의 키보드·포인터·휠, 창 너비와 포커스, 전체화면
- * 상태, 슬라이드쇼와 툴바를 숨기는 대기, 그리고 리더 안으로 lift 한 슬라이더의
- * 드래그 스트림과 페이지 격자의 컨테이너 스트림.
+ * 상태, 슬라이드쇼의 대기, 그리고 리더 안으로 lift 한 슬라이더의 드래그 스트림과
+ * 페이지 격자의 컨테이너 스트림.
  */
 export const subscriptions = Subscription.aggregate<Model, Message>()(
   readerSubscriptions,

@@ -45,12 +45,15 @@ test('R-2C1 · 슬라이드쇼가 스스로 페이지를 넘긴다', async ({ pa
   await panel.getByRole('button', { name: 'Close' }).click()
 
   await page.getByRole('button', { name: 'Start the slideshow' }).click()
-  await expect(counter(page)).toHaveText('2 / 12', { timeout: 10000 })
-  await expect(counter(page)).toHaveText('3 / 12', { timeout: 10000 })
+  // 돌기 시작하면 툴바가 함께 숨는다. 카운터도 툴바에 있으므로 페이지는 그림으로 센다.
+  await expect(page.locator('header')).toHaveCount(0)
+  const onStage = page.locator('#reader-stage img')
+  await expect(page.getByRole('img', { name: 'Page 2' })).toBeVisible({ timeout: 10000 })
+  await expect(page.getByRole('img', { name: 'Page 3' })).toBeVisible({ timeout: 10000 })
 
-  // 도는 동안 툴바는 숨어 있다. 멈추는 것은 키가 맡는다.
+  // 멈추는 것은 키가 맡는다.
   await page.keyboard.press('p')
-  const stopped = await counter(page).textContent()
+  const stopped = await onStage.first().getAttribute('alt')
   await page.waitForTimeout(3000)
-  await expect(counter(page)).toHaveText(stopped ?? '')
+  await expect(onStage.first()).toHaveAttribute('alt', stopped ?? '')
 })

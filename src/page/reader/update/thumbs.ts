@@ -62,11 +62,7 @@ export const clickedToggleThumbs = (model: Model): UpdateReturn =>
         // 폭을 묻기만 하고 뽑지는 않는다. 몇 칸이 서는지가 무엇을 뽑을지도
         // 정하므로, 여기서 뽑으면 기본값으로 한 번 뽑았다가 잰 값으로 다시
         // 뽑게 된다. 채우는 일은 잰 답이 돌아올 때 한 번에 한다.
-        model: evo(model, {
-          isThumbsOpen: () => true,
-          isChromeVisible: () => true,
-          activityToken: (token) => token + 1,
-        }),
+        model: evo(model, { isThumbsOpen: () => true }),
         commands: [MeasureThumbsWidth()],
       }
 

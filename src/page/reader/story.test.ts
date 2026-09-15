@@ -819,38 +819,58 @@ describe('gestures', () => {
 })
 
 describe('chrome', () => {
-  test('a wait from before the last activity does not hide the chrome', () => {
+  test('the chrome stays up while nothing happens', () => {
+    // 스스로 숨던 툴바는 넘김 키마다 되돌아와 읽는 사람을 지치게 했다. 이제 숨기는
+    // 대기가 없으므로, 열린 리더는 사람이 숨기기 전까지 툴바를 띄워 둔다.
     story(
       update,
-      given({ ...openingModel(), activityToken: 3 }),
-      message(Message.ElapsedChromeIdle({ token: 0 })),
+      given(openingModel()),
+      ...opened(0),
       model((model) => {
         expect(model.isChromeVisible).toBe(true)
       }),
     )
   })
 
-  test('the wait for the current activity hides it', () => {
+  test('the hide control takes the chrome down and brings it back', () => {
     story(
       update,
-      given({ ...openingModel(), activityToken: 3 }),
-      message(Message.ElapsedChromeIdle({ token: 3 })),
+      given(openingModel()),
+      message(Message.ClickedToggleChrome()),
       model((model) => {
         expect(model.isChromeVisible).toBe(false)
+      }),
+      message(Message.ClickedToggleChrome()),
+      model((model) => {
+        expect(model.isChromeVisible).toBe(true)
       }),
     )
   })
 
-  test('a press restarts the wait but leaves the chrome as it found it', () => {
+  test('the h key does what the hide control does', () => {
+    story(
+      update,
+      given(openingModel()),
+      message(Message.PressedKey({ key: 'h', withShift: false })),
+      model((model) => {
+        expect(model.isChromeVisible).toBe(false)
+      }),
+      message(Message.PressedKey({ key: 'h', withShift: false })),
+      model((model) => {
+        expect(model.isChromeVisible).toBe(true)
+      }),
+    )
+  })
+
+  test('a press leaves the chrome as it found it', () => {
     // 누르는 길에 보여 버리면 가운데 탭이 하나같이 '숨김'으로 끝난다. 놓는 쪽이
     // 누름이 남긴 상태에서 토글하기 때문이다.
     story(
       update,
-      given({ ...openingModel(), isChromeVisible: false, activityToken: 3 }),
+      given({ ...openingModel(), isChromeVisible: false }),
       message(Message.PressedPointer({ pointerId: 1, at: { x: 0, y: 0 } })),
       model((model) => {
         expect(model.isChromeVisible).toBe(false)
-        expect(model.activityToken).toBe(4)
       }),
     )
   })
@@ -875,73 +895,35 @@ describe('chrome', () => {
     )
   })
 
-  test('a key brings the chrome back', () => {
+  test('turning the page leaves hidden chrome hidden', () => {
+    // 숨긴 사람은 페이지만 보려고 숨겼다. 넘길 때마다 툴바가 되돌아오면 숨긴 것이
+    // 한 장을 넘기지 못한다.
     story(
       update,
       given({ ...openingModel(), isChromeVisible: false }),
       ...opened(0),
       message(Message.PressedKey({ key: 'ArrowLeft', withShift: false })),
       model((model) => {
-        expect(model.isChromeVisible).toBe(true)
+        expect(model.page).toBe(1)
+        expect(model.isChromeVisible).toBe(false)
       }),
       ...settle(1),
     )
   })
-})
 
-describe('using a control keeps the chrome up', () => {
-  // 여기 있는 것은 모두 사람이 툴바나 푸터에 한 일이다. 하나를 빠뜨렸기에 쓰고
-  // 있는 사람 밑에서 툴바가 사라졌으므로, 컨트롤마다 테스트를 두지 않고 한자리에서
-  // 함께 확인한다.
-  //
-  // `update`를 직접 부른다. 이 성질은 Model만의 이야기인데, 컨트롤마다 만들어 내는
-  // Command가 달라서 story로 쓰면 주장하려는 것과 아무 상관 없는 이유로 그것들을
-  // 처리해 주어야 한다.
-  const busyReading: Model = {
-    ...openingModel(),
-    openState: OpenState.Ready({
-      title: 'Volume 1',
-      pageCount: PAGE_COUNT,
-      ratios: UNMEASURED,
-      names: namesOf(PAGE_COUNT),
-    }),
-    isChromeVisible: false,
-    activityToken: 5,
-  }
-
-  const controls: ReadonlyArray<readonly [string, Message]> = [
-    ['previous', Message.ClickedPrevious()],
-    ['next', Message.ClickedNext()],
-    ['first', Message.ClickedFirst()],
-    ['last', Message.ClickedLast()],
-    ['direction', Message.ClickedToggleDirection()],
-    ['one or two pages', Message.ClickedToggleView()],
-    ['spread binding', Message.ClickedToggleBinding()],
-    ['fit', Message.ClickedCycleFit()],
-    ['bookmark', Message.ClickedToggleBookmark()],
-    ['every page', Message.ClickedToggleThumbs()],
-    ['settings', Message.ClickedToggleSettings()],
-    ['fullscreen', Message.ClickedToggleFullscreen()],
-    ['zoom in', Message.ClickedZoomIn()],
-    ['zoom out', Message.ClickedZoomOut()],
-    ['go to page', Message.SubmittedGoToPage({ text: '5' })],
-    ['cover alone', Message.ToggledCoverAlone({ isChecked: false })],
-    ['split wide', Message.ToggledSplitWide({ isChecked: true })],
-    ['stretch small pages', Message.ToggledEnlargeToFit({ isChecked: false })],
-    ['remember for each book', Message.ToggledRememberBookSettings({ isChecked: true })],
-  ]
-
-  for (const [name, control] of controls) {
-    test(`the ${name} control restarts the wait`, () => {
-      const next = update(busyReading, control).model
-
-      expect(next.isChromeVisible).toBe(true)
-      expect(next.activityToken).toBeGreaterThan(busyReading.activityToken)
-    })
-  }
-
-  test('but leaving the book does not', () => {
-    expect(update(busyReading, Message.ClickedExit()).model.isChromeVisible).toBe(false)
+  test('using a control leaves the chrome where it is', () => {
+    // 툴바가 내려가 있을 때 닿는 컨트롤은 키와 격자, 설정 패널이다. 그것들을 쓴다고
+    // 툴바가 따라 나오지 않는다.
+    story(
+      update,
+      given({ ...openingModel(), isChromeVisible: false }),
+      message(Message.ClickedToggleSettings()),
+      message(Message.ToggledCoverAlone({ isChecked: false })),
+      model((model) => {
+        expect(model.isSettingsOpen).toBe(true)
+        expect(model.isChromeVisible).toBe(false)
+      }),
+    )
   })
 })
 
@@ -1751,6 +1733,34 @@ describe('the slideshow', () => {
       }),
     )
   })
+
+  test('starting it takes the chrome down, so only the page is left', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ClickedToggleSlideshow()),
+      model((model) => {
+        expect(model.isPlaying).toBe(true)
+        expect(model.isChromeVisible).toBe(false)
+      }),
+    )
+  })
+
+  test('stopping it leaves the chrome down', () => {
+    // 슬라이드쇼 전에 손으로 숨겨 두었을 수도 있다. 되부르는 것은 `h` 키와 가운데
+    // 탭의 몫이다.
+    story(
+      update,
+      given({ ...openingModel(), isPlaying: true, isChromeVisible: false }),
+      ...opened(0),
+      message(Message.ClickedToggleSlideshow()),
+      model((model) => {
+        expect(model.isPlaying).toBe(false)
+        expect(model.isChromeVisible).toBe(false)
+      }),
+    )
+  })
 })
 
 describe('reading a wide page in halves', () => {
@@ -2063,44 +2073,6 @@ describe('escape', () => {
       ...opened(0),
       message(Message.PressedKey({ key: 'Escape', withShift: false })),
       expectOutMessage(OutMessage.RequestedExit()),
-    )
-  })
-})
-
-describe('a pointer on the chrome', () => {
-  test('entering holds it, and leaving starts the wait over', () => {
-    story(
-      update,
-      given({ ...openingModel(), activityToken: 4 }),
-      message(Message.EnteredChrome()),
-      model((model) => {
-        expect(model.isPointerOverChrome).toBe(true)
-      }),
-      message(Message.LeftChrome()),
-      model((model) => {
-        expect(model.isPointerOverChrome).toBe(false)
-        // 새 토큰이라서, 포인터가 떠난 뒤에는 앞선 대기의 남은 조각이 아니라
-        // 온전한 대기를 받는다.
-        expect(model.activityToken).toBe(5)
-      }),
-    )
-  })
-
-  test('keyboard focus entering brings it back and holds it, and leaving starts the wait over', () => {
-    story(
-      update,
-      given({ ...openingModel(), isChromeVisible: false, activityToken: 3 }),
-      message(Message.FocusEnteredChrome()),
-      model((model) => {
-        expect(model.isChromeVisible).toBe(true)
-        expect(model.isFocusInChrome).toBe(true)
-        expect(model.activityToken).toBe(4)
-      }),
-      message(Message.FocusLeftChrome()),
-      model((model) => {
-        expect(model.isFocusInChrome).toBe(false)
-        expect(model.activityToken).toBe(5)
-      }),
     )
   })
 })

@@ -67,9 +67,6 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   half: 'first',
   isPlaying: false,
   isChromeVisible: true,
-  isPointerOverChrome: false,
-  isFocusInChrome: false,
-  activityToken: 0,
   lastTapAt: 0,
   maybeTapFlash: Option.none(),
   slider: Slider.init({ id: SLIDER_ID, min: 0, max: 5, step: 1 }),
@@ -686,24 +683,24 @@ describe('page slider', () => {
     )
   })
 
-  test('using the slider brings the chrome back', () => {
+  test('the hide control takes the toolbar and the footer off the screen', () => {
+    scene(
+      program,
+      given(readingModel()),
+      click(role('button', { name: 'Hide the toolbar' })),
+      // 흐려진 채 남는 것이 아니라 빠진다. 그래야 스테이지가 그 높이를 가져간다.
+      expect(selector('header')).not.toExist(),
+      expect(selector('footer')).not.toExist(),
+      expect(role('img', { name: 'Page 1' })).toExist(),
+    )
+  })
+
+  test('hidden chrome is not drawn at all', () => {
     scene(
       program,
       given({ ...readingModel(), isChromeVisible: false }),
-      keydown(role('slider', { name: 'Page' }), 'ArrowLeft'),
-      expectOutMessage(
-        OutMessage.UpdatedProgress({
-          bookId: 'volume-1::42',
-          page: 1,
-          bookmarks: [],
-          marks: [],
-          rotation: 0,
-        }),
-      ),
-      ...settleTurn(1),
-      // 툴바가 그저 있는 것이 아니라 돌아왔다는 뜻이다. 툴바가 내려가 있는 동안
-      // 그것은 흐려지고 보조기기에서도 감춰진다.
-      expect(selector('header')).toHaveAttr('aria-hidden', 'false'),
+      expect(selector('header')).not.toExist(),
+      expect(role('slider', { name: 'Page' })).not.toExist(),
     )
   })
 })

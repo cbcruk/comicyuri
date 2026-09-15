@@ -1,54 +1,53 @@
-/** R-251, R-272, R-291 · 시간과 브라우저 API가 걸린 것들. */
+/** R-251, R-252, R-272, R-291 · 툴바, 시간과 브라우저 API가 걸린 것들. */
 
 import { expect, test } from '@playwright/test'
 
 import { control, readBook, stage } from './fixture/app.ts'
 
-test('R-251 · 3초 동안 아무 일도 없으면 툴바가 사라지고, 다시 만지면 돌아온다', async ({
+test('R-251 · 가만히 두어도 툴바가 사라지지 않는다', async ({ page }) => {
+  await readBook(page)
+  const header = page.locator('header')
+  await expect(header).toBeVisible()
+
+  // 예전의 자동 숨김은 3초였다. 그보다 넉넉히 기다려도 그대로다.
+  await page.waitForTimeout(4_500)
+  await expect(header).toBeVisible()
+  await expect(page.locator('footer')).toBeVisible()
+})
+
+test('R-252 · `h` 키가 툴바를 숨기면 스테이지가 그 높이를 가져가고, 다시 누르면 돌아온다', async ({
   page,
 }) => {
   await readBook(page)
   const header = page.locator('header')
+  const before = (await stage(page).boundingBox())?.height ?? 0
 
-  await expect(header).toHaveAttribute('aria-hidden', 'false')
-  await expect(header).toHaveAttribute('aria-hidden', 'true', { timeout: 6_000 })
-  // 사라진 툴바는 포인터를 받지 않는다.
-  await expect(header).toHaveClass(/pointer-events-none/)
+  await page.keyboard.press('h')
+  await expect(header).toHaveCount(0)
+  await expect(page.locator('footer')).toHaveCount(0)
+  // 흐려진 채 자리를 차지하는 것이 아니라 빠진다.
+  await expect
+    .poll(async () => (await stage(page).boundingBox())?.height ?? 0)
+    .toBeGreaterThan(before)
 
-  // 숨은 툴바는 접근성 트리에서도 빠지므로 버튼으로는 부를 수 없다. 화면 가운데를
-  // 탭하는 것이 툴바를 다시 부르는 길이다.
+  // 넘김 키는 숨긴 툴바를 되부르지 않는다.
+  await page.keyboard.press('ArrowLeft')
+  await expect(header).toHaveCount(0)
+
+  await page.keyboard.press('h')
+  await expect(header).toBeVisible()
+})
+
+test('R-252 · `Hide` 버튼으로 숨긴 툴바는 가운데 탭으로 돌아온다', async ({ page }) => {
+  await readBook(page)
+  const header = page.locator('header')
+
+  await page.getByRole('button', { name: 'Hide the toolbar' }).click()
+  await expect(header).toHaveCount(0)
+
   const box = await stage(page).boundingBox()
   await page.touchscreen.tap(640, (box?.y ?? 0) + (box?.height ?? 0) / 2)
-  await expect(header).toHaveAttribute('aria-hidden', 'false')
-})
-
-test('R-251 · 숨은 툴바에 Tab으로 들어오면 툴바가 돌아오고, 초점이 있는 동안 머문다', async ({
-  page,
-}) => {
-  await readBook(page)
-  const header = page.locator('header')
-  await expect(header).toHaveAttribute('aria-hidden', 'true', { timeout: 6_000 })
-
-  await page.keyboard.press('Tab')
-  await expect(header).toHaveAttribute('aria-hidden', 'false')
-  expect(await header.evaluate((element) => element.contains(document.activeElement))).toBe(true)
-
-  // 보이지 않는 버튼에 초점이 남는 일이 없도록, 초점이 안에 있는 동안에는 숨지 않는다.
-  await page.waitForTimeout(4_500)
-  await expect(header).toHaveAttribute('aria-hidden', 'false')
-})
-
-test('R-251 · 포인터가 툴바 위에 있는 동안에는 시간이 흐르지 않는다', async ({ page }) => {
-  await readBook(page)
-  const header = page.locator('header')
-
-  await header.hover()
-  await page.waitForTimeout(4_500)
-  await expect(header).toHaveAttribute('aria-hidden', 'false')
-
-  // 벗어나면 대기가 처음부터 다시 간다.
-  await stage(page).hover({ position: { x: 10, y: 10 } })
-  await expect(header).toHaveAttribute('aria-hidden', 'true', { timeout: 6_000 })
+  await expect(header).toBeVisible()
 })
 
 test('R-272 · 패널을 여는 순간 썸네일이 채워진다', async ({ page }) => {
