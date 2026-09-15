@@ -44,7 +44,7 @@ export const managedResources = ManagedResource.make<Model, Message>()((entry) =
     resource: OpenBook,
     modelToMaybeRequirements: (model) => Option.some(model.bookId),
     acquire: openBook,
-    release: (book) => Effect.sync(() => Array.forEach(book.pages, (page) => page.unload())),
+    release: (book) => Effect.sync(() => Array.forEach(book.pages, (page) => page.release())),
     onAcquired: (book) =>
       Message.CompletedOpenBook({
         title: book.title,
