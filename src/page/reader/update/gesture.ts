@@ -31,14 +31,6 @@ import type { Model } from '../model.ts'
 import { step } from './navigation.ts'
 import type { UpdateReturn } from './navigation.ts'
 
-/**
- * 누름은 대기를 다시 시작시키지만 그 자체로 툴바를 보이지는 않는다. 페이지
- * 가운데를 탭하는 것은 툴바를 토글하라는 뜻인데, 누르는 길에 보여 버리면 그
- * 탭들이 하나같이 '숨김'으로 끝난다.
- */
-export const withPress = (model: Model): Model =>
-  evo(model, { activityToken: (token) => token + 1 })
-
 /** 배율을 바꾸되, `anchor` 아래 있던 것이 그 자리에 머물도록 옮긴다. */
 export const zoomedTo = (model: Model, nextZoom: number, anchor: Point): Model => {
   const zoom = clampZoom(nextZoom)
@@ -190,7 +182,6 @@ const released = (
     model: evo(settled, {
       lastTapAt: () => timeStamp,
       isChromeVisible: (visible) => !visible,
-      activityToken: (token) => token + 1,
     }),
   }
 }
@@ -217,9 +208,9 @@ const withTapFlash = (turned: UpdateReturn, pageBefore: number, side: Side): Upd
         }),
       }
 
-/** 포인터가 페이지를 눌렀다. 대기를 다시 세고, 추적을 시작하거나 핀치로 잇는다. */
+/** 포인터가 페이지를 눌렀다. 추적을 시작하거나 핀치로 잇는다. */
 export const pressedPointer = (model: Model, pointerId: number, at: Point): UpdateReturn => ({
-  model: pressed(withPress(model), pointerId, at),
+  model: pressed(model, pointerId, at),
 })
 
 /** 누른 포인터가 움직였다. 확대된 페이지를 옮기거나 핀치의 배율을 바꾼다. */

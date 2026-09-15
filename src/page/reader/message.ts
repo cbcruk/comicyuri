@@ -67,11 +67,8 @@ export const Message = defineMessageUnion({
 
   ClickedZoomIn: {},
   ClickedZoomOut: {},
-  ElapsedChromeIdle: { token: Schema.Number },
-  EnteredChrome: {},
-  LeftChrome: {},
-  FocusEnteredChrome: {},
-  FocusLeftChrome: {},
+  /** 툴바와 푸터를 숨기거나 되부른다. `Hide` 버튼과 `h` 키가 보낸다. */
+  ClickedToggleChrome: {},
 
   GotSliderMessage: { message: Slider.Message },
 

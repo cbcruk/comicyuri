@@ -191,19 +191,13 @@ export const Model = Schema.Struct({
   /** 슬라이드쇼가 돌고 있는지. 돌면 정해 둔 시간마다 스스로 넘어간다. */
   isPlaying: Schema.Boolean,
   /**
-   * 툴바는 읽는 동안 스스로 숨고, 컨트롤을 쓰면 돌아온다. 화면을 누르는 것만으로는
-   * 돌아오지 않는다.
+   * 툴바와 푸터가 화면에 있는지. 스스로 숨지 않고, 사람이 숨기거나 슬라이드쇼를
+   * 시작할 때만 내려간다.
+   *
+   * 숨으면 흐려지는 것이 아니라 레이아웃에서 빠진다. 그래야 스테이지가 그 높이를
+   * 가져가고, 숨기는 일이 읽을 자리를 넓힌다.
    */
   isChromeVisible: Schema.Boolean,
-  /** 포인터가 툴바 위에 머무는 동안에는 시간이 흐르지 않는다. */
-  isPointerOverChrome: Schema.Boolean,
-  /**
-   * 키보드 초점이 툴바 안에 있는 동안에도 시간이 흐르지 않는다. 그러지 않으면 Tab으로
-   * 버튼을 고르던 사람 앞에서 툴바가 사라지고, 초점은 보이지 않는 버튼에 남는다.
-   */
-  isFocusInChrome: Schema.Boolean,
-  /** 이 값을 바꾸면 툴바를 숨기는 대기가 처음부터 다시 간다. */
-  activityToken: Schema.Number,
   /** 마지막 탭이 떨어진 시각. 다음 탭이 더블인지 알아보는 데 쓴다. */
   lastTapAt: Schema.Number,
   maybeTapFlash: Schema.Option(TapFlash),
@@ -318,9 +312,6 @@ export const init = (config: InitConfig): Model => ({
   half: 'first',
   isPlaying: false,
   isChromeVisible: true,
-  isPointerOverChrome: false,
-  isFocusInChrome: false,
-  activityToken: 0,
   lastTapAt: 0,
   maybeTapFlash: Option.none(),
   // 책이 페이지 수를 말해 주기 전까지 범위는 비어 있다.

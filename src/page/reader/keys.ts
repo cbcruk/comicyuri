@@ -18,6 +18,7 @@ const COMMAND_KEYS: Readonly<Record<string, () => Message>> = {
   v: Message.ClickedToggleView,
   s: Message.ClickedToggleBinding,
   f: Message.ClickedToggleFullscreen,
+  h: Message.ClickedToggleChrome,
   t: Message.ClickedToggleThumbs,
   ',': Message.ClickedToggleSettings,
   b: Message.ClickedToggleBookmark,

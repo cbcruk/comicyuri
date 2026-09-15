@@ -22,7 +22,6 @@ import {
   movedPointer,
   pressedPointer,
   releasedPointer,
-  withPress,
   zoomedTo,
 } from './update/gesture.ts'
 import { goToPage, showPage, skip, step } from './update/navigation.ts'
@@ -91,13 +90,6 @@ const flipBindingHere = (model: Model): UpdateReturn =>
         },
       })
 
-/** 툴바를 다시 불러오고, 그것을 숨기는 대기를 처음부터 다시 시작한다. */
-const withActivity = (model: Model): Model =>
-  evo(model, {
-    isChromeVisible: () => true,
-    activityToken: (token) => token + 1,
-  })
-
 /**
  * 슬라이더 값에 해당하는 페이지.
  *
@@ -137,40 +129,8 @@ const foldSlider = Update.foldChild({
   foldOutMessage: foldSliderOutMessage,
 })
 
-/**
- * 이 Message가 누군가 컨트롤을 쓴 것인지. 그렇다면 툴바를 띄워 두고 그것을 숨기는
- * 대기를 처음부터 다시 시작한다.
- *
- * 들를 핸들러 목록이 아니라 Message의 이름을 기준으로 삼는다. 쓰고 있는 사람 밑에서
- * 툴바가 사라지게 만든 것이 바로 그 목록이었다. 그 뒤로 더해진 컨트롤마다 목록에
- * 적어 넣기를 기억해야 했고, 아무도 기억하지 않았다. `Clicked*`, `Selected*`,
- * `Toggled*`, `Submitted*`는 이미 사람이 컨트롤에 손댔다는 뜻이므로, 규약대로 이름
- * 붙인 새 컨트롤은 저절로 포함된다. 새 동사로 이름 붙인 컨트롤이 생기면 여기에
- * 더한다.
- *
- * 포인터 Message는 일부러 빠져 있다. 누름이 툴바를 보여서는 안 된다. 그러면 툴바를
- * 토글하는 탭이 매번 '숨김'으로 끝난다.
- */
-const isControlUse = (message: Message): boolean =>
-  message._tag !== 'ClickedExit' &&
-  (message._tag.startsWith('Clicked') ||
-    message._tag.startsWith('Selected') ||
-    message._tag.startsWith('Toggled') ||
-    message._tag.startsWith('Submitted') ||
-    message._tag === 'PressedKey' ||
-    message._tag === 'ScrolledToZoom' ||
-    message._tag === 'GotSliderMessage')
-
-/**
- * Message 하나를 리더에 접어 넣는다.
- *
- * 사람이 일부러 한 일은 모두 활동으로도 쳐서 툴바를 되불러오고 숨김 대기를 다시
- * 시작시킨다 — 그래서 그 처리가 아래 모든 분기에 되풀이되는 대신 여기에 있다.
- */
+/** Message 하나를 리더에 접어 넣는다. */
 export const update = (model: Model, message: Message): UpdateReturn =>
-  applyMessage(isControlUse(message) ? withActivity(model) : model, message)
-
-const applyMessage = (model: Model, message: Message): UpdateReturn =>
   Message.match<UpdateReturn>(message, {
     /**
      * 책이 열렸다. 받아 든 자리를 그대로 보여 주되, 그것을 저장된 자리로 적지는
@@ -319,9 +279,17 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
         evo(model.settings, { singleThreshold: (threshold) => nudgedThreshold(threshold, by) }),
       ),
 
-    ClickedToggleSlideshow: () => ({
-      model: evo(model, { isPlaying: (isPlaying) => !isPlaying }),
-    }),
+    /**
+     * 슬라이드쇼를 돌리거나 멈춘다. 돌기 시작하면 툴바도 함께 숨어, 도는 동안 화면에는
+     * 페이지만 남는다.
+     *
+     * 멈출 때는 툴바를 되부르지 않는다. 슬라이드쇼 전에 손으로 숨겨 둔 사람에게는 되부르는
+     * 것이 도리어 끼어드는 일이고, 되부를 길은 `h` 키와 가운데 탭이 이미 가지고 있다.
+     */
+    ClickedToggleSlideshow: () =>
+      model.isPlaying
+        ? { model: evo(model, { isPlaying: () => false }) }
+        : { model: evo(model, { isPlaying: () => true, isChromeVisible: () => false }) },
 
     ClickedNudgeSlideSeconds: ({ by }) =>
       withSettings(
@@ -431,19 +399,18 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
      * 그동안은 갈 곳이 없는 것으로 친다.
      */
     ScrolledStage: ({ delta, room: measured, device }) => {
-      const scrolled = withPress(model)
       const room = holdsEarlierSpread(model) ? NO_ROOM : measured
       const pan = pannedBy(model.pan, delta, room)
 
       if (pan.x !== model.pan.x || pan.y !== model.pan.y) {
-        return { model: evo(scrolled, { pan: () => pan }) }
+        return { model: evo(model, { pan: () => pan }) }
       }
 
-      if (device === 'trackpad') return { model: scrolled }
+      if (device === 'trackpad') return { model }
 
       return Option.match(turnFromEdge(delta, room), {
-        onNone: () => ({ model: scrolled }),
-        onSome: (by) => step(scrolled, by),
+        onNone: () => ({ model }),
+        onSome: (by) => step(model, by),
       })
     },
 
@@ -455,38 +422,9 @@ const applyMessage = (model: Model, message: Message): UpdateReturn =>
       model: zoomedTo(model, model.zoom / 1.25, ORIGIN),
     }),
 
-    EnteredChrome: () => ({
-      model: evo(model, { isPointerOverChrome: () => true }),
+    ClickedToggleChrome: () => ({
+      model: evo(model, { isChromeVisible: (isVisible) => !isVisible }),
     }),
-
-    // 벗어날 때는 대기를 다시 시작한다. 포인터가 오기 전의 대기가 곧바로 끝나
-    // 버리게 두지 않는다.
-    LeftChrome: () => ({
-      model: evo(model, {
-        isPointerOverChrome: () => false,
-        activityToken: (token) => token + 1,
-      }),
-    }),
-
-    // 숨은 툴바로 Tab이 들어오면 툴바를 되부른다. 보이지 않는 버튼에 초점이 앉아
-    // 있게 두지 않는다.
-    FocusEnteredChrome: () => ({
-      model: evo(withActivity(model), { isFocusInChrome: () => true }),
-    }),
-
-    // 포인터가 떠날 때와 같은 이유로 대기를 다시 시작한다.
-    FocusLeftChrome: () => ({
-      model: evo(model, {
-        isFocusInChrome: () => false,
-        activityToken: (token) => token + 1,
-      }),
-    }),
-
-    // 지금의 활동을 위해 시작된 대기만 툴바를 숨길 수 있다.
-    ElapsedChromeIdle: ({ token }) =>
-      token === model.activityToken
-        ? { model: evo(model, { isChromeVisible: () => false }) }
-        : { model },
 
     PressedKey: ({ key, withShift }) =>
       Option.match(messageForKey(model, key, withShift), {

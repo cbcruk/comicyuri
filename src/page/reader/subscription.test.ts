@@ -1,4 +1,4 @@
-import { Effect, Option, Stream } from 'effect'
+import { Option } from 'effect'
 import { describe, expect, test } from 'vite-plus/test'
 
 import { defaultSettings } from '../../types.ts'
@@ -7,30 +7,6 @@ import { init } from './model.ts'
 import { subscriptions } from './subscription.ts'
 
 const NO_MODIFIERS = { ctrl: false, meta: false, alt: false }
-
-describe('the chrome wait', () => {
-  test('waits before it says the reader has gone idle', async () => {
-    // `Stream.tick`은 곧바로 한 번 흘리므로, 그 위에 세운 대기는 툴바가 나타나는
-    // 순간 숨겨 버린다. 대기의 첫 조각 동안에는 아무것도 오지 않아야 한다.
-    const dependencies = { isWaiting: true, activityToken: 3 }
-    const idle = subscriptions.chromeIdle.dependenciesToStream(dependencies, () => dependencies)
-
-    const early = await Effect.runPromise(
-      Stream.runHead(idle).pipe(Effect.timeoutOption('300 millis')),
-    )
-
-    expect(Option.isNone(early)).toBe(true)
-  })
-
-  test('says nothing while there is nothing to hide', async () => {
-    // 툴바가 이미 내려가 있거나, 썸네일 격자가 열려 있어서 격자가 닫힐 때까지
-    // 그대로 있어야 하는 경우다.
-    const dependencies = { isWaiting: false, activityToken: 3 }
-    const idle = subscriptions.chromeIdle.dependenciesToStream(dependencies, () => dependencies)
-
-    expect(await Effect.runPromise(Stream.runHead(idle))).toStrictEqual(Option.none())
-  })
-})
 
 describe('which keys belong to the reader', () => {
   test('the keys the reader acts on', () => {
@@ -100,84 +76,6 @@ describe('who answers a key first', () => {
     expect(handlesKeysItself(element('<button>Next</button>'))).toBe(false)
     expect(handlesKeysItself(null)).toBe(false)
     expect(handlesKeysItself(document)).toBe(false)
-  })
-})
-
-describe('what the chrome wait is gated on', () => {
-  const reading = init({
-    bookId: 'volume-1::42',
-    page: 0,
-    maybeResumePage: Option.none(),
-    bookmarks: [],
-    marks: [],
-    rotation: 0,
-    maybeBookSettings: Option.none(),
-    settings: defaultSettings,
-  })
-
-  test('it waits while the chrome is up and the grid is closed', () => {
-    expect(subscriptions.chromeIdle.modelToDependencies(reading)).toStrictEqual({
-      isWaiting: true,
-      activityToken: 0,
-    })
-  })
-
-  test('it does not run out from under an open grid', () => {
-    expect(
-      subscriptions.chromeIdle.modelToDependencies({
-        ...reading,
-        isThumbsOpen: true,
-      }).isWaiting,
-    ).toBe(false)
-  })
-
-  test('it has nothing to do once the chrome is down', () => {
-    expect(
-      subscriptions.chromeIdle.modelToDependencies({
-        ...reading,
-        isChromeVisible: false,
-      }).isWaiting,
-    ).toBe(false)
-  })
-})
-
-describe('a pointer resting on the chrome', () => {
-  const reading = init({
-    bookId: 'volume-1::42',
-    page: 0,
-    maybeResumePage: Option.none(),
-    bookmarks: [],
-    marks: [],
-    rotation: 0,
-    maybeBookSettings: Option.none(),
-    settings: defaultSettings,
-  })
-
-  test('holds the wait for as long as it is there', () => {
-    expect(
-      subscriptions.chromeIdle.modelToDependencies({
-        ...reading,
-        isPointerOverChrome: true,
-      }).isWaiting,
-    ).toBe(false)
-  })
-
-  test('keyboard focus inside the chrome holds the wait the same way', () => {
-    expect(
-      subscriptions.chromeIdle.modelToDependencies({
-        ...reading,
-        isFocusInChrome: true,
-      }).isWaiting,
-    ).toBe(false)
-  })
-
-  test('and the wait resumes once it leaves', () => {
-    expect(
-      subscriptions.chromeIdle.modelToDependencies({
-        ...reading,
-        isPointerOverChrome: false,
-      }).isWaiting,
-    ).toBe(true)
   })
 })
 

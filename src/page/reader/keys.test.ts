@@ -46,6 +46,7 @@ describe('the keys that toggle something', () => {
     [',', 'ClickedToggleSettings'],
     ['b', 'ClickedToggleBookmark'],
     ['f', 'ClickedToggleFullscreen'],
+    ['h', 'ClickedToggleChrome'],
     ['+', 'ClickedZoomIn'],
     ['-', 'ClickedZoomOut'],
   ]

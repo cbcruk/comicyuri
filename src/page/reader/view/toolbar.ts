@@ -1,11 +1,9 @@
 /**
- * 리더 위쪽의 툴바. 읽는 동안 스스로 숨고, 푸터와 함께 숨김 규칙(`R-251`)을 나눠 쓴다.
+ * 리더 위쪽의 툴바. 스스로 숨지 않고, 손으로 숨기면 푸터와 함께 화면에서 빠진다(`R-252`).
  */
 
 import { Array, Option } from 'effect'
-import type { Attribute, Html, HtmlBuilder } from 'foldkit/html'
-
-import clsx from 'clsx'
+import type { Html, HtmlBuilder } from 'foldkit/html'
 
 import type { FitMode } from '../../../types.ts'
 import { controlView } from '../../../view/control.ts'
@@ -18,31 +16,6 @@ const FIT_LABEL: Record<FitMode, string> = {
   height: 'Height',
   original: '1:1',
 }
-
-/** 툴바는 읽는 동안 흐려지고 포인터를 받지 않는다. 푸터도 같이 쓴다. */
-export const chromeClassName = (isVisible: boolean): string =>
-  clsx('transition-opacity', { 'pointer-events-none opacity-0': !isVisible })
-
-/**
- * 툴바와 푸터가 함께 거는 속성.
- *
- * 숨긴 툴바에도 초점은 들어올 수 있고, 들어오면 툴바가 돌아온다. 키보드로 읽는
- * 사람에게는 Tab이 툴바를 부르는 길이다 — 리더 키는 모두 저마다 하는 일이 있어서,
- * 툴바를 막아 두면 그것만 부를 키가 없다.
- *
- * 포인터가 위에 머물거나 키보드 초점이 안에 있는 것은 아직 쓰고 있다는 뜻이므로,
- * 그동안에는 툴바를 숨기는 대기를 붙잡아 둔다.
- */
-export const chromeAttributes = (
-  isVisible: boolean,
-  h: HtmlBuilder<Message>,
-): ReadonlyArray<Attribute<Message>> => [
-  h.AriaHidden(!isVisible),
-  h.OnMouseEnter(Message.EnteredChrome()),
-  h.OnMouseLeave(Message.LeftChrome()),
-  h.OnFocusEnter(Message.FocusEnteredChrome()),
-  h.OnFocusLeave(Message.FocusLeftChrome()),
-]
 
 const counterLabel = (pages: ReadonlyArray<number>, pageCount: number): string => {
   const first = Option.getOrElse(Array.head(pages), () => 0)
@@ -120,19 +93,10 @@ export const toolbarView = (
   here: ReadonlyArray<number>,
   pageCount: number,
   names: ReadonlyArray<string>,
-  isVisible: boolean,
   h: HtmlBuilder<Message>,
 ): Html =>
   h.header(
-    [
-      h.Class(
-        clsx(
-          'flex flex-wrap items-center gap-2 border-b border-edge px-4 py-2',
-          chromeClassName(isVisible),
-        ),
-      ),
-      ...chromeAttributes(isVisible, h),
-    ],
+    [h.Class('flex flex-wrap items-center gap-2 border-b border-edge px-4 py-2')],
     [
       controlView({ label: '← Shelf', message: Message.ClickedExit() }, h),
       counterView(
@@ -177,6 +141,14 @@ export const toolbarView = (
           label: model.isFullscreen ? 'Exit full' : 'Full',
           message: Message.ClickedToggleFullscreen(),
           attributes: [h.AriaLabel(model.isFullscreen ? 'Leave fullscreen' : 'Enter fullscreen')],
+        },
+        h,
+      ),
+      controlView(
+        {
+          label: 'Hide',
+          message: Message.ClickedToggleChrome(),
+          attributes: [h.AriaLabel('Hide the toolbar')],
         },
         h,
       ),

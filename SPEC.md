@@ -330,7 +330,7 @@ does not know is refused by name"
 
 번호만으로는 정렬이 어긋난 것을 알아볼 수 없다. 아카이브는 이름순으로 서는데 그
 이름이 사람의 기대와 다른 책이 있고, 그때 몇 번째 장인지가 아니라 어느 파일인지가
-단서가 된다. 툴바와 함께 숨으므로(`R-251`) 읽는 동안 눈에 걸리지 않는다.
+단서가 된다. 툴바 안에 있으므로 툴바를 숨기면(`R-252`) 함께 빠진다.
 ✅ reader/scene "the counter says which files are on screen", "a long file name keeps its
 tail, where the page number lives",
 e2e "R-217 · 카운터 아래에 아카이브 안의 파일 이름이 보인다", "R-217 · 두 장이 걸리면
@@ -679,7 +679,7 @@ e2e "R-241 · 오른쪽에서 왼쪽으로 읽을 때 왼쪽 1/3 탭이 앞으�
 부르지 않는다 — 그랬다면 가운데 탭이 언제나 숨김으로 끝난다.
 ✅ reader/story "a tap in the middle toggles the chrome and stays on the page",
 "a middle tap brings hidden chrome back",
-"a press restarts the wait but leaves the chrome as it found it"
+"a press leaves the chrome as it found it"
 
 **R-243 · 옆으로 45px 넘게 끌면 페이지가 넘어간다**
 왼쪽으로 끌면 오른쪽 페이지를 부른다.
@@ -692,38 +692,35 @@ e2e "R-243 · 옆으로 끌면 그 반대쪽 페이지를 부른다"
 **R-244 · 10px 이내의 움직임은 탭으로 친다**
 📖
 
-### 2.6 툴바 자동 숨김
+### 2.6 툴바 보이기와 숨기기
 
-**R-251 · 3초 동안 아무 일도 없으면 툴바가 사라진다**
-사라진 툴바는 흐려지고 포인터를 받지 않는다. 키보드 초점은 여전히 들어올 수 있고,
-Tab으로 들어오면 툴바가 돌아온다 — 리더 키는 모두 저마다 하는 일이 있어서, 키보드로
-읽는 사람이 툴바만 부를 길은 이것이다.
+**R-251 · 툴바는 스스로 숨지 않는다**
+책을 열면 툴바와 푸터가 떠 있고, 사람이 숨기기 전까지 그대로 있다. 페이지를 넘기거나
+컨트롤을 쓰는 것은 툴바를 건드리지 않는다 — 떠 있으면 떠 있고, 숨어 있으면 숨어 있다.
 
-다음 경우에는 시간이 흐르지 않는다 — 썸네일 그리드가 열려 있을 때(닫았더니 툴바가
-없으면 곤란하다), 포인터가 툴바 위에 있을 때, 그리고 키보드 초점이 툴바 안에 있을 때
-(둘 다 아직 쓰는 중이다). 포인터나 초점이 벗어나면 대기가 처음부터 다시 간다.
-✅ reader/story "the wait for the current activity hides it",
-subscription "waits before it says the reader has gone idle",
-"it does not run out from under an open grid",
-"holds the wait for as long as it is there", "keyboard focus inside the chrome holds the wait
-the same way",
-reader/story "entering holds it, and leaving starts the wait over", "keyboard focus entering
-brings it back and holds it, and leaving starts the wait over",
-e2e "R-251 · 3초 동안 아무 일도 없으면 툴바가 사라지고, 다시 만지면 돌아온다",
-"R-251 · 숨은 툴바에 Tab으로 들어오면 툴바가 돌아오고, 초점이 있는 동안 머문다",
-"R-251 · 포인터가 툴바 위에 있는 동안에는 시간이 흐르지 않는다"
-❓ 페이드가 눈에 어떻게 보이는지
+예전에는 3초 동안 아무 일도 없으면 흐려졌고, 키를 누르면 다시 나왔다. 키보드로 읽는
+사람에게는 넘길 때마다 툴바가 나타났다 사라지기를 되풀이하는 셈이라 도리어 피곤했다.
+흐려진 툴바는 자리를 그대로 차지해서, 숨겨도 읽을 자리가 넓어지지도 않았다.
+✅ reader/story "the chrome stays up while nothing happens", "turning the page leaves
+hidden chrome hidden", "using a control leaves the chrome where it is",
+e2e "R-251 · 가만히 두어도 툴바가 사라지지 않는다"
 
-**R-252 · 컨트롤을 쓰면 툴바가 다시 나오고 대기가 처음부터 다시 간다**
-툴바·푸터의 버튼, 번호 입력란, 슬라이더, 썸네일 선택, 설정 패널의 스위치, 키보드가
-모두 해당한다. 툴바를 쓰는
-동안 툴바가 사라지지 않는다. 화면을 누르는 것은 대기만 다시 센다 — 누르기가
-툴바를 부르면 가운데 탭이 언제나 숨김으로 끝나기 때문이다.
-✅ reader/story "the next control restarts the wait" 외 컨트롤 18종,
-"a key brings the chrome back",
-reader/scene "using the slider brings the chrome back",
-"a wait from before the last activity does not hide the chrome",
-"a press restarts the wait but leaves the chrome as it found it"
+**R-252 · `Hide` 버튼, `h` 키, 가운데 탭이 툴바를 숨기거나 되부른다**
+숨긴 툴바와 푸터는 흐려지는 것이 아니라 화면에서 빠지고, 스테이지가 그 높이를
+가져간다. 전체화면(`R-291`)과 함께 쓰면 화면에는 페이지만 남는다.
+
+`Hide` 버튼은 툴바 안에 있으므로 숨길 때만 쓸 수 있다. 되부르는 길은 `h` 키와 가운데
+탭(`R-242`)이다. 숨긴 툴바는 탭 순서에서도 빠지므로, 키보드로 읽는 사람에게는 `h`가
+그 길이다.
+
+숨긴 상태는 저장하지 않는다. 책을 새로 열면 툴바는 다시 떠 있다.
+✅ reader/story "the hide control takes the chrome down and brings it back", "the h key
+does what the hide control does", "a middle tap brings hidden chrome back",
+reader/scene "the hide control takes the toolbar and the footer off the screen", "hidden
+chrome is not drawn at all",
+keys `"h" is the same thing the ClickedToggleChrome control does`,
+e2e "R-252 · `h` 키가 툴바를 숨기면 스테이지가 그 높이를 가져가고, 다시 누르면
+돌아온다", "R-252 · `Hide` 버튼으로 숨긴 툴바는 가운데 탭으로 돌아온다"
 
 ### 2.7 페이지 슬라이더
 
@@ -986,11 +983,11 @@ e2e "R-2B5 · 기본값은 조용히 읽던 자리로 간다" 외 5개
 
 **R-2A2 · 토글**
 `d` 방향 · `v` 한/두 장 · `s` 묶기 뒤집기 · `r` 세우기 · `p` 슬라이드쇼 · `t` 썸네일 ·
-`,` 설정 · `b` 북마크 · `f` 전체화면 · `+`/`-` 줌.
+`,` 설정 · `b` 북마크 · `f` 전체화면 · `h` 툴바 · `+`/`-` 줌.
 
 키는 같은 일을 하는 버튼이 보내는 Message로 풀린다. 그래서 키와 버튼이 서로 어긋날
 수 없다 — 버튼의 동작을 고치면 키도 함께 간다.
-✅ keys `"d" is the same thing the ClickedToggleDirection control does` 외 10개,
+✅ keys `"d" is the same thing the ClickedToggleDirection control does` 외 11개,
 "Home and End are the ends of the book, whichever way it reads", "the bracket keys are the
 bookmarks either side"
 
@@ -1039,12 +1036,14 @@ e2e "R-2A5 · Shift와 함께 누른 넘김 키가 열 장을 건너뛴다", "R-
 **더 갈 곳이 없으면 스스로 멈춘다.** 책 끝 동작(`R-212`)이 `stop`이면 마지막 장에서
 멈추고, `wrap`이면 계속 돌고, `next`면 이웃한 책이 열리며 그 책은 멈춘 채로 시작한다.
 
-넘어가는 것은 사람이 한 일로 치지 않는다. 그래서 툴바는 평소처럼 숨고(`R-251`), 도는
-동안 화면에는 페이지만 남는다. Escape는 전체화면을 벗기기 전에 슬라이드쇼를 먼저
-멈춘다(`R-2A3`).
+**돌기 시작하면 툴바가 함께 숨는다**(`R-252`). 도는 동안 화면에는 페이지만 남는다.
+멈출 때는 툴바를 되부르지 않는다 — 슬라이드쇼 전에 손으로 숨겨 두었을 수도 있고,
+되부르는 길은 `h` 키와 가운데 탭이 이미 가지고 있다. Escape는 전체화면을 벗기기 전에
+슬라이드쇼를 먼저 멈춘다(`R-2A3`).
 ✅ reader/story "each turn of the wait moves a page on", "it stops itself where it can go
 no further", "escape stops it before it leaves anything else", "a wide page read in halves
-gives each half a turn of the wait",
+gives each half a turn of the wait", "starting it takes the chrome down, so only the page is
+left", "stopping it leaves the chrome down",
 reader/subscription "moving to the other half of a page starts the wait again",
 e2e "R-2C1 · 슬라이드쇼가 스스로 페이지를 넘긴다"
 
@@ -1241,14 +1240,13 @@ reported rather than thrown", "an open that errors is reported as a failure to o
 - [x] R-232 핀치 줌 · R-233 확대 시 손가락 아래 지점 · R-234 Ctrl+휠
 - [x] R-240 굴려서 페이지를 움직이는 것 · R-246 끝에서 넘어가는 것 · R-247 들어선 쪽
 - [x] R-241 탭 존 방향 · R-243 스와이프 방향 · R-244 탭 판정
-- [x] R-251 툴바 3초 자동 숨김과 포인터가 붙잡는 것
+- [x] R-251 · R-252 툴바가 스스로 숨지 않는 것과 숨기면 스테이지가 높이를 가져가는 것
 - [x] R-272 썸네일 패널이 열리는 즉시 채워지는지
 - [x] R-291 · R-292 전체화면
 - [x] P-301~303 새로고침 후 책장·위치·설정 유지
 
 **여전히 사람 눈이 필요한 것**
 
-- [ ] R-251 툴바가 사라지고 나타나는 페이드가 눈에 어떻게 보이는지
 - [ ] R-232 실기기에서 두 손가락의 감각
 - [ ] R-246 마우스 휠과 트랙패드를 가르는 짐작이 실제 장치에서 맞는지 — 하네스가
       만드는 휠 이벤트는 언제나 마우스로 보인다

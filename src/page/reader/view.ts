@@ -14,7 +14,7 @@ import { indexOfPage, pagesAt, spreadsFor } from './spread.ts'
 import { sliderPage } from './update.ts'
 import { stageView } from './view/stage.ts'
 import { thumbsView } from './view/thumbs.ts'
-import { chromeAttributes, chromeClassName, toolbarView } from './view/toolbar.ts'
+import { toolbarView } from './view/toolbar.ts'
 
 /**
  * 책 전체를 훑는 자리. 키보드 지원은 컴포넌트가 가져다준다.
@@ -99,7 +99,7 @@ const goToPageView = (page: number, h: HtmlBuilder<Message>): Html =>
     h,
   )
 
-const turnView = (model: Model, isVisible: boolean, h: HtmlBuilder<Message>): Html =>
+const turnView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.footer(
     [
       h.Class(
@@ -108,10 +108,8 @@ const turnView = (model: Model, isVisible: boolean, h: HtmlBuilder<Message>): Ht
           // Next는 다음 페이지가 오는 쪽, 그러니까 이제 슬라이더가 채워지기
           // 시작하는 쪽에 선다.
           { 'flex-row-reverse': model.settings.direction === 'rtl' },
-          chromeClassName(isVisible),
         ),
       ),
-      ...chromeAttributes(isVisible, h),
     ],
     [
       controlView({ label: 'First', message: Message.ClickedFirst() }, h),
@@ -164,6 +162,9 @@ const openingView = (text: string, h: HtmlBuilder<Message>): Html =>
 /**
  * 리더를 그린다. 툴바, 이어 가기 줄, 화면, 넘김 버튼 줄을 위에서 아래로 쌓고, 열려
  * 있다면 페이지 격자와 설정 패널을 더한다.
+ *
+ * 숨긴 툴바와 넘김 버튼 줄은 흐리게 두지 않고 아예 그리지 않는다. 자리를 차지한 채
+ * 투명해지면 스테이지는 그대로 작고, 숨기는 일이 읽을 자리를 넓히지 못한다.
  */
 export const view = defineView<Model, Message>((model, h): Html =>
   OpenState.match(model.openState, {
@@ -178,13 +179,13 @@ export const view = defineView<Model, Message>((model, h): Html =>
       return h.main(
         [h.Class('relative flex h-full flex-col'), h.AriaLabel(title)],
         [
-          toolbarView(model, here, pageCount, names, model.isChromeVisible, h),
+          model.isChromeVisible ? toolbarView(model, here, pageCount, names, h) : h.empty,
           Option.match(model.maybeResumePage, {
             onNone: () => h.empty,
             onSome: (page) => resumeView(page, h),
           }),
           stageView(model, layout, h),
-          turnView(model, model.isChromeVisible, h),
+          model.isChromeVisible ? turnView(model, h) : h.empty,
           model.isThumbsOpen ? thumbsView(model, pageCount, h) : h.empty,
           model.isSettingsOpen
             ? settingsView(
