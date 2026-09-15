@@ -1025,6 +1025,22 @@ describe('reading fast is not asking to zoom', () => {
       }),
     )
 
+  test('a first middle tap moments after the page opens shows the chrome, not a zoom', () => {
+    // `timeStamp`는 문서가 열린 순간부터 센다. 기다리는 탭이 없는 것을 `0`으로 적어 두었을
+    // 때는 열리고 300ms 안의 첫 탭이 그 `0`과 짝지어져 확대가 되었다.
+    story(
+      update,
+      given({ ...openingModel(), isChromeVisible: false }),
+      ...opened(0),
+      press(1, 0),
+      release(1, 0, 120),
+      model((model) => {
+        expect(model.zoom).toBe(ZOOM_MIN)
+        expect(model.isChromeVisible).toBe(true)
+      }),
+    )
+  })
+
   test('two quick taps on a turning zone turn two pages', () => {
     // 트랙패드에서는 이것이 실수로도 쉽게 일어나고, 그 짝을 더블 탭으로 다루었기에
     // 빨리 읽던 사람의 페이지가 확대가 되었다.

@@ -23,7 +23,7 @@ import {
   THRESHOLD_STEP,
 } from '../settings.ts'
 import type { AtBookEnd, Resume, Settings } from '../types.ts'
-import { controlClassName, controlView } from './control.ts'
+import { controlView } from './control.ts'
 
 const AT_BOOK_END_LABEL: Record<AtBookEnd, string> = {
   next: 'Next book',
@@ -111,7 +111,29 @@ const nudgeView = <Msg>(
     ],
   )
 
-/** 스위치 한 줄. 이름을 자기 라벨에서 가져가므로 줄 전체를 스위치가 그린다. */
+/**
+ * 스위치의 트랙. 켜지면 `data-checked`가 붙어 강조색으로 찬다.
+ *
+ * 패널의 다른 줄은 모두 텍스트 버튼이라, 켜고 끄는 줄만은 모양으로 갈라 둔다. 색은
+ * 페이지 슬라이더와 같은 토큰을 써서 테마를 따라간다.
+ */
+const switchTrackClassName =
+  'group relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full bg-edge transition-colors data-checked:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+
+/**
+ * 트랙 위의 손잡이. 켜지면 오른쪽으로 옮겨 가고 강조색 위의 글자색이 된다.
+ *
+ * 꺼진 손잡이는 흐린 글자색이다. 두 테마 모두에서 `bg-edge` 트랙과 구별되는 색이
+ * 그것뿐이다 — 표면색은 어두운 테마에서 트랙에 묻힌다.
+ */
+const switchKnobClassName =
+  'pointer-events-none inline-block h-4 w-4 translate-x-1 rounded-full bg-muted shadow transition-transform group-data-checked:translate-x-6 group-data-checked:bg-accent-ink'
+
+/**
+ * 스위치 한 줄. 이름을 자기 라벨에서 가져가므로 줄 전체를 스위치가 그린다.
+ *
+ * 라벨도 누르면 토글된다. 그래서 라벨은 `label`이고 누를 수 있는 곳처럼 보인다.
+ */
 const switchRow = <Msg>(
   config: Readonly<{
     id: string
@@ -130,10 +152,13 @@ const switchRow = <Msg>(
         h.div(
           [h.Class(settingRowClassName)],
           [
-            h.span([...attributes.label, h.Class('text-sm text-ink')], [config.label]),
+            h.label(
+              [...attributes.label, h.Class('cursor-pointer text-sm text-ink select-none')],
+              [config.label],
+            ),
             h.button(
-              [...attributes.button, h.Class(controlClassName)],
-              [config.isChecked ? 'On' : 'Off'],
+              [...attributes.button, h.Class(switchTrackClassName)],
+              [h.span([h.Class(switchKnobClassName)])],
             ),
           ],
         ),

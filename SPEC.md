@@ -644,7 +644,8 @@ e2e "R-247 · 앞으로 넘겨 온 긴 페이지는 첫 줄부터 보인다", "R
 ✅ reader/story "two quick taps in the middle still zoom",
 "two quick taps on a turning zone turn two pages",
 "a turning tap does not pair with a middle tap that follows",
-"a double tap zooms in, and the next pair zooms back out"
+"a double tap zooms in, and the next pair zooms back out", "a first middle tap
+moments after the page opens shows the chrome, not a zoom"
 
 **R-238 · 툴바의 −/+ 버튼으로도 확대·축소**
 화면 중앙을 기준으로 1.25배씩. 배치를 바꾸는 것이 아니라 같은 이미지를 늘리는
@@ -896,7 +897,12 @@ e2e "R-292 · 브라우저 쪽에서 나가도 상태가 맞는다"
 
 패널에서 바꾼 것은 곧바로 배치에 반영되고 다른 설정과 같이 저장된다(`P-303`). 같은
 패널을 책장에서도 연다(`R-2B6`).
-✅ reader/scene "the settings that have no toolbar button live here",
+
+켜고 끄는 항목은 트랙 위를 손잡이가 오가는 스위치다. 패널의 다른 줄은 모두 텍스트
+버튼이라, 이 줄만은 모양으로 갈린다. 라벨을 눌러도 토글된다. 설명 문구가 없으므로
+스위치는 `aria-describedby`를 달지 않는다 — 없는 요소를 가리키는 참조가 된다.
+✅ reader/scene "the settings that have no toolbar button live here", "a switch is not
+described by a description it does not have",
 "turning the cover rule off reports the new settings", "turning off stretching caps the
 page at its own size", "picking what happens at the end of a book reports it",
 reader/story "a setting picked in the panel lays the book out again at once",

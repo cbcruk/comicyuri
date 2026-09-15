@@ -198,8 +198,14 @@ export const Model = Schema.Struct({
    * 가져가고, 숨기는 일이 읽을 자리를 넓힌다.
    */
   isChromeVisible: Schema.Boolean,
-  /** 마지막 탭이 떨어진 시각. 다음 탭이 더블인지 알아보는 데 쓴다. */
-  lastTapAt: Schema.Number,
+  /**
+   * 짝을 기다리는 가운데 탭이 떨어진 시각(이벤트의 `timeStamp`, 밀리초). 다음 탭이
+   * 더블인지 알아보는 데 쓰고, 기다리는 탭이 없으면 없음이다.
+   *
+   * `0`으로 없음을 대신하지 않는다. `timeStamp`는 문서가 열린 순간부터 세므로, 열리고
+   * 300ms 안에 온 첫 탭이 있지도 않은 탭과 짝지어져 툴바 대신 확대가 된다.
+   */
+  maybeLastTapAt: Schema.Option(Schema.Number),
   maybeTapFlash: Schema.Option(TapFlash),
 
   slider: Slider.Model,
@@ -312,7 +318,7 @@ export const init = (config: InitConfig): Model => ({
   half: 'first',
   isPlaying: false,
   isChromeVisible: true,
-  lastTapAt: 0,
+  maybeLastTapAt: Option.none(),
   maybeTapFlash: Option.none(),
   // 책이 페이지 수를 말해 주기 전까지 범위는 비어 있다.
   slider: Slider.init({ id: SLIDER_ID, min: 0, max: 0, step: 1 }),

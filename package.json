@@ -13,16 +13,16 @@
     "prepare": "vp config"
   },
   "dependencies": {
-    "@foldkit/ui": "^0.158.0",
+    "@foldkit/ui": "^0.160.0",
     "clsx": "^2.1.1",
-    "effect": "4.0.0-rc.112",
-    "foldkit": "^0.158.0"
+    "effect": "4.0.0-rc.115",
+    "foldkit": "^0.160.0"
   },
   "devDependencies": {
-    "@effect/platform-browser": "4.0.0-rc.112",
-    "@foldkit/devtools": "^0.158.1",
-    "@foldkit/oxlint-plugin": "^0.12.0",
-    "@foldkit/vite-plugin": "^0.20.1",
+    "@effect/platform-browser": "4.0.0-rc.115",
+    "@foldkit/devtools": "^0.160.0",
+    "@foldkit/oxlint-plugin": "^0.13.0",
+    "@foldkit/vite-plugin": "^0.22.0",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.5.0",
