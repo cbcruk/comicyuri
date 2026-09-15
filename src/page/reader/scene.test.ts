@@ -67,7 +67,7 @@ const readingModel = (page = 0, settings = defaultSettings): Model => ({
   half: 'first',
   isPlaying: false,
   isChromeVisible: true,
-  lastTapAt: 0,
+  maybeLastTapAt: Option.none(),
   maybeTapFlash: Option.none(),
   slider: Slider.init({ id: SLIDER_ID, min: 0, max: 5, step: 1 }),
   isFullscreen: false,
@@ -499,6 +499,16 @@ describe('the settings panel', () => {
       expect(role('switch', { name: 'Stretch small pages to fit' })).toBeChecked(),
       expect(role('button', { name: 'Next book' })).toHaveAttr('aria-pressed', 'true'),
       expect(role('button', { name: 'Stay put' })).toHaveAttr('aria-pressed', 'false'),
+    )
+  })
+
+  test('a switch is not described by a description it does not have', () => {
+    // 설정 스위치에는 설명 문구가 없다. 없는 id를 가리키는 `aria-describedby`는
+    // 접근성 검사에서 잘못된 참조로 잡힌다.
+    scene(
+      program,
+      given({ ...readingModel(), isSettingsOpen: true }),
+      expect(role('switch', { name: 'Cover on its own' })).not.toHaveAttr('aria-describedby'),
     )
   })
 

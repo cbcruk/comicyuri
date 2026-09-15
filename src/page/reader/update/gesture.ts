@@ -146,7 +146,7 @@ const released = (
 
   // 드래그는 결코 탭이 아니며, 앞선 탭이 열어 둔 짝도 닫는다.
   if (tracking.hasLeftSlop) {
-    const dragged = evo(settled, { lastTapAt: () => 0 })
+    const dragged = evo(settled, { maybeLastTapAt: () => Option.none<number>() })
 
     // 확대된 상태에서 움직인 누름은 이동이었고, 이미 적용되어 있다.
     if (model.zoom > ZOOM_MIN) return { model: dragged }
@@ -161,14 +161,14 @@ const released = (
   // 탭하는 것은 빨리 읽고 있다는 뜻이고, 그것을 확대 요청으로 읽었기에 트랙패드에서
   // 두 페이지를 넘긴 것이 확대가 되었다.
   if (zone !== 'Middle') {
-    const turning = evo(settled, { lastTapAt: () => 0 })
+    const turning = evo(settled, { maybeLastTapAt: () => Option.none<number>() })
     return withTapFlash(step(turning, stepForSide(turning, zone)), turning.page, zone)
   }
 
   // 가운데가 모드가 사는 곳이다. 한 번은 툴바, 두 번은 줌.
-  if (timeStamp - model.lastTapAt < DOUBLE_TAP_MILLIS) {
+  if (Option.exists(model.maybeLastTapAt, (tapAt) => timeStamp - tapAt < DOUBLE_TAP_MILLIS)) {
     // 여기서 써 버리므로, 세 번째 탭은 이것을 되돌리지 않고 새 짝을 연다.
-    const consumed = evo(settled, { lastTapAt: () => 0 })
+    const consumed = evo(settled, { maybeLastTapAt: () => Option.none<number>() })
 
     return {
       model:
@@ -180,7 +180,7 @@ const released = (
 
   return {
     model: evo(settled, {
-      lastTapAt: () => timeStamp,
+      maybeLastTapAt: () => Option.some(timeStamp),
       isChromeVisible: (visible) => !visible,
     }),
   }
