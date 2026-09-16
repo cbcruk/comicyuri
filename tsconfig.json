@@ -7,6 +7,8 @@
        `Buffer`로 아카이브를 짓는다. */
     "types": ["vite-plus/client", "node"],
     "allowArbitraryExtensions": true,
+    /* React 화면은 `.tsx`다. 다 옮기면 `.ts`만 남은 파일이 줄어든다. */
+    "jsx": "react-jsx",
     "skipLibCheck": true,
 
     /* Effect requires strict mode for its type-level machinery to work. */

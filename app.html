@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#14141a" />
+    <link href="/src/styles.css" rel="stylesheet" />
+    <title>comicyuri · web comic viewer</title>
+    <!--
+      저장된 테마를 첫 페인트 전에 세운다(`S-144`). `index.html`의 것과 같은 스크립트다.
+      마이그레이션이 끝나면 이 문서가 `index.html`이 된다.
+    -->
+    <script>
+      try {
+        var stored = JSON.parse(localStorage.getItem('comicyuri:settings'))
+        var theme = stored && stored.theme
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.dataset.theme = theme
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute('content', theme === 'light' ? '#f4f2f7' : '#14141a')
+        }
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/app/main.tsx"></script>
+  </body>
+</html>

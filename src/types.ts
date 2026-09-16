@@ -250,6 +250,13 @@ export interface Page {
    */
   release(): void
   /**
+   * 이미지 바이트를 `Blob`으로 읽는다. URL을 만들지도 캐시하지도 않는다.
+   *
+   * URL의 수명을 부르는 쪽이 쥐게 하려고 둔다. 페이지마다 하나인 atom이 URL을 만들고
+   * 놓는다(`src/atoms/pages.ts`).
+   */
+  read(): Effect.Effect<Blob, ArchiveError>
+  /**
    * 이미지 헤더를 읽어 픽셀 크기를 잰다. 임포트할 때 한 번 부르고, 그 답은
    * 책 레코드에 남는다. 형식을 알아보지 못하면 실패가 아니라 `None`이다.
    */

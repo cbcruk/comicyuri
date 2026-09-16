@@ -71,6 +71,9 @@ class BlobPage implements Page {
     this.isReleased = true
     this.unload()
   }
+  read(): Effect.Effect<Blob> {
+    return Effect.succeed(this.blob)
+  }
   /** 막 만든 URL을 캐시한다. 책이 이미 닫혔다면 캐시하지 않고 놓는다. */
   private cache(url: string): string {
     if (this.isReleased) {
@@ -131,6 +134,9 @@ class ZipPage implements Page {
   release(): void {
     this.isReleased = true
     this.unload()
+  }
+  read(): Effect.Effect<Blob, ArchiveError> {
+    return Effect.map(this.archive.extract(this.entry), (bytes) => new Blob([bytes]))
   }
   /** 막 만든 URL을 캐시한다. 푸는 사이에 책이 닫혔다면 캐시하지 않고 놓는다. */
   private cache(url: string): string {
