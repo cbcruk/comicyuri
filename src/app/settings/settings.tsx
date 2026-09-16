@@ -11,7 +11,6 @@
  */
 
 import type { ReactNode } from 'react'
-import { useEffect, useRef } from 'react'
 
 import { Dialog } from '@astryxdesign/core/Dialog'
 import { Switch } from '@astryxdesign/core/Switch'
@@ -138,26 +137,18 @@ const NudgeRow = ({
 /**
  * 스위치 한 줄. 이름을 자기 라벨에서 가져가므로 줄 전체를 스위치가 그린다.
  *
- * `aria-checked`를 손으로 세운다. Astryx의 `Switch`는 `role="switch"`를 단 네이티브
- * 체크박스라 켜짐이 `checked` 프로퍼티에만 남는데, e2e가 그것을 속성으로 읽는다
- * (`R-2B1`, `R-2B6`). 여벌 프로퍼티는 입력이 아니라 바깥 줄로 흘러가므로 ref로
- * 세우는 길밖에 없다.
+ * 켜짐은 `aria-checked`가 아니라 네이티브 `checked`가 말한다. Astryx의 `Switch`는
+ * `role="switch"`를 단 체크박스이고, 체크박스의 켜짐은 브라우저가 접근성 트리에 스스로
+ * 싣는다 — 거기에 속성을 덧다는 것은 ARIA in HTML이 하지 말라는 일이다.
  */
 const SwitchRow = ({
   label,
   isChecked,
   onToggle,
 }: Readonly<{ label: string; isChecked: boolean; onToggle: (isChecked: boolean) => void }>) => {
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    inputRef.current?.setAttribute('aria-checked', isChecked ? 'true' : 'false')
-  }, [isChecked])
-
   return (
     <div className={settingRowClassName}>
       <Switch
-        ref={inputRef}
         label={label}
         value={isChecked}
         onChange={onToggle}

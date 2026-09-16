@@ -66,7 +66,7 @@ test('R-2B1 · 표지를 혼자 두지 않기로 하면 배치가 바로 바뀌�
 
   await useSettings(page)
   await coverAlone(page).click()
-  await expect(coverAlone(page)).toHaveAttribute('aria-checked', 'false')
+  await expect(coverAlone(page)).not.toBeChecked()
 
   // 패널이 열려 있어도 그 뒤의 화면은 이미 다시 묶였다.
   await page.getByRole('button', { name: 'Close' }).click()
@@ -175,17 +175,11 @@ test('R-2B6 · 책장에서 정한 것이 새로고침을 넘기고, 리더의 �
 
   await page.reload()
   await page.getByRole('button', { name: 'Reading settings' }).click()
-  await expect(page.getByRole('switch', { name: 'Cover on its own' })).toHaveAttribute(
-    'aria-checked',
-    'false',
-  )
+  await expect(page.getByRole('switch', { name: 'Cover on its own' })).not.toBeChecked()
   await page.getByRole('button', { name: 'Close' }).click()
 
   // 같은 값을 리더의 패널이 그대로 보여 준다. 한 자리를 두 곳에서 여는 것이다.
   await openReader(page, title)
   await useSettings(page)
-  await expect(page.getByRole('switch', { name: 'Cover on its own' })).toHaveAttribute(
-    'aria-checked',
-    'false',
-  )
+  await expect(page.getByRole('switch', { name: 'Cover on its own' })).not.toBeChecked()
 })
