@@ -20,7 +20,7 @@ import type { Layout } from '../../reader/spread.ts'
 import type { SpreadPanel } from '../../atoms/pages.ts'
 import type { Model, PageEntry, TapFlash } from '../../reader/model.ts'
 import type { FitMode } from '../../types.ts'
-import type { OnScreen } from './spread.tsx'
+import type { OnScreen } from './session.ts'
 
 /**
  * 맞춤 모드에 따라 페이지를 화면에 어떻게 앉힐지.
