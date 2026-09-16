@@ -19,7 +19,12 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 
 import { pageAtoms } from '../../atoms/browser.ts'
-import { THUMBS_DEFAULT_WIDTH, THUMB_OVERSCAN, THUMB_RATIO } from '../../page/reader/constant.ts'
+import {
+  THUMBS_DEFAULT_WIDTH,
+  THUMBS_ID,
+  THUMB_OVERSCAN,
+  THUMB_RATIO,
+} from '../../page/reader/constant.ts'
 import {
   cellWidthFor,
   perRowFor,
@@ -204,7 +209,7 @@ export const ThumbsPanel = ({
       {isEmpty ? (
         <p className="p-6 text-center text-sm text-muted">Nothing is bookmarked in this book yet</p>
       ) : null}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} id={THUMBS_ID} className="flex-1 overflow-y-auto">
         <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
           {virtualizer.getVirtualItems().map((row) => (
             // 칸이 남는 자리를 고르게 나눠 가져서 행이 폭을 남김없이 쓴다. 그래서

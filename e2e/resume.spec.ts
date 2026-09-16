@@ -2,7 +2,18 @@
 
 import { expect, test } from '@playwright/test'
 
-import { control, counter, openReader, readBook } from './fixture/app.ts'
+import { control, counter, openMenu, openReader, readBook, use } from './fixture/app.ts'
+
+/**
+ * 설정 패널을 연다.
+ *
+ * "Reading settings"는 패널이 열렸는지를 지는 `menuitemcheckbox`라 `use`가 찾는
+ * `menuitem`이 아니다. 메뉴를 여는 일만 픽스처에 맡기고 항목은 그 역할로 누른다.
+ */
+const openSettings = async (page: import('@playwright/test').Page): Promise<void> => {
+  await openMenu(page, 'settings')
+  await page.getByRole('menuitemcheckbox', { name: 'Reading settings' }).click()
+}
 
 /** 3쪽까지 읽고 책장으로 나온 다음, 설정 패널에서 이어 읽기 방식을 고른다. */
 const readThenChoose = async (
@@ -15,10 +26,10 @@ const readThenChoose = async (
   await control.next(page).click()
   await expect(counter(page)).toHaveText('3 / 6')
 
-  await control.settings(page).click()
+  await openSettings(page)
   await page.getByRole('button', { name: choice, exact: true }).click()
   await page.getByRole('button', { name: 'Close' }).click()
-  await control.shelf(page).click()
+  await use(page, 'shelf')
 
   return title
 }
@@ -28,7 +39,7 @@ test('R-2B5 · 기본값은 조용히 읽던 자리로 간다', async ({ page })
 
   await control.next(page).click()
   await expect(counter(page)).toHaveText('2 / 6')
-  await control.shelf(page).click()
+  await use(page, 'shelf')
 
   await openReader(page, title)
   await expect(counter(page)).toHaveText('2 / 6')
@@ -68,7 +79,7 @@ test('R-2B5 · 물음을 거절하면 첫 장에 머물고, 읽던 자리는 그
   await expect(page.getByRole('button', { name: 'Go there' })).toHaveCount(0)
 
   // 거절은 읽던 자리를 지우지 않는다. 다음에 열면 또 묻는다.
-  await control.shelf(page).click()
+  await use(page, 'shelf')
   await openReader(page, title)
   await expect(page.getByText('You left this book on page 3')).toBeVisible()
 })
@@ -81,10 +92,10 @@ test('R-2B5 · 처음부터 보기는 읽던 자리를 무시할 뿐 지우지 �
   await expect(counter(page)).toHaveText('1 / 6')
 
   // 다시 이어 읽기로 바꾸면 3쪽이 그대로 남아 있다.
-  await control.settings(page).click()
+  await openSettings(page)
   await page.getByRole('button', { name: 'Go there', exact: true }).click()
   await page.getByRole('button', { name: 'Close' }).click()
-  await control.shelf(page).click()
+  await use(page, 'shelf')
 
   await openReader(page, title)
   await expect(counter(page)).toHaveText('3 / 6')

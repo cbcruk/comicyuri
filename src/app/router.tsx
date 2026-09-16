@@ -6,6 +6,7 @@
  */
 
 import {
+  Link,
   Outlet,
   createRootRoute,
   createRoute,
@@ -14,9 +15,33 @@ import {
 } from '@tanstack/react-router'
 
 import { ReaderScreen } from './reader.tsx'
+import { useDocumentTitle } from './title.ts'
 import { ShelfScreen } from './shelf.tsx'
 
-const rootRoute = createRootRoute({ component: Outlet })
+/**
+ * 아무 라우트도 맞지 않는 주소. 무엇을 찾으려 했는지 보여 주고 책장으로 돌아갈 길을 준다.
+ *
+ * 돌아가는 링크는 라우터가 짓는다. 그래야 저장소 이름 아래에 놓였을 때도 그 아래를
+ * 가리킨다(`N-407`).
+ */
+const NotFound = () => {
+  useDocumentTitle('comicyuri — not found')
+
+  return (
+    <main className="flex h-full flex-col items-center justify-center gap-3 p-6">
+      <h1 className="text-lg font-medium">Nothing here</h1>
+      <p className="text-sm text-muted">{window.location.pathname}</p>
+      <Link
+        to="/"
+        className="text-sm text-accent underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      >
+        Back to the shelf
+      </Link>
+    </main>
+  )
+}
+
+const rootRoute = createRootRoute({ component: Outlet, notFoundComponent: NotFound })
 
 const shelfRoute = createRoute({
   getParentRoute: () => rootRoute,

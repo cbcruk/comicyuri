@@ -8,7 +8,7 @@
 
 import { expect, test } from '@playwright/test'
 
-import { control, counter, importBook, openReader, stage } from './fixture/app.ts'
+import { control, counter, importBook, openReader, stage, use } from './fixture/app.ts'
 
 const SHELF = '/comicyuri/'
 
@@ -19,7 +19,7 @@ test('N-407 · 저장소 이름 아래에서 책장과 리더가 오간다', asy
   await openReader(page, title)
   await expect(page).toHaveURL(/\/comicyuri\/book\/volume-1/)
 
-  await control.shelf(page).click()
+  await use(page, 'shelf')
   await expect(page).toHaveURL(/\/comicyuri\/$/)
   await expect(page.getByRole('link', { name: title })).toBeVisible()
 })

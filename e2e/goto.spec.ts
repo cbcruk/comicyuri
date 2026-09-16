@@ -1,13 +1,26 @@
 /** R-266 · 번호를 적어 그 페이지로 간다. R-2C1 · 슬라이드쇼. */
 
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
-import { control, counter, readBook } from './fixture/app.ts'
+import { counter, openMenu, readBook, use } from './fixture/app.ts'
+
+/**
+ * 설정 패널을 여닫는다.
+ *
+ * `use(page, 'settings')`를 쓰지 못한다. 이 항목은 상태를 지므로
+ * `menuitemcheckbox`인데, 픽스처의 `openMenu`는 이름에 `bookmark`·`fullscreen`·
+ * `slideshow`가 든 것만 그 역할로 찾기 때문이다. 픽스처가 그것을 알게 되면
+ * 이 helper는 `use(page, 'settings')` 한 줄로 줄어든다.
+ */
+const useSettings = async (page: Page): Promise<void> => {
+  await openMenu(page, 'settings')
+  await page.getByRole('menuitemcheckbox', { name: 'Reading settings' }).click()
+}
 
 const BOOK = { fileName: 'volume-1.cbz', pageCount: 12 }
 
-const goTo = (page: import('@playwright/test').Page) =>
-  page.getByRole('spinbutton', { name: 'Go to page' })
+const goTo = (page: Page) => page.getByRole('spinbutton', { name: 'Go to page' })
 
 test('R-266 · 번호를 적고 Enter를 누르면 그 페이지로 간다', async ({ page }) => {
   await readBook(page, BOOK)
@@ -37,14 +50,14 @@ test('R-2C1 · 슬라이드쇼가 스스로 페이지를 넘긴다', async ({ pa
 
   // 가장 짧은 간격으로 줄여 둔다.
   const panel = page.getByRole('dialog', { name: 'Reading settings' })
-  await control.settings(page).click()
+  await useSettings(page)
   for (let step = 0; step < 3; step++) {
     await panel.getByRole('button', { name: 'Spend less time on a page' }).click()
   }
   await expect(panel.getByText('2s')).toBeVisible()
   await panel.getByRole('button', { name: 'Close' }).click()
 
-  await page.getByRole('button', { name: 'Start the slideshow' }).click()
+  await use(page, 'slideshow')
   // 돌기 시작하면 툴바가 함께 숨는다. 카운터도 툴바에 있으므로 페이지는 그림으로 센다.
   await expect(page.locator('header')).toHaveCount(0)
   const onStage = page.locator('#reader-stage img')

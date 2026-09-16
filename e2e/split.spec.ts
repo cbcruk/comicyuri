@@ -3,7 +3,20 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, counter, readBook, stage } from './fixture/app.ts'
+import { control, counter, openMenu, readBook, stage } from './fixture/app.ts'
+
+/**
+ * 설정 패널을 여닫는다.
+ *
+ * `use(page, 'settings')`를 쓰지 못한다. 이 항목은 상태를 지므로
+ * `menuitemcheckbox`인데, 픽스처의 `openMenu`는 이름에 `bookmark`·`fullscreen`·
+ * `slideshow`가 든 것만 그 역할로 찾기 때문이다. 픽스처가 그것을 알게 되면
+ * 이 helper는 `use(page, 'settings')` 한 줄로 줄어든다.
+ */
+const useSettings = async (page: Page): Promise<void> => {
+  await openMenu(page, 'settings')
+  await page.getByRole('menuitemcheckbox', { name: 'Reading settings' }).click()
+}
 
 const TALL = { width: 1200, height: 1800 }
 const WIDE = { width: 3200, height: 1800 }
@@ -32,7 +45,7 @@ const halfBox = async (page: Page) => {
 const readInHalves = async (page: Page): Promise<void> => {
   const panel = page.getByRole('dialog', { name: 'Reading settings' })
 
-  await control.settings(page).click()
+  await useSettings(page)
   await panel.getByRole('switch', { name: 'Read wide pages in halves' }).click()
   await panel.getByRole('button', { name: 'Close' }).click()
   await expect(panel).toBeHidden()

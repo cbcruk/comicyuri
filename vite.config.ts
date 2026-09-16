@@ -30,13 +30,13 @@ export default defineConfig(({ mode }) => ({
   base: mode === GITHUB_PAGES ? '/comicyuri/' : '/',
   plugins: [tailwindcss(), foldkit({ devToolsMcpPort: 9988 }), pagesFallback()],
   optimizeDeps: {
-    entries: ['src/entry.ts', 'src/app/main.tsx'],
+    entries: ['src/app/main.tsx', 'src/entry.ts'],
   },
-  // 옮기는 동안 두 앱이 각자의 문서로 선다. `app.html`이 React 쪽이고, 다 옮기면 그것이
-  // `index.html`이 된다.
+  // 옮기는 동안 Foldkit 앱은 `foldkit.html`로 물러나 있다. e2e와 사람이 여는 것은
+  // `index.html`, 곧 React 앱이다. Foldkit을 지우면 이 항목도 사라진다.
   build: {
     rollupOptions: {
-      input: { main: 'index.html', app: 'app.html' },
+      input: { main: 'index.html', foldkit: 'foldkit.html' },
     },
   },
   staged: {

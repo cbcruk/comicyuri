@@ -10,7 +10,7 @@ import { writeFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, openReader, openShelf, importBook, stage } from '../fixture/app.ts'
+import { control, openReader, openShelf, importBook, stage, use } from '../fixture/app.ts'
 
 const OUT = process.env['SPIKE_MEASURE'] ?? ''
 const BOOK = { fileName: 'volume-40.cbz', pageCount: 40, size: { width: 1600, height: 2400 } }
@@ -149,7 +149,7 @@ test('baseline · page loading path', async ({ page }, info) => {
   await page.waitForTimeout(SETTLE)
   const afterRapid = await snapshot(page)
 
-  await control.shelf(page).click()
+  await use(page, 'shelf')
   await expect(page.getByRole('link', { name: title })).toBeVisible()
   await page.waitForTimeout(SETTLE)
   const afterLeaving = await snapshot(page)

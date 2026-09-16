@@ -1,8 +1,18 @@
 /** R-251, R-252, R-272, R-291 · 툴바, 시간과 브라우저 API가 걸린 것들. */
 
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
-import { control, readBook, stage } from './fixture/app.ts'
+import { readBook, readMenuItem, stage, use } from './fixture/app.ts'
+
+/**
+ * 전체화면 항목이 지금 어느 쪽을 말하고 있는지 본다. 예전 툴바 버튼은 `Full`과
+ * `Exit full`로 갈렸고, 메뉴 항목은 같은 것을 제 이름으로 말한다.
+ */
+const expectFullscreenItem = (page: Page, name: string): Promise<void> =>
+  readMenuItem(page, 'fullscreen', async (item) => {
+    await expect(item).toHaveAccessibleName(name)
+  })
 
 test('R-251 · 가만히 두어도 툴바가 사라지지 않는다', async ({ page }) => {
   await readBook(page)
@@ -42,7 +52,7 @@ test('R-252 · `Hide` 버튼으로 숨긴 툴바는 가운데 탭으로 돌아�
   await readBook(page)
   const header = page.locator('header')
 
-  await page.getByRole('button', { name: 'Hide the toolbar' }).click()
+  await use(page, 'hideToolbar')
   await expect(header).toHaveCount(0)
 
   const box = await stage(page).boundingBox()
@@ -53,7 +63,7 @@ test('R-252 · `Hide` 버튼으로 숨긴 툴바는 가운데 탭으로 돌아�
 test('R-272 · 패널을 여는 순간 썸네일이 채워진다', async ({ page }) => {
   await readBook(page)
 
-  await control.everyPage(page).click()
+  await use(page, 'everyPage')
 
   const panel = page.getByRole('dialog', { name: 'Every page' })
   await expect(panel).toBeVisible()
@@ -66,23 +76,23 @@ test('R-272 · 패널을 여는 순간 썸네일이 채워진다', async ({ page
 test('R-291 · Full 버튼이 전체화면을 오간다', async ({ page }) => {
   await readBook(page)
 
-  await control.fullscreen(page).click()
+  await use(page, 'fullscreen')
   await expect.poll(() => page.evaluate(() => document.fullscreenElement !== null)).toBe(true)
-  await expect(control.fullscreen(page)).toHaveText('Exit full')
+  await expectFullscreenItem(page, 'Leave fullscreen')
 
-  await control.fullscreen(page).click()
+  await use(page, 'fullscreen')
   await expect.poll(() => page.evaluate(() => document.fullscreenElement !== null)).toBe(false)
-  await expect(control.fullscreen(page)).toHaveText('Full')
+  await expectFullscreenItem(page, 'Enter fullscreen')
 })
 
 test('R-292 · 브라우저 쪽에서 나가도 상태가 맞는다', async ({ page }) => {
   await readBook(page)
 
-  await control.fullscreen(page).click()
-  await expect(control.fullscreen(page)).toHaveText('Exit full')
+  await use(page, 'fullscreen')
+  await expectFullscreenItem(page, 'Leave fullscreen')
 
   // 앱을 거치지 않고 문서에서 직접 빠져나온다.
   await page.evaluate(() => document.exitFullscreen())
 
-  await expect(control.fullscreen(page)).toHaveText('Full')
+  await expectFullscreenItem(page, 'Enter fullscreen')
 })

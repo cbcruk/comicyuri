@@ -102,28 +102,116 @@ export const stage = (page: Page) => page.locator('#reader-stage')
 export const counter = (page: Page) => page.locator('header span').first()
 
 /**
- * 툴바 버튼들. 버튼마다 `aria-label`이 붙어 있어서 접근 가능한 이름은 눈에 보이는
- * 글자가 아니라 그 라벨이다. 보이는 글자는 상태를 말하므로 따로 확인한다 — 예를
- * 들어 방향 버튼의 이름은 늘 "Toggle reading direction"이고 글자만 RTL/LTR로 바뀐다.
+ * 메뉴바가 지고 있는 컨트롤과, 그것이 어느 메뉴에 사는지.
+ *
+ * 예전에는 툴바에 버튼 열넷이 늘어서 있었고 e2e가 그것을 `button` 역할로 곧장 찾았다.
+ * 지금은 네이티브 앱처럼 메뉴바라서, 같은 이름이 `menuitem`(또는 상태를 지는
+ * `menuitemcheckbox`)으로 메뉴 안에 있다. 이름은 하나도 바뀌지 않았고 사는 곳만 바뀌었다.
+ */
+const MENU_OF = {
+  shelf: '책',
+  bookmark: '책',
+  everyPage: '책',
+  direction: '보기',
+  view: '보기',
+  fit: '보기',
+  rotate: '보기',
+  binding: '보기',
+  zoomIn: '보기',
+  zoomOut: '보기',
+  fullscreen: '보기',
+  hideToolbar: '보기',
+  nextBookmark: '이동',
+  previousBookmark: '이동',
+  slideshow: '재생',
+  settings: '설정',
+} as const
+
+/** 메뉴 항목의 접근 가능한 이름. 상태에 따라 갈리는 것은 정규식이다. */
+const ITEM_NAME: Readonly<Record<keyof typeof MENU_OF, string | RegExp>> = {
+  shelf: '← Shelf',
+  bookmark: /bookmark/i,
+  everyPage: 'Show every page',
+  direction: 'Toggle reading direction',
+  view: 'Toggle one or two pages',
+  fit: 'Change how pages are fitted',
+  rotate: 'Turn the page a quarter clockwise',
+  binding: 'Flip how this spread is paired',
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out',
+  fullscreen: /fullscreen/i,
+  hideToolbar: 'Hide the toolbar',
+  nextBookmark: 'Next bookmark',
+  previousBookmark: 'Previous bookmark',
+  slideshow: /slideshow/i,
+  settings: 'Reading settings',
+}
+
+/**
+ * 상태를 지는 항목들. 켜짐이 `aria-checked`로 드러나므로 역할이 `menuitemcheckbox`다.
+ *
+ * 패널을 여는 둘(`everyPage`, `settings`)은 `aria-expanded`도 함께 진다(`R-271`, `R-2B1`).
+ * 나머지는 상태가 아니라 명령이라 평범한 `menuitem`이다 — 전체화면도 그렇다. 예전 툴바의
+ * 버튼도 눌림을 지지 않았고, 지금 어느 상태인지는 항목의 이름이 말한다.
+ */
+const CHECKABLE: ReadonlySet<string> = new Set(['bookmark', 'everyPage', 'settings', 'slideshow'])
+
+/** 메뉴에 사는 컨트롤의 이름. */
+export type MenuControl = keyof typeof MENU_OF
+
+/**
+ * 그 컨트롤이 사는 메뉴를 열고, 항목을 돌려준다.
+ *
+ * 항목은 메뉴가 열려 있는 동안에만 선다. 상태를 읽고 나서 다시 닫으려면
+ * {@linkcode readMenuItem}을 쓴다.
+ */
+export const openMenu = async (page: Page, control: MenuControl) => {
+  const menu = page.getByRole('menuitem', { name: MENU_OF[control], exact: true })
+  if ((await page.getByRole('menu').filter({ visible: true }).count()) === 0) {
+    await menu.click()
+  } else {
+    // 이미 다른 메뉴가 열려 있으면 그 줄에서 옮겨 간다 — 네이티브 메뉴바와 같다.
+    await menu.hover()
+    await menu.click()
+  }
+  return page.getByRole(CHECKABLE.has(control) ? 'menuitemcheckbox' : 'menuitem', {
+    name: ITEM_NAME[control],
+  })
+}
+
+/** 메뉴를 열어 그 항목을 누른다. 예전의 툴바 버튼 한 번 누르기에 해당한다. */
+export const use = async (page: Page, control: MenuControl): Promise<void> => {
+  const item = await openMenu(page, control)
+  await item.click()
+}
+
+/**
+ * 메뉴를 열어 항목을 읽고 다시 닫는다. 메뉴가 열린 채로 남으면 그다음 클릭이 메뉴에
+ * 가로막힌다.
+ */
+export const readMenuItem = async (
+  page: Page,
+  control: MenuControl,
+  read: (item: ReturnType<Page['getByRole']>) => Promise<void>,
+): Promise<void> => {
+  const item = await openMenu(page, control)
+  await read(item)
+  await page.keyboard.press('Escape')
+}
+
+/**
+ * 메뉴 밖에 그대로 남아 있는 컨트롤들. 푸터의 넘김 줄과 번호 입력란, 슬라이더다.
+ *
+ * 읽는 동안 손이 계속 가는 것이라 메뉴에 접지 않았다. `Next`는 설정 패널의 "Next book"과
+ * 이름이 겹치므로 정확히 맞는 것만 고른다.
  */
 export const control = {
-  shelf: (page: Page) => page.getByRole('button', { name: '← Shelf' }),
-  previous: (page: Page) => page.getByRole('button', { name: 'Previous' }),
-  // "Next book"(설정 패널의 책 끝 동작)과 이름이 겹치므로 정확히 맞는 것만 고른다.
+  previous: (page: Page) => page.getByRole('button', { name: 'Previous', exact: true }),
   next: (page: Page) => page.getByRole('button', { name: 'Next', exact: true }),
-  first: (page: Page) => page.getByRole('button', { name: 'First' }),
-  last: (page: Page) => page.getByRole('button', { name: 'Last' }),
-  bookmark: (page: Page) => page.getByRole('button', { name: /bookmark/i }),
-  everyPage: (page: Page) => page.getByRole('button', { name: 'Show every page' }),
-  fullscreen: (page: Page) => page.getByRole('button', { name: /fullscreen/i }),
-  direction: (page: Page) => page.getByRole('button', { name: 'Toggle reading direction' }),
-  view: (page: Page) => page.getByRole('button', { name: 'Toggle one or two pages' }),
-  binding: (page: Page) => page.getByRole('button', { name: 'Flip how this spread is paired' }),
-  rotate: (page: Page) => page.getByRole('button', { name: 'Turn the page a quarter clockwise' }),
-  settings: (page: Page) => page.getByRole('button', { name: 'Reading settings' }),
-  fit: (page: Page) => page.getByRole('button', { name: 'Change how pages are fitted' }),
-  zoomOut: (page: Page) => page.getByRole('button', { name: 'Zoom out' }),
-  zoomIn: (page: Page) => page.getByRole('button', { name: 'Zoom in' }),
+  first: (page: Page) => page.getByRole('button', { name: 'First', exact: true }),
+  last: (page: Page) => page.getByRole('button', { name: 'Last', exact: true }),
+  goToPage: (page: Page) => page.getByRole('spinbutton', { name: 'Go to page' }),
+  slider: (page: Page) => page.getByRole('slider', { name: 'Page' }),
 }
 
 /**

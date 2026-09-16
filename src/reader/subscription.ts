@@ -13,7 +13,7 @@
 import { Option } from 'effect'
 
 import { PAGE_ID, STAGE_ID } from '../page/reader/constant.ts'
-import { NO_ROOM, deviceFor } from '../page/reader/scroll.ts'
+import { EDGE_SLACK, NO_ROOM, deviceFor } from '../page/reader/scroll.ts'
 import type { Room } from '../page/reader/scroll.ts'
 import type { Point } from '../page/reader/gesture.ts'
 import type { Half } from '../page/reader/half.ts'
@@ -94,7 +94,16 @@ export const roomOnStage = (): Room => {
 
   const view = viewOnStage(stage)
 
-  const room = (edge: number): number => Math.max(0, edge)
+  /**
+   * 한 변에 남은 거리. `EDGE_SLACK`보다 적게 남은 것은 끝에 닿은 것으로 친다.
+   *
+   * 화면에 통째로 들어간 페이지가 제 상자보다 소수점 몇 픽셀 넘치는 일이 흔하다 — 툴바
+   * 높이가 `55.46875`처럼 떨어지면 맞춤된 이미지가 반올림되어 0.375px 넘친다. 그것을
+   * 갈 곳으로 치면 굴림이 그 0.375px를 먹어 치우고, 넘어가야 할 굴림이 넘어가지 않는다
+   * (`R-246`). 넘김을 정하는 {@linkcode turnFromEdge}가 이미 같은 값으로 봐주고 있으므로,
+   * 재는 쪽도 같은 눈금을 쓴다.
+   */
+  const room = (edge: number): number => (edge <= EDGE_SLACK ? 0 : edge)
 
   return {
     up: room(view.top - Math.min(...boxes.map((box) => box.top))),

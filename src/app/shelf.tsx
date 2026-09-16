@@ -31,6 +31,10 @@ import {
 } from './shelfAtoms.ts'
 import type { ShelfBook } from './shelfAtoms.ts'
 import type { Theme } from '../types.ts'
+import { nudgedSlideSeconds, nudgedThreshold } from '../settings.ts'
+import { SettingsPanel } from './settings/index.ts'
+import { useDocumentTitle } from './title.ts'
+import { settingsAtom } from './state/index.ts'
 
 /** 실패가 상태 줄에 머무르다 스스로 사라지기까지의 시간(밀리초). */
 const NOTICE_LINGER_MS = 4000
@@ -187,6 +191,8 @@ const Placeholder = ({ text }: Readonly<{ text: string }>) => (
 export const ShelfScreen = () => {
   const shelf = useAtomValue(shelfAtom)
   const [theme, setTheme] = useAtom(themeAtom)
+  const [settings, setSettings] = useAtom(settingsAtom)
+  useDocumentTitle('comicyuri')
   const runImport = useAtomSet(importFilesAtom, { mode: 'promise' })
   const runDelete = useAtomSet(deleteBookAtom, { mode: 'promise' })
 
@@ -265,10 +271,7 @@ export const ShelfScreen = () => {
           variant="ghost"
           onClick={toggleTheme}
         />
-        {/*
-          설정 패널로 들어가는 문(`R-2B6`). 패널 자체는 리더의 것과 한 벌이라 이관
-          차례가 따로 있고, 그때 이 자리에 `Dialog`가 선다. 그때까지는 문만 있다.
-        */}
+        {/* 설정 패널로 들어가는 문(`R-2B6`). 패널은 리더의 것과 한 벌이다. */}
         <Button
           label="Reading settings"
           icon={<span aria-hidden={true}>⚙</span>}
@@ -278,6 +281,32 @@ export const ShelfScreen = () => {
           onClick={() => setIsSettingsOpen((isOpen) => !isOpen)}
         />
       </header>
+      {/*
+        책장에서 정하는 것은 전역 기본값이다(`R-2B6`). 책이 없으니 이 책의 것과 가를
+        일도 없고, 여기서 바꾼 것이 그대로 다음에 여는 책들의 기본값이 된다.
+      */}
+      <SettingsPanel
+        isOpen={isSettingsOpen}
+        settings={settings}
+        onClose={() => setIsSettingsOpen(false)}
+        onToggleCoverAlone={(isChecked) => setSettings({ ...settings, coverAlone: isChecked })}
+        onToggleSplitWide={(isChecked) => setSettings({ ...settings, splitWide: isChecked })}
+        onToggleEnlargeToFit={(isChecked) => setSettings({ ...settings, enlargeToFit: isChecked })}
+        onToggleRememberBookSettings={(isChecked) =>
+          setSettings({ ...settings, rememberBookSettings: isChecked })
+        }
+        onNudgeThreshold={(by) =>
+          setSettings({
+            ...settings,
+            singleThreshold: nudgedThreshold(settings.singleThreshold, by),
+          })
+        }
+        onNudgeSlideSeconds={(by) =>
+          setSettings({ ...settings, slideSeconds: nudgedSlideSeconds(settings.slideSeconds, by) })
+        }
+        onSelectAtBookEnd={(atBookEnd) => setSettings({ ...settings, atBookEnd })}
+        onSelectResume={(resume) => setSettings({ ...settings, resume })}
+      />
       {/*
         할 말이 생기기 전에 live region이 이미 있도록, 할 말이 없을 때도 빈 채로 그려
         둔다. 문구와 함께 만들어진 region은 읽히지 않는다.

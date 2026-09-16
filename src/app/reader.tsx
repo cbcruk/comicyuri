@@ -21,6 +21,7 @@ import type { Model } from '../reader/model.ts'
 import { browserPersistence } from './reader/persistence.ts'
 import type { ReaderPersistence, ReaderProgress } from './reader/persistence.ts'
 import { ReaderView } from './reader/reader.tsx'
+import { useDocumentTitle } from './title.ts'
 
 export { ReaderView } from './reader/reader.tsx'
 export type { ReaderViewProps } from './reader/reader.tsx'
@@ -62,6 +63,7 @@ const openingModel = (
 
 /** 리더 화면을 세우고 라우터에 잇는다. */
 export const ReaderScreen = ({ bookId }: Readonly<{ bookId: string }>) => {
+  useDocumentTitle(`comicyuri — ${bookId}`)
   const navigate = useNavigate()
   const registry = useContext(RegistryContext)
   const initial = useMemo(

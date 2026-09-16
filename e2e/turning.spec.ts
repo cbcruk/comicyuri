@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, readBook, stage, zoomOf } from './fixture/app.ts'
+import { control, readBook, stage, use, zoomOf } from './fixture/app.ts'
 
 /**
  * 디코딩이 한 프레임을 넘기는 페이지. 단색이라 만들기는 빠르지만 픽셀이 많아서
@@ -67,8 +67,8 @@ const narrowestFirstPage = (page: Page): Promise<unknown> =>
 test('R-207 · 확대해 둔 페이지는 다음 페이지가 설 때까지 확대된 채 남는다', async ({ page }) => {
   await readBook(page, HEAVY_BOOK)
   await expect(stage(page).getByRole('img', { name: 'Page 1' })).toBeVisible()
-  await control.zoomIn(page).click()
-  await control.zoomIn(page).click()
+  await use(page, 'zoomIn')
+  await use(page, 'zoomIn')
   await expect.poll(() => zoomOf(page)).toBeGreaterThan(1.5)
   const zoomed = await stage(page).getByRole('img', { name: 'Page 1' }).boundingBox()
   await recordNarrowestFirstPage(page)

@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, counter, importBook, openReader, openShelf, stage } from './fixture/app.ts'
+import { control, counter, importBook, openReader, openShelf, stage, use } from './fixture/app.ts'
 
 /**
  * 이 문서에 표를 하나 꽂아 둔다. 페이지를 다시 읽으면 새 문서가 오므로 표가
@@ -74,7 +74,7 @@ test('N-404 · 링크 클릭은 페이지를 다시 읽지 않는다', async ({ 
   expect(await markSurvives(page)).toBe(true)
 
   // 돌아오는 길도 같은 문서다.
-  await control.shelf(page).click()
+  await use(page, 'shelf')
   await expect(page.getByRole('link', { name: title })).toBeVisible()
   expect(await markSurvives(page)).toBe(true)
 

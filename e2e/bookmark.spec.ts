@@ -1,19 +1,32 @@
 /** R-284~285 · 북마크 목록과 그 사이의 이동. */
 
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
-import { control, counter, readBook } from './fixture/app.ts'
+import { control, counter, openMenu, readBook, use } from './fixture/app.ts'
+
+/**
+ * 썸네일 격자를 여닫는다.
+ *
+ * `use(page, 'everyPage')`를 쓰지 못한다. 이 항목은 상태를 지므로
+ * `menuitemcheckbox`인데, 픽스처의 `openMenu`는 이름에 `bookmark`·`fullscreen`·
+ * `slideshow`가 든 것만 그 역할로 찾기 때문이다.
+ */
+const useEveryPage = async (page: Page): Promise<void> => {
+  await openMenu(page, 'everyPage')
+  await page.getByRole('menuitemcheckbox', { name: 'Show every page' }).click()
+}
 
 test('R-284 · 그리드를 북마크만으로 좁힌다', async ({ page }) => {
   await readBook(page)
 
-  await control.bookmark(page).click()
+  await use(page, 'bookmark')
   await control.next(page).click()
   await control.next(page).click()
   await expect(counter(page)).toHaveText('3 / 6')
-  await control.bookmark(page).click()
+  await use(page, 'bookmark')
 
-  await control.everyPage(page).click()
+  await useEveryPage(page)
   const everyPage = page.getByRole('dialog', { name: 'Every page' })
   await expect(everyPage.getByRole('button', { name: 'Go to page 2' })).toBeVisible()
 
@@ -32,10 +45,10 @@ test('R-284 · 그리드를 북마크만으로 좁힌다', async ({ page }) => {
 test('R-285 · `[`/`]`가 앞뒤 북마크로 건너뛴다', async ({ page }) => {
   await readBook(page)
 
-  await control.bookmark(page).click()
+  await use(page, 'bookmark')
   await control.last(page).click()
   await expect(counter(page)).toHaveText('6 / 6')
-  await control.bookmark(page).click()
+  await use(page, 'bookmark')
 
   await control.first(page).click()
   await expect(counter(page)).toHaveText('1 / 6')
@@ -54,13 +67,13 @@ test('R-285 · `[`/`]`가 앞뒤 북마크로 건너뛴다', async ({ page }) =>
 test('R-286 · 목록에서 북마크를 바로 지우고, 그것이 새로고침을 넘긴다', async ({ page }) => {
   await readBook(page)
 
-  await control.bookmark(page).click()
+  await use(page, 'bookmark')
   await control.next(page).click()
   await control.next(page).click()
   await expect(counter(page)).toHaveText('3 / 6')
-  await control.bookmark(page).click()
+  await use(page, 'bookmark')
 
-  await control.everyPage(page).click()
+  await useEveryPage(page)
   await page.getByRole('button', { name: 'Show bookmarks only' }).click()
   const bookmarks = page.getByRole('dialog', { name: 'Bookmarks' })
   await expect(bookmarks.getByRole('button', { name: 'Go to page 1' })).toBeVisible()
@@ -74,7 +87,7 @@ test('R-286 · 목록에서 북마크를 바로 지우고, 그것이 새로고�
   await expect(counter(page)).toHaveText('3 / 6')
 
   await page.reload()
-  await control.everyPage(page).click()
+  await useEveryPage(page)
   await page.getByRole('button', { name: 'Show bookmarks only' }).click()
   await expect(bookmarks.getByRole('button', { name: 'Go to page 3' })).toBeVisible()
   await expect(bookmarks.getByRole('button', { name: 'Go to page 1' })).toHaveCount(0)
