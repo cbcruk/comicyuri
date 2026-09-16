@@ -29,7 +29,6 @@ const makeWorld = (pageCount: number) => {
     name: `page-${index + 1}.png`,
     load: () => Effect.die('atoms never cache URLs on the page'),
     unload: () => undefined,
-    release: () => undefined,
     measure: () => Effect.succeed(Option.none()),
     read: () =>
       Effect.sync(() => {

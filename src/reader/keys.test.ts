@@ -10,7 +10,7 @@ import { Option } from 'effect'
 import { describe, expect, test } from 'vite-plus/test'
 
 import { defaultSettings } from '../types.ts'
-import { isReaderKey, messageForKey } from './keys.ts'
+import { handlesKeysItself, isReaderKey, messageForKey } from './keys.ts'
 import { init } from './model.ts'
 
 const model = init({
@@ -90,5 +90,54 @@ describe('the keys the reader leaves alone', () => {
 
   test('Shift is the one it keeps for itself', () => {
     expect(isReaderKey('ArrowLeft', NOTHING_PRESSED)).toBe(true)
+  })
+})
+
+describe('the elements the reader yields its keys to', () => {
+  /**
+   * 그 역할을 단 요소를 하나 세우고, 리더가 그 위에서 누른 키를 양보하는지 묻는다.
+   * 문서에 붙이지 않는 이유는 `closest`가 붙지 않은 가지에서도 같은 답을 주기
+   * 때문이다.
+   */
+  const atRole = (role: string): Element => {
+    const element = document.createElement('div')
+    element.setAttribute('role', role)
+    return element
+  }
+
+  /** `R-265`가 덮는 위젯들. 메뉴바가 들어오면서 넷이 늘었다. */
+  const YIELDED_TO: ReadonlyArray<string> = [
+    'slider',
+    'menubar',
+    'menu',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+  ]
+
+  for (const role of YIELDED_TO) {
+    test(`a key pressed on a ${role} is that widget’s, not the reader’s`, () => {
+      expect(handlesKeysItself(atRole(role))).toBe(true)
+    })
+  }
+
+  test('a key pressed while typing a page number is the box’s', () => {
+    expect(handlesKeysItself(document.createElement('input'))).toBe(true)
+  })
+
+  // 항목 안의 글자에서 키가 나도 그 항목의 것이다. 메뉴 항목은 라벨과 단축키를
+  // 제 안에 `span`으로 품고 있다.
+  test('a key pressed inside a menu item still belongs to the menu', () => {
+    const item = atRole('menuitem')
+    const label = document.createElement('span')
+    item.append(label)
+
+    expect(handlesKeysItself(label)).toBe(true)
+  })
+
+  test('a key pressed on an ordinary button is the reader’s', () => {
+    expect(handlesKeysItself(document.createElement('button'))).toBe(false)
+    expect(handlesKeysItself(atRole('dialog'))).toBe(false)
+    expect(handlesKeysItself(null)).toBe(false)
   })
 })

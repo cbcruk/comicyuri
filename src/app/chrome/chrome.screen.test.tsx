@@ -1,12 +1,13 @@
 /**
  * 크롬 화면 테스트. 실제 Chromium에서 메뉴바를 세우고 눌러 본다.
  *
- * 보는 것은 두 가지다. 예전 툴바가 가지고 있던 접근 가능한 이름이 하나도 빠지지
- * 않고 그대로 있고 저마다 자기 콜백을 부르는 것, 그리고 메뉴바가 네이티브
- * 메뉴바처럼 움직이는 것 — 좌우 화살표로 메뉴 사이를 오가고, Enter로 열리고,
- * Escape로 닫힌다.
+ * 보는 것은 셋이다. 예전 툴바가 가지고 있던 접근 가능한 이름이 하나도 빠지지
+ * 않고 그대로 있고 저마다 자기 콜백을 부르는 것, 메뉴바가 네이티브 메뉴바처럼
+ * 움직이는 것 — 좌우 화살표로 메뉴 사이를 오가고, Enter로 열리고, Escape로
+ * 닫힌다 — 그리고 지금 걸린 값이 메뉴를 열지 않고도 헤더에서 읽히는 것이다.
  */
 
+import { useState } from 'react'
 import { userEvent } from 'vite-plus/test/context'
 import { render } from 'vitest-browser-react'
 import { expect, test, vi } from 'vite-plus/test'
@@ -89,13 +90,55 @@ const trackAndFill = (container: HTMLElement): readonly [HTMLElement, HTMLElemen
   return [track, fill]
 }
 
+/**
+ * 슬라이더가 옮긴 자리를 그대로 되먹이는 크롬. 끄는 시험만 이것으로 세운다 —
+ * 무르는 것을 재려면 값이 손을 따라 움직여야 한다.
+ */
+const DraggableChrome = ({ actions }: Readonly<{ actions: ChromeActions }>) => {
+  const [page, setPage] = useState(BASE.page)
+
+  return (
+    <ReaderChrome
+      state={{ ...BASE, direction: 'ltr', page }}
+      actions={{
+        ...actions,
+        onSlide: (next) => {
+          setPage(next)
+          actions.onSlide(next)
+        },
+      }}
+    />
+  )
+}
+
+/** 끌 수 있는 슬라이더를 세운다. 트랙과, 포인터를 받는 면을 함께 돌려준다. */
+const renderDraggable = async () => {
+  const actions = spies()
+  const screen = await render(
+    <Providers theme="dark">
+      <DraggableChrome actions={actions} />
+    </Providers>,
+  )
+  const [track] = trackAndFill(screen.container)
+  const surface = track.parentElement
+  if (surface === null) throw new Error('슬라이더를 감싼 면이 없다')
+  return { actions, screen, track, surface }
+}
+
+/**
+ * 끌기 한 동작을 흉내 내는 포인터 이벤트. 마우스 포인터는 `1`번이라 진짜 포인터를
+ * 잡는 `setPointerCapture`가 그대로 받는다.
+ */
+const pointerAt = (type: string, clientX: number): PointerEvent =>
+  new PointerEvent(type, { bubbles: true, pointerId: 1, isPrimary: true, clientX })
+
 /** 지금 열려 있는 메뉴. 닫힌 메뉴도 DOM에 남아 있으므로 보이는 것을 고른다. */
 const openMenuElement = (container: HTMLElement): Element | undefined =>
   [...container.querySelectorAll('[role="menu"]')].find((menu) => menu.checkVisibility())
 
 /** 메뉴 하나를 열고 그 안의 항목을 부른다. */
 const chooseFromMenu = async (screen: Rendered, menu: string, item: string) => {
-  await screen.getByRole('menuitem', { name: menu }).click()
+  await screen.getByRole('menuitem', { name: menu, exact: true }).click()
   await screen.getByRole('menuitem', { name: item, exact: true }).click()
 }
 
@@ -104,65 +147,65 @@ const chooseFromMenu = async (screen: Rendered, menu: string, item: string) => {
  * `menuitemcheckbox`라 역할이 다르다.
  */
 const toggleFromMenu = async (screen: Rendered, menu: string, item: string) => {
-  await screen.getByRole('menuitem', { name: menu }).click()
+  await screen.getByRole('menuitem', { name: menu, exact: true }).click()
   await screen.getByRole('menuitemcheckbox', { name: item, exact: true }).click()
 }
 
 test('the book menu carries the shelf, the bookmark and the page grid', async () => {
   const { actions, screen } = await renderChrome()
 
-  await chooseFromMenu(screen, '책', '← Shelf')
+  await chooseFromMenu(screen, 'Book', '← Shelf')
   expect(actions.onExit).toHaveBeenCalled()
 
-  await toggleFromMenu(screen, '책', 'Bookmark this page')
+  await toggleFromMenu(screen, 'Book', 'Bookmark this page')
   expect(actions.onToggleBookmark).toHaveBeenCalled()
 
-  await toggleFromMenu(screen, '책', 'Show every page')
+  await toggleFromMenu(screen, 'Book', 'Show every page')
   expect(actions.onToggleThumbs).toHaveBeenCalled()
 })
 
 test('a bookmarked page offers to take the bookmark away instead', async () => {
   const { actions, screen } = await renderChrome({ isBookmarked: true })
 
-  await toggleFromMenu(screen, '책', 'Remove bookmark from this page')
+  await toggleFromMenu(screen, 'Book', 'Remove bookmark from this page')
   expect(actions.onToggleBookmark).toHaveBeenCalled()
 })
 
 test('the view menu carries every control that changes how a page is shown', async () => {
   const { actions, screen } = await renderChrome()
 
-  await chooseFromMenu(screen, '보기', 'Toggle reading direction')
+  await chooseFromMenu(screen, 'View', 'Toggle reading direction')
   expect(actions.onToggleDirection).toHaveBeenCalled()
 
-  await chooseFromMenu(screen, '보기', 'Toggle one or two pages')
+  await chooseFromMenu(screen, 'View', 'Toggle one or two pages')
   expect(actions.onToggleView).toHaveBeenCalled()
 
-  await chooseFromMenu(screen, '보기', 'Change how pages are fitted')
+  await chooseFromMenu(screen, 'View', 'Change how pages are fitted')
   expect(actions.onCycleFit).toHaveBeenCalled()
 
-  await chooseFromMenu(screen, '보기', 'Turn the page a quarter clockwise')
+  await chooseFromMenu(screen, 'View', 'Turn the page a quarter clockwise')
   expect(actions.onRotate).toHaveBeenCalled()
 
-  await chooseFromMenu(screen, '보기', 'Flip how this spread is paired')
+  await chooseFromMenu(screen, 'View', 'Flip how this spread is paired')
   expect(actions.onToggleBinding).toHaveBeenCalled()
 
-  await chooseFromMenu(screen, '보기', 'Zoom in')
+  await chooseFromMenu(screen, 'View', 'Zoom in')
   expect(actions.onZoomIn).toHaveBeenCalled()
 
-  await chooseFromMenu(screen, '보기', 'Zoom out')
+  await chooseFromMenu(screen, 'View', 'Zoom out')
   expect(actions.onZoomOut).toHaveBeenCalled()
 
-  await chooseFromMenu(screen, '보기', 'Enter fullscreen')
+  await chooseFromMenu(screen, 'View', 'Enter fullscreen')
   expect(actions.onToggleFullscreen).toHaveBeenCalled()
 
-  await chooseFromMenu(screen, '보기', 'Hide the toolbar')
+  await chooseFromMenu(screen, 'View', 'Hide the toolbar')
   expect(actions.onToggleChrome).toHaveBeenCalled()
 })
 
 test('a single-page view has no binding to flip', async () => {
   const { screen } = await renderChrome({ view: 'single' })
 
-  await screen.getByRole('menuitem', { name: '보기' }).click()
+  await screen.getByRole('menuitem', { name: 'View', exact: true }).click()
 
   await expect.element(screen.getByRole('menuitem', { name: 'Zoom in' })).toBeVisible()
   expect(
@@ -173,33 +216,33 @@ test('a single-page view has no binding to flip', async () => {
 test('fullscreen and the slideshow say how to leave once they are on', async () => {
   const { actions, screen } = await renderChrome({ isFullscreen: true, isPlaying: true })
 
-  await chooseFromMenu(screen, '보기', 'Leave fullscreen')
+  await chooseFromMenu(screen, 'View', 'Leave fullscreen')
   expect(actions.onToggleFullscreen).toHaveBeenCalled()
 
-  await toggleFromMenu(screen, '재생', 'Stop the slideshow')
+  await toggleFromMenu(screen, 'Play', 'Stop the slideshow')
   expect(actions.onToggleSlideshow).toHaveBeenCalled()
 })
 
 test('the play menu starts the slideshow and the settings menu opens the panel', async () => {
   const { actions, screen } = await renderChrome()
 
-  await toggleFromMenu(screen, '재생', 'Start the slideshow')
+  await toggleFromMenu(screen, 'Play', 'Start the slideshow')
   expect(actions.onToggleSlideshow).toHaveBeenCalled()
 
-  await toggleFromMenu(screen, '설정', 'Reading settings')
+  await toggleFromMenu(screen, 'Settings', 'Reading settings')
   expect(actions.onToggleSettings).toHaveBeenCalled()
 })
 
 test('the go menu steps through bookmarks and sends focus to the page box', async () => {
   const { actions, screen } = await renderChrome()
 
-  await chooseFromMenu(screen, '이동', 'Next bookmark')
+  await chooseFromMenu(screen, 'Go', 'Next bookmark')
   expect(actions.onStepBookmark).toHaveBeenCalledWith(1)
 
-  await chooseFromMenu(screen, '이동', 'Previous bookmark')
+  await chooseFromMenu(screen, 'Go', 'Previous bookmark')
   expect(actions.onStepBookmark).toHaveBeenCalledWith(-1)
 
-  await chooseFromMenu(screen, '이동', 'Go to page')
+  await chooseFromMenu(screen, 'Go', 'Go to page')
   expect(document.activeElement).toBe(
     screen.getByRole('spinbutton', { name: 'Go to page' }).element(),
   )
@@ -264,22 +307,28 @@ test('a hidden chrome leaves neither bar behind', async () => {
 test('left and right arrows walk the menubar', async () => {
   const { screen } = await renderChrome()
 
-  trigger(screen.container, '책').focus()
+  trigger(screen.container, 'Book').focus()
 
   await userEvent.keyboard('{ArrowRight}')
-  expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: '보기' }).element())
+  expect(document.activeElement).toBe(
+    screen.getByRole('menuitem', { name: 'View', exact: true }).element(),
+  )
 
   await userEvent.keyboard('{ArrowRight}')
-  expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: '이동' }).element())
+  expect(document.activeElement).toBe(
+    screen.getByRole('menuitem', { name: 'Go', exact: true }).element(),
+  )
 
   await userEvent.keyboard('{ArrowLeft}')
-  expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: '보기' }).element())
+  expect(document.activeElement).toBe(
+    screen.getByRole('menuitem', { name: 'View', exact: true }).element(),
+  )
 })
 
 test('Enter opens a menu and Escape closes it again', async () => {
   const { screen } = await renderChrome()
 
-  trigger(screen.container, '재생').focus()
+  trigger(screen.container, 'Play').focus()
 
   await userEvent.keyboard('{Enter}')
   await expect
@@ -297,7 +346,7 @@ test('Enter opens a menu and Escape closes it again', async () => {
 test('an open menu hands the arrow keys to its neighbour', async () => {
   const { screen } = await renderChrome()
 
-  trigger(screen.container, '재생').focus()
+  trigger(screen.container, 'Play').focus()
   await userEvent.keyboard('{Enter}')
   await expect
     .element(screen.getByRole('menuitemcheckbox', { name: 'Start the slideshow' }))
@@ -313,7 +362,7 @@ test('an open menu hands the arrow keys to its neighbour', async () => {
 test('every item shows the key that does the same thing', async () => {
   const { screen } = await renderChrome()
 
-  await screen.getByRole('menuitem', { name: '보기' }).click()
+  await screen.getByRole('menuitem', { name: 'View', exact: true }).click()
   await expect.element(screen.getByRole('menuitem', { name: 'Zoom in' })).toBeVisible()
 
   const menu = openMenuElement(screen.container)
@@ -329,7 +378,7 @@ test('a bookmarked page, an open grid and an open panel all say so on their row'
     isSettingsOpen: true,
   })
 
-  await screen.getByRole('menuitem', { name: '책' }).click()
+  await screen.getByRole('menuitem', { name: 'Book', exact: true }).click()
   await expect
     .element(screen.getByRole('menuitemcheckbox', { name: 'Remove bookmark from this page' }))
     .toHaveAttribute('aria-checked', 'true')
@@ -337,7 +386,7 @@ test('a bookmarked page, an open grid and an open panel all say so on their row'
     .element(screen.getByRole('menuitemcheckbox', { name: 'Show every page' }))
     .toHaveAttribute('aria-expanded', 'true')
 
-  await screen.getByRole('menuitem', { name: '설정' }).click()
+  await screen.getByRole('menuitem', { name: 'Settings', exact: true }).click()
   const settings = screen.getByRole('menuitemcheckbox', { name: 'Reading settings' })
   await expect.element(settings).toHaveAttribute('aria-checked', 'true')
   await expect.element(settings).toHaveAttribute('aria-expanded', 'true')
@@ -346,7 +395,7 @@ test('a bookmarked page, an open grid and an open panel all say so on their row'
 test('a running slideshow says so on its row', async () => {
   const { screen } = await renderChrome({ isPlaying: true })
 
-  await screen.getByRole('menuitem', { name: '재생' }).click()
+  await screen.getByRole('menuitem', { name: 'Play', exact: true }).click()
   await expect
     .element(screen.getByRole('menuitemcheckbox', { name: 'Stop the slideshow' }))
     .toHaveAttribute('aria-checked', 'true')
@@ -355,7 +404,7 @@ test('a running slideshow says so on its row', async () => {
 test('and a stopped one says that', async () => {
   const { screen } = await renderChrome()
 
-  await screen.getByRole('menuitem', { name: '재생' }).click()
+  await screen.getByRole('menuitem', { name: 'Play', exact: true }).click()
   await expect
     .element(screen.getByRole('menuitemcheckbox', { name: 'Start the slideshow' }))
     .toHaveAttribute('aria-checked', 'false')
@@ -364,7 +413,7 @@ test('and a stopped one says that', async () => {
 test('a page with no bookmark leaves its row unchecked', async () => {
   const { screen } = await renderChrome()
 
-  await screen.getByRole('menuitem', { name: '책' }).click()
+  await screen.getByRole('menuitem', { name: 'Book', exact: true }).click()
   await expect
     .element(screen.getByRole('menuitemcheckbox', { name: 'Bookmark this page' }))
     .toHaveAttribute('aria-checked', 'false')
@@ -373,7 +422,7 @@ test('a page with no bookmark leaves its row unchecked', async () => {
 test('hiding the toolbar is a command, not a state', async () => {
   const { screen } = await renderChrome()
 
-  await screen.getByRole('menuitem', { name: '보기' }).click()
+  await screen.getByRole('menuitem', { name: 'View', exact: true }).click()
 
   const hide = screen.getByRole('menuitem', { name: 'Hide the toolbar', exact: true })
   await expect.element(hide).toBeVisible()
@@ -454,4 +503,89 @@ test('reading right to left, the slider keys follow what the eye sees', async ()
   // 오른쪽 화살표는 트랙 위에서 오른쪽으로 가고, 그쪽이 책의 앞이다.
   await userEvent.keyboard('{ArrowRight}')
   expect(actions.onSlide).toHaveBeenLastCalledWith(1)
+})
+
+test('the header says which way it reads, how many pages and how they fit', async () => {
+  const { screen } = await renderChrome({ direction: 'rtl', view: 'spread', fit: 'width' })
+
+  const status = screen.getByRole('status', { name: 'Reading state' })
+  await expect.element(status).toBeVisible()
+  expect(status.element().textContent).toBe('RTL · Two · Width')
+})
+
+test('and it says so too while the slideshow runs', async () => {
+  const { screen } = await renderChrome({
+    direction: 'ltr',
+    view: 'single',
+    fit: 'original',
+    isPlaying: true,
+  })
+
+  expect(screen.getByRole('status', { name: 'Reading state' }).element().textContent).toBe(
+    'LTR · One · 1:1 · Playing',
+  )
+})
+
+test('the values stand beside the counter, and the counter still comes first', async () => {
+  const { screen } = await renderChrome()
+
+  // 메뉴 안의 곁글과 달리 보조기기가 닿는다.
+  const status = screen.getByRole('status', { name: 'Reading state' }).element()
+  expect(status.closest('[aria-hidden="true"]')).toBeNull()
+
+  // e2e는 헤더의 첫 `span`으로 카운터를 읽는다. 지금 값 줄이 그 앞에 서면 안 된다.
+  expect(screen.container.querySelector('header span')?.textContent).toBe('3 / 6')
+  expect(screen.container.querySelector('header')?.contains(status)).toBe(true)
+})
+
+test('the menubar names its menus in the language the rest of the app speaks', async () => {
+  const { screen } = await renderChrome()
+
+  const names = [...screen.container.querySelectorAll('[role="menubar"] > [role="menuitem"]')].map(
+    (item) => item.textContent,
+  )
+
+  expect(names).toEqual(['Book', 'View', 'Go', 'Play', 'Settings'])
+})
+
+test('Escape during a drag puts the slider back where the drag began', async () => {
+  const { actions, screen, track, surface } = await renderDraggable()
+  const box = track.getBoundingClientRect()
+  const thumb = screen.getByRole('slider', { name: 'Page' })
+
+  surface.dispatchEvent(pointerAt('pointerdown', box.right))
+  await expect.element(thumb).toHaveAttribute('aria-valuenow', '5')
+
+  surface.dispatchEvent(pointerAt('pointermove', box.left))
+  await expect.element(thumb).toHaveAttribute('aria-valuenow', '0')
+
+  const onDocumentKeyDown = vi.fn()
+  document.addEventListener('keydown', onDocumentKeyDown)
+  await userEvent.keyboard('{Escape}')
+  document.removeEventListener('keydown', onDocumentKeyDown)
+
+  await expect.element(thumb).toHaveAttribute('aria-valuenow', '2')
+  expect(actions.onSlide).toHaveBeenLastCalledWith(2)
+  // 무르려고 누른 Escape는 리더에게 가지 않는다 — 가면 한 겹이 더 벗겨진다.
+  expect(onDocumentKeyDown).not.toHaveBeenCalled()
+
+  // 포인터도 함께 놓았으므로 이어진 움직임은 아무것도 옮기지 않는다.
+  expect(surface.hasPointerCapture(1)).toBe(false)
+  surface.dispatchEvent(pointerAt('pointermove', box.left))
+  await expect.element(thumb).toHaveAttribute('aria-valuenow', '2')
+})
+
+test('and an Escape with no drag to undo is left to the reader', async () => {
+  const { actions, screen } = await renderDraggable()
+
+  const thumb = screen.getByRole('slider', { name: 'Page' }).element()
+  if (thumb instanceof HTMLElement) thumb.focus()
+
+  const onDocumentKeyDown = vi.fn()
+  document.addEventListener('keydown', onDocumentKeyDown)
+  await userEvent.keyboard('{Escape}')
+  document.removeEventListener('keydown', onDocumentKeyDown)
+
+  expect(onDocumentKeyDown).toHaveBeenCalled()
+  expect(actions.onSlide).not.toHaveBeenCalled()
 })

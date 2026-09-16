@@ -48,7 +48,7 @@ import { counterLabel, fileNamesFor, readerLayout } from './layout.ts'
 import { browserPersistence } from './persistence.ts'
 import type { ReaderPersistence } from './persistence.ts'
 import { ReaderStage } from './stage.tsx'
-import { SpreadHold, useShownSpread } from './spread.tsx'
+import { PageHold, SpreadHold, useShownSpread } from './spread.tsx'
 
 /**
  * 리더가 직접 세우는 버튼의 겉모습. 앱의 다른 버튼과 같은 색이어야 하므로 Astryx의
@@ -56,6 +56,32 @@ import { SpreadHold, useShownSpread } from './spread.tsx'
  */
 const controlClassName =
   'cursor-pointer rounded-lg border border-edge bg-surface-2 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-accent/60 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+
+/**
+ * 아직 놓지 않을 페이지. 미리 읽은 적이 있고, 지금 자리에서 `keep` 안에 드는 것들이다
+ * (`R-215`).
+ *
+ * "미리 읽은 적이 있는지"를 따로 세는 이유는 쥐는 것과 뽑는 것이 같은 일이 되어서는 안
+ * 되기 때문이다. atom은 원하는 곳이 생기는 순간 값을 만들기 시작하므로, `keep` 전부를
+ * 구독하면 그것이 곧 미리 읽기 명령이 되어 책을 여는 순간 일곱 스프레드를 한꺼번에
+ * 뽑는다. 미리 읽는 것은 양옆 하나씩이고(`neighbours`), 이 함수는 그렇게 뽑아 둔 것을
+ * 언제까지 붙잡을지만 정한다.
+ *
+ * 책이 바뀌면 처음부터 다시 센다 — 같은 번호가 책마다 다른 장을 가리킨다.
+ */
+const useHeldPages = (
+  bookId: string,
+  warm: ReadonlyArray<number>,
+  keep: ReadonlyArray<number>,
+): ReadonlyArray<number> => {
+  const warmed = useRef<{ bookId: string; pages: Set<number> }>({ bookId, pages: new Set() })
+
+  if (warmed.current.bookId !== bookId) warmed.current = { bookId, pages: new Set() }
+  for (const page of warm) warmed.current.pages.add(page)
+
+  const seen = warmed.current.pages
+  return Array.filter(keep, (page) => seen.has(page))
+}
 
 /** 책을 여는 동안과, 끝내 열지 못했을 때 서는 화면. */
 const OpeningScreen = ({ text, onExit }: Readonly<{ text: string; onExit: () => void }>) => (
@@ -220,6 +246,17 @@ export const ReaderView = ({
   const here = spreadPages(model)
   const { maybeShown, isReady, maybeFailure } = useShownSpread(pages, model, here)
 
+  // 훅은 책이 열리기 전에도 같은 차례로 불려야 하므로 `maybeLayout`을 가르기 전에 센다.
+  const warm = Option.match(maybeLayout, {
+    onNone: () => Array.empty<number>(),
+    onSome: (drawn) => drawn.warm,
+  })
+  const keep = Option.match(maybeLayout, {
+    onNone: () => Array.empty<number>(),
+    onSome: (drawn) => drawn.keep,
+  })
+  const heldPages = useHeldPages(model.bookId, warm, keep)
+
   useReaderEvents({ send, model, isSpreadReady: isReady })
   useSlideshow(send, model)
 
@@ -299,8 +336,8 @@ export const ReaderView = ({
           </ReaderChrome>
 
           {/*
-            다음 것이 설 때까지 남아 있는 스프레드와 양옆 이웃을 쥔다. 그리지는 않고
-            구독만 하므로, 그 페이지들의 URL이 놓이지 않는다(`R-207`, `R-215`).
+            다음 것이 설 때까지 남아 있는 스프레드를 쥔다. 그리지는 않고 구독만 하므로,
+            그 페이지들의 URL이 놓이지 않는다(`R-207`).
           */}
           {Option.match(maybeShown, {
             onNone: () => null,
@@ -309,13 +346,13 @@ export const ReaderView = ({
                 <SpreadHold pages={pages} bookId={model.bookId} spread={shown.pages} />
               ),
           })}
-          {drawn.neighbours.map((spread) => (
-            <SpreadHold
-              key={spread.join(',')}
-              pages={pages}
-              bookId={model.bookId}
-              spread={spread}
-            />
+
+          {/*
+            양옆을 미리 읽고, 멀어지기 전까지 놓지 않는다(`R-215`). 미리 읽는 것도 붙잡는
+            것도 구독 하나로 같은 일이라, 미리 읽을 것이 `heldPages`에 이미 들어 있다.
+          */}
+          {heldPages.map((page) => (
+            <PageHold key={page} pages={pages} bookId={model.bookId} page={page} />
           ))}
 
           {model.isThumbsOpen ? (

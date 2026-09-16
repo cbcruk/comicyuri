@@ -109,22 +109,22 @@ export const counter = (page: Page) => page.locator('header span').first()
  * `menuitemcheckbox`)으로 메뉴 안에 있다. 이름은 하나도 바뀌지 않았고 사는 곳만 바뀌었다.
  */
 const MENU_OF = {
-  shelf: '책',
-  bookmark: '책',
-  everyPage: '책',
-  direction: '보기',
-  view: '보기',
-  fit: '보기',
-  rotate: '보기',
-  binding: '보기',
-  zoomIn: '보기',
-  zoomOut: '보기',
-  fullscreen: '보기',
-  hideToolbar: '보기',
-  nextBookmark: '이동',
-  previousBookmark: '이동',
-  slideshow: '재생',
-  settings: '설정',
+  shelf: 'Book',
+  bookmark: 'Book',
+  everyPage: 'Book',
+  direction: 'View',
+  view: 'View',
+  fit: 'View',
+  rotate: 'View',
+  binding: 'View',
+  zoomIn: 'View',
+  zoomOut: 'View',
+  fullscreen: 'View',
+  hideToolbar: 'View',
+  nextBookmark: 'Go',
+  previousBookmark: 'Go',
+  slideshow: 'Play',
+  settings: 'Settings',
 } as const
 
 /** 메뉴 항목의 접근 가능한 이름. 상태에 따라 갈리는 것은 정규식이다. */

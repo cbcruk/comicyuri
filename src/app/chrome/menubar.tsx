@@ -35,16 +35,27 @@ const MENU_IDS = ['book', 'view', 'go', 'play', 'settings'] as const
 /** {@linkcode MENU_IDS}의 한 칸. */
 type MenuId = (typeof MENU_IDS)[number]
 
+/**
+ * 트리거에 적히는 이름. 네이티브 메뉴바처럼 한 낱말이다.
+ *
+ * 앱의 다른 모든 문구와 같이 영어다 — 한국어는 주석·커밋·`SPEC.md`의 것이지
+ * 화면에 적히는 글자의 것이 아니다.
+ */
 const MENU_LABELS: Readonly<Record<MenuId, string>> = {
-  book: '책',
-  view: '보기',
-  go: '이동',
-  play: '재생',
-  settings: '설정',
+  book: 'Book',
+  view: 'View',
+  go: 'Go',
+  play: 'Play',
+  settings: 'Settings',
 }
 
-/** 맞춤 모드가 메뉴에 적히는 이름. 예전 툴바 버튼의 글자와 같다(`R-224`). */
-const FIT_LABEL: Readonly<Record<FitMode, string>> = {
+/**
+ * 맞춤 모드가 적히는 이름. 예전 툴바 버튼의 글자와 같다(`R-224`).
+ *
+ * 메뉴의 곁글과 헤더의 지금 값 줄이 같은 것을 쓴다 — 한 모드가 자리에 따라 다른
+ * 이름으로 불리면 그 둘이 같은 것을 말한다는 것을 알 수 없다.
+ */
+export const FIT_LABEL: Readonly<Record<FitMode, string>> = {
   contain: 'Fit',
   width: 'Width',
   height: 'Height',

@@ -215,9 +215,11 @@ export const ShelfScreen = () => {
 
     setNotice({ tone: 'busy', text: 'Importing…' })
     const maybeError = await runImport(files)
-    setNotice(
+    setNotice((standing) =>
       Option.match(maybeError, {
-        onNone: () => null,
+        // 끝난 작업은 자기가 세운 대기만 거둔다. 도는 동안 실패가 들어왔다면 그것은
+        // 아직 제 4초를 다 쓰지 않았으므로 그대로 둔다(`F-503`).
+        onNone: () => (standing?.tone === 'failed' ? standing : null),
         onSome: (text) => ({ tone: 'failed', text }),
       }),
     )

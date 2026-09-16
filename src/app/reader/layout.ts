@@ -8,7 +8,13 @@
 
 import { Array, Option } from 'effect'
 
-import { indexOfPage, pagesAt, spreadsFor } from '../../reader/spread.ts'
+import {
+  indexOfPage,
+  neighbourPages,
+  pagesAt,
+  pagesToKeep,
+  spreadsFor,
+} from '../../reader/spread.ts'
 import type { Layout } from '../../reader/spread.ts'
 import { OpenState } from '../../reader/model.ts'
 import type { Model } from '../../reader/model.ts'
@@ -26,8 +32,20 @@ export type ReaderLayout = Readonly<{
   index: number
   /** 지금 화면에 걸릴 스프레드의 페이지들. */
   here: ReadonlyArray<number>
-  /** 미리 읽어 둘 양옆 스프레드(`R-215`). 책의 끝에서는 한쪽뿐이다. */
-  neighbours: ReadonlyArray<ReadonlyArray<number>>
+  /**
+   * 미리 읽어 둘 페이지(`R-215`). 지금 스프레드와 양옆 하나씩이고, 책의 끝에서는
+   * 한쪽뿐이다.
+   */
+  warm: ReadonlyArray<number>
+  /**
+   * 아직 놓지 않을 만큼 가까운 페이지(`R-215`). 여기서 벗어난 페이지는 URL이 해제된다.
+   *
+   * 미리 읽는 범위보다 넓은 이유는 둘이 다른 일을 하기 때문이다. 미리 읽기는 다음
+   * 넘김을 위해 새로 뽑는 것이라 좁아야 하고, 이쪽은 이미 뽑아 둔 것을 언제 버릴지를
+   * 정하는 것이라 넓어야 한다 — 두 스프레드 앞으로 갔다 돌아오는 것이 흔한 걸음인데
+   * 그때마다 다시 뽑으면 읽던 자리가 "Loading…"으로 덮인다.
+   */
+  keep: ReadonlyArray<number>
 }>
 
 /** 책이 열린 뒤에만 셈할 수 있다. 여는 중이거나 실패했으면 없음이다. */
@@ -48,10 +66,8 @@ export const readerLayout = (model: Model): Option.Option<ReaderLayout> =>
         spreads,
         index,
         here: pagesAt(spreads, index),
-        neighbours: Array.filter(
-          [pagesAt(spreads, index - 1), pagesAt(spreads, index + 1)],
-          (spread) => spread.length > 0,
-        ),
+        warm: neighbourPages(spreads, index),
+        keep: pagesToKeep(spreads, index),
       })
     },
   })

@@ -5,13 +5,15 @@
  * 왼쪽으로 읽으면 트랙과 채움의 색이 자리를 바꿔야 하는데, Astryx의 것은 트랙과
  * 채움을 스스로 그리고 그 안으로 손을 넣을 길이 없다. 그래서 Foldkit의 Slider가
  * 하던 것을 그대로 옮겼다 — `role="slider"`를 진 손잡이, `aria-valuemin`/`max`/
- * `now`/`valuetext`, 걸음·페이지·처음·끝 키, 그리고 끌기.
+ * `now`/`valuetext`, 걸음·페이지·처음·끝 키, 끌기, 그리고 끄는 중의 Escape가
+ * 잡기 전 자리로 되돌리는 것.
  */
 
 import clsx from 'clsx'
 import type { KeyboardEvent, PointerEvent } from 'react'
 import { useRef, useState } from 'react'
 
+import { mirrorForDirection } from '../../reader/spread.ts'
 import type { ReadingDirection } from '../../types.ts'
 
 /** PageUp·PageDown 한 번이 걸음 몇 개인지. Foldkit Slider의 것과 같은 값이다. */
@@ -35,6 +37,14 @@ const valueForKey = (key: string, value: number, max: number): number | undefine
   if (key === 'End') return max
   return undefined
 }
+
+/**
+ * 끄는 동안 붙잡아 두는 것. 잡은 포인터와, 잡기 전에 슬라이더가 가리키던 값이다.
+ *
+ * 잡기 전 값을 적어 두는 이유는 끄는 중의 Escape가 그리로 되돌리기 때문이다 —
+ * 손잡이를 잘못 집어 읽던 자리를 잃는 일을 이 한 키가 무른다.
+ */
+type Drag = Readonly<{ pointerId: number; originValue: number }>
 
 /** 소수를 CSS 백분율로. 자리를 지나치게 잘게 적지 않는다. */
 const percent = (fraction: number): string => `${Math.round(fraction * 10000) / 100}%`
@@ -63,13 +73,15 @@ export const PageSlider = ({ page, pageCount, direction, onSlide }: PageSliderPr
   const max = Math.max(pageCount - 1, 0)
 
   /** 슬라이더의 값과 페이지 번호를 서로 옮긴다. 자기 역함수라 양쪽에 같은 것을 쓴다. */
-  const turn = (value: number): number => (isRightToLeft ? max - value : value)
+  const turn = (value: number): number => mirrorForDirection(value, pageCount, direction)
 
   const value = turn(page)
   const fraction = max === 0 ? 0 : value / max
 
+  const rootRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const thumbRef = useRef<HTMLDivElement>(null)
+  const dragRef = useRef<Drag | null>(null)
   const [isDragging, setIsDragging] = useState(false)
 
   const slideTo = (nextValue: number) => {
@@ -83,8 +95,20 @@ export const PageSlider = ({ page, pageCount, direction, onSlide }: PageSliderPr
     return Math.round(clamp((clientX - box.left) / box.width, 1) * max)
   }
 
+  /** 끌기를 끝내고 잡아 두었던 포인터를 놓는다. 값은 건드리지 않는다. */
+  const endDrag = () => {
+    const drag = dragRef.current
+    const root = rootRef.current
+    if (drag !== null && root !== null && root.hasPointerCapture(drag.pointerId)) {
+      root.releasePointerCapture(drag.pointerId)
+    }
+    dragRef.current = null
+    setIsDragging(false)
+  }
+
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId)
+    dragRef.current = { pointerId: event.pointerId, originValue: value }
     setIsDragging(true)
     thumbRef.current?.focus()
     slideTo(valueAt(event.clientX))
@@ -94,14 +118,21 @@ export const PageSlider = ({ page, pageCount, direction, onSlide }: PageSliderPr
     if (isDragging) slideTo(valueAt(event.clientX))
   }
 
-  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId)
-    }
-    setIsDragging(false)
-  }
-
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      const drag = dragRef.current
+      // 끌지 않는 중의 Escape는 리더의 것이다. 무를 끌기가 없으면 그대로 흘려보낸다.
+      if (drag === null) return
+
+      event.preventDefault()
+      // 무르려고 누른 Escape가 문서까지 올라가면 리더가 그것을 한 겹 벗기라는 뜻으로
+      // 읽는다(`R-2A3`). 리더의 키 구독은 document에 걸려 있으므로 네이티브 쪽을 멈춘다.
+      event.nativeEvent.stopPropagation()
+      endDrag()
+      slideTo(drag.originValue)
+      return
+    }
+
     const next = valueForKey(event.key, value, max)
     if (next === undefined) return
     event.preventDefault()
@@ -110,11 +141,12 @@ export const PageSlider = ({ page, pageCount, direction, onSlide }: PageSliderPr
 
   return (
     <div
+      ref={rootRef}
       className="relative flex h-6 flex-1 touch-none items-center select-none"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
     >
       {/* 트랙이 깔고 채움이 덮는다. 읽는 방향이 뒤집히면 두 색이 자리를 바꾼다. */}
       <div

@@ -16,9 +16,6 @@ export const PAGE_ID = 'reader-page'
  */
 export const SKIP_PAGES = 10
 
-/** 페이지 슬라이더. 부모가 드래그 구독을 lift 할 때 이 id로 부른다. */
-export const SLIDER_ID = 'reader-page-slider'
-
 /** 번호를 적어 그 페이지로 가는 입력란. */
 export const GOTO_ID = 'reader-go-to-page'
 

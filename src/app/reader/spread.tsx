@@ -126,3 +126,19 @@ export const SpreadHold = ({
   useAtomMount(pages.spread(bookId, spread))
   return null
 }
+
+/**
+ * 페이지 한 장을 구독만 한다. 멀어지기 전까지 URL을 놓지 않는 자리다(`R-215`).
+ *
+ * 스프레드가 아니라 낱장을 쥐는 이유는 쥐는 범위와 묶는 범위가 다르기 때문이다. 묶기는
+ * 설정과 페이지 비에 따라 달라지지만 쥐는 범위는 "지금 자리에서 몇 장 안"이고, 낱장으로
+ * 세면 묶기가 바뀌어도 쥐던 페이지가 그대로 남는다.
+ */
+export const PageHold = ({
+  pages,
+  bookId,
+  page,
+}: Readonly<{ pages: PageAtoms; bookId: string; page: number }>) => {
+  useAtomMount(pages.pageUrl(bookId, page))
+  return null
+}

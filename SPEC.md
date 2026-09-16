@@ -27,8 +27,10 @@
 **테스트 이름 앞의 접두사**는 그 테스트가 어디서 도는지를 말합니다.
 
 - **`*/screen`은 화면 테스트입니다.** `vp run test:screen`이 실제 Chromium에
-  컴포넌트를 세워 놓고 눌러 봅니다 — `shelf/screen`, `chrome/screen`,
-  `reader/screen`, `settings/screen`, `thumbs/screen` 다섯입니다. Foldkit의 scene
+  컴포넌트를 세워 놓고 눌러 봅니다 — `shelf/screen`, `shelfNotice/screen`,
+  `chrome/screen`, `reader/screen`, `settings/screen`, `thumbs/screen` 여섯입니다.
+  `shelfNotice/screen`만 저장소를 가짜로 갈아 끼웁니다. 거절하는 저장소와 늦게 답하는
+  저장소는 진짜 IndexedDB로 만들 수 없기 때문입니다. Foldkit의 scene
   테스트가 하던 일을 이것이 이어받았습니다.
 - **나머지 접두사는 `vp test`가 돌리는 단위 테스트**이고, 접두사가 곧 파일입니다 —
   `reader/story`·`reader/subscription`·`keys`·`scroll`·`gesture`·`half`·`rotation`·
@@ -41,7 +43,7 @@
   구독과 라우팅이 맞물리는지도 여기서만 드러납니다. 테스트 이름은 이 문서의 항목
   번호로 시작합니다.
 
-기준 커밋: `9390e30b` · 단위 310개 · 화면 68개 · e2e 109개 통과
+기준 커밋: `ccb77c46` · 단위 321개 · 화면 85개 · e2e 109개 통과
 
 ---
 
@@ -112,7 +114,7 @@ whatever the case"
 ✅ e2e "S-115 · 같은 파일을 다시 열면 같은 책이고, 읽던 자리도 그대로다"
 
 **S-116 · 임포트 중에는 상태줄이 "Importing…"이라고 말하고, 끝나면 사라진다**
-📖 재는 테스트가 없다
+✅ shelfNotice/screen "the line says it is importing, and says nothing once the book is in"
 
 **S-117 · 임포트가 끝나면 책장이 다시 읽히되, 기존 책은 화면에 남는다**
 `Refreshing` 상태라 그리드가 비었다가 다시 그려지지 않는다.
@@ -133,7 +135,8 @@ e2e "S-117 · 한 권을 더 들여와도 이미 선 책의 표지 URL이 그대
 테스트가 없다
 
 **S-118 · 선택창을 취소하면 아무 일도 없다**
-📖 재는 테스트가 없다
+취소는 실패가 아니라 빈 목록이다. 아무것도 고르지 않은 것과 구별하지 않는다.
+✅ shelfNotice/screen "cancelling the picker imports nothing and says nothing"
 
 **S-119 · 파일이 아닌 것을 드롭하면 그렇게 말한다**
 "Couldn't do that — Only files can be dropped here", 4초 뒤 사라짐.
@@ -188,7 +191,7 @@ e2e "S-131 · 🗑은 묻기만 하고, 지키기를 고르면 책이 남는다"
 ✅ shelf/screen "removing a book from the shelf takes it out of the grid"
 
 **S-133 · 삭제가 실패하면 책은 남고 실패만 보고된다**
-📖 재는 테스트가 없다
+✅ shelfNotice/screen "a failed delete is reported and the book stays"
 
 ⚠️ 되돌리기는 없다. 답하고 나면 그 책의 바이트도 읽던 자리도 돌아오지 않는다.
 
@@ -283,23 +286,23 @@ in an archive is not a page", "loose images keep the order and the names they we
 with"
 
 **R-204 · 책을 떠나면 아카이브와 모든 페이지 URL이 해제된다**
-ManagedResource가 Model 상태에 따라 해제한다.
+URL의 수명은 페이지 atom의 스코프다. 만드는 것과 놓는 것을 `Effect.acquireRelease`가
+한 쌍으로 묶어 두므로, 그 페이지를 원하는 곳이 하나도 남지 않으면 — 멀어졌든 책을
+떠났든 — 레지스트리가 atom을 치우면서 URL도 함께 놓는다. 디코딩보다 먼저 걸어 두어
+디코딩 도중에 치워져도 URL이 남지 않는다.
 
-URL이 새는 길이 둘 있었고 둘 다 막았다.
-
-- **같은 페이지를 동시에 부를 때.** 미리 읽지 않은 페이지로 가면 화면에 걸 스프레드와
-  미리 읽을 이웃이 같은 페이지를 한꺼번에 부른다. 둘 다 URL이 없다고 보고 각자 만들면
-  캐시는 나중 것만 기억하고, 화면에 걸린 먼저 것은 끝내 해제되지 않았다. 페이지의 `load`는
-  이제 한 번에 하나씩 돌고, 기다린 호출은 앞선 호출이 만든 URL을 받는다.
-- **풀고 있는 도중에 책을 떠날 때.** 푸는 일은 책이 닫힌 뒤에 끝나고, 그때 캐시한 URL은
-  페이지와 함께 버려졌다. 책을 닫는 `release`는 미리 읽기가 쓰는 `unload`와 따로 있어서,
-  닫힌 뒤에 만든 URL은 캐시하지 않고 곧바로 놓는다. 미리 읽기가 놓은 페이지에는 이 규칙을
-  걸지 않는다 — 늦게 끝난 이전 미리 읽기가 지금 불러오는 페이지를 놓았을 때 그 URL까지
-  놓아 버리기 때문이다.
-  ✅ loader "a page asked for twice at once makes one URL", "a page closed while it is still
-  unpacking keeps no URL", "a page let go by the preloader can still be loaded again",
-  e2e "R-204 · 멀리 건너뛰었다가 책을 떠나도 페이지 URL이 남지 않는다", "R-204 · 페이지를
-  풀고 있는 순간에 책을 떠나도 URL이 남지 않는다"
+같은 페이지를 동시에 부를 때 URL이 새는 길이 있었고 막았다. 미리 읽지 않은 페이지로
+가면 화면에 걸 스프레드와 미리 읽을 이웃이 같은 페이지를 한꺼번에 부른다. 둘 다 URL이
+없다고 보고 각자 만들면 캐시는 나중 것만 기억하고, 화면에 걸린 먼저 것은 끝내 해제되지
+않았다. 페이지의 `load`는 이제 한 번에 하나씩 돌고, 기다린 호출은 앞선 호출이 만든 URL을
+받는다. atom 쪽은 페이지마다 하나뿐이라 구조적으로 겹치지 않는다.
+✅ loader "a page asked for twice at once makes one URL", "a page let go by the preloader
+can still be loaded again",
+pages "a page two spreads want at once is unpacked into one URL", "leaving the book leaves
+no page URL behind", "a spread left while its pages are still decoding gives the URLs back
+too",
+e2e "R-204 · 멀리 건너뛰었다가 책을 떠나도 페이지 URL이 남지 않는다", "R-204 · 페이지를
+풀고 있는 순간에 책을 떠나도 URL이 남지 않는다"
 
 **R-205 · ZIP 리더가 읽는 것과 거절하는 것**
 중앙 디렉터리를 파싱해 엔트리를 적힌 순서대로 세우고, 페이지는 필요할 때 하나씩
@@ -356,6 +359,19 @@ e2e "R-217 · 카운터 아래에 아카이브 안의 파일 이름이 보인다
 이름도 둘이다"
 📖 긴 이름의 앞을 줄이는 것은 CSS가 한다 — 재는 테스트가 없다
 
+**R-218 · 카운터 옆에 지금 걸린 값이 적힌다**
+읽는 방향(`RTL`/`LTR`), 한 장인지 두 장인지(`One`/`Two`), 맞춤 모드
+(`Fit`/`Width`/`Height`/`1:1`), 그리고 돌고 있을 때만 `Playing`이다. 멈춘 슬라이드쇼는
+적지 않는다 — 언제나 서 있는 글자는 읽히지 않고 줄만 길게 만든다.
+
+컨트롤이 메뉴 안으로 들어가면서(`R-251` 위의 머리말) 지금 값도 함께 접혔다. 그것을 도로 꺼내 놓는
+자리다. 메뉴 안의 곁글과 달리 `aria-hidden`이 아니므로 보조기기도 읽는다. 값을 바꾸는
+항목은 눌리는 순간 메뉴와 함께 사라지므로, 무엇으로 바뀌었는지 말해 줄 자리가 이 줄
+말고는 없다 — 그래서 `role="status"`다.
+✅ chrome/screen "the header says which way it reads, how many pages and how they fit",
+"and it says so too while the slideshow runs", "the values stand beside the counter, and the
+counter still comes first"
+
 **R-214 · 이미 지나간 페이지의 이미지가 늦게 도착하면 버린다**
 ✅ pages "land on their own spread and leave the one on screen alone",
 reader/screen "a stale answer does not replace the page on screen"
@@ -364,7 +380,14 @@ reader/screen "a stale answer does not replace the page on screen"
 양쪽 1스프레드를 미리 읽고 3스프레드 밖은 해제한다. 미리 읽는 것은 압축을 푸는
 데서 끝나지 않고 디코딩까지 해 둔다 — 넘겼을 때 곧바로 그려지는 것이 미리 읽어
 두는 이유이므로, 압축만 풀어 두면 절반만 한 셈이다.
-📖 🔍 (2026-09-12, `R-206`과 같이 쟀다)
+
+미리 읽는 범위와 놓지 않는 범위가 다른 것은 둘이 다른 일을 하기 때문이다. 앞의 것은
+새로 뽑을 것을 정하므로 좁고, 뒤의 것은 이미 뽑아 둔 것을 언제 버릴지 정하므로 넓다.
+그래서 3스프레드 안이어도 한 번도 미리 읽은 적 없는 페이지는 뽑지 않는다 — 책을 여는
+순간 일곱 스프레드가 한꺼번에 풀리는 일이 없다.
+✅ reader/screen "pages within three spreads keep their URLs, and the ones beyond let them
+go"
+🔍 (2026-09-12, `R-206`과 같이 쟀다)
 
 **R-206 · 페이지는 그릴 수 있게 된 뒤에 걸린다**
 디코딩은 object URL을 만드는 것과 별개의 일이다. URL이 생기자마자 `<img>`를
@@ -431,8 +454,9 @@ e2e "R-207 · 멀리 건너뛰어도, 빠르게 넘겨도 화면이 비는 프�
 열린다. 책장으로 돌아갈 필요가 없다. 이웃한 책은 책장에서 열 때와 똑같이 저장된
 위치에서 시작한다(`N-403`).
 
-책장의 끝에서는 아무 일도 일어나지 않고 제자리에 머문다. 책장을 아직 읽는 중일
-때도 마찬가지다 — 순서를 모르는 채로 짐작해 여는 것보다 낫다.
+책장의 끝에서는 아무 일도 일어나지 않고 제자리에 머문다. 이웃을 묻는 일은 그때마다
+저장소를 읽는 것이라(`P-301`), 책장을 한 번도 거치지 않고 주소로 곧장 리더에 들어온
+사람도 이웃 책으로 넘어간다. 저장소가 답하지 못했을 때만 제자리다.
 
 책 사이를 오가는 별도의 버튼은 없다. 원본 뷰어에서도 책의 끝을 넘기는 동작이 곧
 다음 권을 여는 동작이었고, 따로 만들면 두 기능이 겹친다.
@@ -450,15 +474,18 @@ e2e "R-216 · 마지막 장에서 넘기면 다음 권이 열린다", "R-216 · 
 ### 2.3 레이아웃
 
 **R-221 · 읽는 방향 (RTL / LTR)**
-버튼이 현재 방향을 보여주고 누르면 뒤집힌다. 두 장 배치에서 페이지 좌우 순서와
-탭·스와이프·화살표의 앞뒤가 함께 바뀐다.
+보기 메뉴의 항목이 뒤집고, 지금 어느 쪽인지는 헤더의 상태 줄이 말한다(`R-218`). 두 장
+배치에서 페이지 좌우 순서와 탭·스와이프·화살표의 앞뒤가 함께 바뀐다.
 ✅ chrome/screen "the view menu carries every control that changes how a page is shown",
+"the header says which way it reads, how many pages and how they fit",
 reader/story "in right-to-left reading the left key advances"
 ❓ **실제로 만화를 넘겨봤을 때 방향이 맞는지**
 
 **R-222 · 한 장 / 두 장 (One / Two)**
-두 장 모드에서도 지금 읽던 페이지를 중심으로 다시 묶는다.
-✅ reader/story "two-page mode regroups around the page being read"
+두 장 모드에서도 지금 읽던 페이지를 중심으로 다시 묶는다. 지금 어느 쪽인지는 헤더의
+상태 줄이 말한다(`R-218`).
+✅ reader/story "two-page mode regroups around the page being read",
+chrome/screen "the header says which way it reads, how many pages and how they fit"
 
 **R-223 · 두 장 모드에서 표지는 혼자 나온다**
 그래서 이후 쌍이 인쇄된 책처럼 맞는다. 설정 패널에서 끌 수 있다(`R-2B1`).
@@ -473,8 +500,12 @@ Fit은 화면 안에 통째로, Width는 너비를, Height는 높이를 채우�
 
 Fit과 1:1은 줄이기만 하고 늘리지 않는다. 화면보다 작은 페이지는 원래 크기 그대로
 선다. 채우는 두 모드(Width·Height)만 늘리고, 그것을 멈추는 것이 `R-2B4`다.
+
+지금 어느 모드인지는 헤더의 상태 줄이 말한다(`R-218`). 메뉴 항목의 이름은 늘
+"Change how pages are fitted"이고, 지금 값은 그 곁글에 적힌다.
 ✅ reader/story "cycling the fit mode walks the four modes and comes back",
 chrome/screen "the view menu carries every control that changes how a page is shown",
+"the header says which way it reads, how many pages and how they fit",
 e2e "R-224 · Fit은 페이지를 화면 안에 통째로 넣는다", "R-224 · Width는 너비를
 채운다", "R-224 · Height는 높이를 채운다", "R-224 · 1:1은 원래 픽셀 크기로 둔다",
 "R-224 · 통째로 맞춤은 켜 두어도 작은 페이지를 늘리지 않는다"
@@ -497,13 +528,14 @@ reader/story "a wide page is read on its own and the pairs after it stay in step
 e2e "R-226 · 넓은 페이지는 두 장 모드에서도 혼자 나온다"
 
 **R-227 · 묶기를 손으로 뒤집을 수 있다**
-두 장 모드에서 `⇹` 버튼과 `s` 키가 지금 보고 있는 스프레드의 묶기를 뒤집는다.
+두 장 모드에서 보기 메뉴의 `Flip how this spread is paired`와 `s` 키가 지금 보고 있는
+스프레드의 묶기를 뒤집는다.
 두 장이 보이고 있으면 앞 장을 혼자 세우고, 한 장만 보이고 있으면 다음 장과 묶는다.
 같은 자리에서 두 번 누르면 처음 보던 묶음으로 돌아온다.
 
 손으로 건 표시는 `R-226`의 자동 판정을 이긴다. 그러지 못하면 탈출구가 아니다.
 표시는 읽던 자리·북마크와 같은 자리에 책마다 저장된다(`P-302`). 한 장 모드에는
-뒤집을 묶기가 없어서 버튼도 없다.
+뒤집을 묶기가 없어서 항목도 서지 않는다.
 ✅ spreads "a page told to stand alone does, however narrow it is", "a page told to
 pair does, however wide it is", "a page bound to the next one wins over the cover
 rule",
@@ -540,7 +572,7 @@ e2e "R-229 · 넓은 페이지가 두 걸음으로 나뉜다", "R-229 · 뒤로 
 
 ⚠️ 카운터는 반쪽을 세지 않는다. 두 걸음 모두 같은 페이지 번호다.
 
-**R-228 · `⟳` 버튼과 `r` 키가 페이지를 시계 방향으로 세운다**
+**R-228 · 보기 메뉴의 `Turn the page a quarter clockwise`와 `r` 키가 페이지를 세운다**
 한 번에 90도씩, 네 번이면 제자리다. 눕혀 스캔된 책을 바로 세우는 자리다.
 
 세운 페이지에도 맞춤 모드가 화면 크기대로 걸린다. 페이지를 담은 상자가 함께 눕기
@@ -629,6 +661,11 @@ e2e "R-240 · 굴리면 페이지가 그만큼 움직인다"
 손가락을 뗀 뒤에도 관성으로 이벤트를 흘리므로, 그 흐름 속에서 "한 번 더 굴렸다"를
 가려내려면 굴림이 멎기를 기다려야 하고, 그러면 넘기려고 몇 번씩 밀어야 한다 —
 2026-09-10에 실제로 그랬다. 마우스 휠은 한 칸이 한 이벤트라 그런 판정이 필요 없다.
+
+**2px 이하의 여유는 없는 것으로 친다.** 화면에 통째로 들어간 페이지가 제 상자보다
+소수점 몇 자리만큼 넘치는 일이 흔한데, 그 조각을 "갈 곳"으로 세면 굴림 한 칸이 거기에
+먹히고 위의 "한 번 굴리면 넘어간다"가 간헐적으로 어긋난다. 갈 곳을 재는 쪽과 끝에
+닿았는지 보는 쪽이 같은 눈금을 쓴다.
 
 둘을 가르는 것은 판정이 아니라 짐작이다. 브라우저는 같은 이벤트로 보내고 어느
 쪽인지 말해 주지 않는다. 줄·페이지 단위로 오면 마우스이고(파이어폭스), 픽셀
@@ -721,8 +758,9 @@ e2e "R-244 · 10px 이내로 움직인 누름은 탭으로 친다"
 ### 2.6 메뉴바 보이기와 숨기기
 
 리더의 위쪽 줄은 버튼이 늘어선 툴바가 아니라 메뉴바다(`role="menubar"`, 이름 "Reader
-menus"). 책·보기·이동·재생·설정 다섯 메뉴 안에 예전 툴바의 컨트롤이 그대로 들어 있고,
-이름도 그대로다. 메뉴 항목은 `menuitem`이며, 상태를 지는 넷 — 북마크(`Bookmark this
+menus"). `Book`·`View`·`Go`·`Play`·`Settings` 다섯 메뉴 안에 예전 툴바의 컨트롤이 그대로
+들어 있고, 이름도 그대로다. 트리거의 이름도 앱의 다른 모든 문구와 같이 영어다.
+메뉴 안으로 접히면서 보이지 않게 된 지금 값들은 헤더의 상태 줄이 대신 말한다(`R-218`). 메뉴 항목은 `menuitem`이며, 상태를 지는 넷 — 북마크(`Bookmark this
 page`/`Remove bookmark from this page`), 격자(`Show every page`), 설정(`Reading
 settings`), 슬라이드쇼 — 은 `menuitemcheckbox`라 `aria-checked`를 진다. 그중 패널을
 여는 둘(격자·설정)은 `aria-expanded`도 함께 진다. `Hide the toolbar`는 상태가 아니라
@@ -779,7 +817,13 @@ e2e "R-252 · `h` 키가 툴바를 숨기면 스테이지가 그 높이를 가�
 
 **R-263 · 키보드로도 움직인다**
 화살표, PageUp/Down, Home/End.
-✅ chrome/screen "the slider moves by step, by page and to either end"
+
+끄는 도중의 Escape는 손잡이를 잡기 전 자리로 되돌린다. 손잡이를 잘못 집어 읽던 자리를
+잃는 일을 이 한 키가 무른다. 끌지 않는 중의 Escape는 리더의 것이라 그대로 흘려보낸다
+(`R-2A3`).
+✅ chrome/screen "the slider moves by step, by page and to either end", "Escape during a
+drag puts the slider back where the drag began", "and an Escape with no drag to undo is left
+to the reader"
 ❓ 드래그로 스크럽하는 감각
 
 **R-264 · 오른쪽에서 왼쪽으로 읽으면 슬라이더도 뒤집힌다**
@@ -795,15 +839,30 @@ turns around with the reading direction", "and reading left to right it stays
 as written", "reading right to left, the slider keys follow what the eye sees"
 🔍 2026-09-09 · 만화를 넘겨보며 채워지는 쪽과 줄어드는 쪽을 확인함
 
-**R-265 · 슬라이더에 포커스가 있는 동안에는 리더가 키를 양보한다**
-슬라이더는 화살표·Home/End·PageUp/Down을 스스로 처리하고, 리더의 키 구독은
-문서에 걸려 있다. 양보하지 않으면 한 번 누른 키가 두 번 세어진다 — 같은 방향
-두 페이지(LTR)이거나 서로 밀어내기(RTL).
-✅ chrome/screen "the slider moves by step, by page and to either end", "reading right to
+**R-265 · 키를 스스로 쓰는 위젯 위에서는 리더가 키를 양보한다**
+리더의 키 구독은 문서에 걸려 있어 언제나 맨 나중에 본다. 양보하지 않으면 한 번 누른
+키가 두 번 세어진다 — 같은 방향 두 페이지(LTR)이거나 서로 밀어내기(RTL).
+
+양보하는 자리는 셋이다. **슬라이더**는 화살표·Home/End·PageUp/Down을 스스로 처리하고,
+**번호 입력란**(`R-266`)에서는 화살표와 Space가 글자를 옮기는 키이며, **메뉴바**는
+화살표로 항목 사이를 걷고 아래 화살표와 Space로 열리고 글자 하나로 항목을 찾는다.
+메뉴가 열려 있는 동안 `h`나 `t` 같은 글자까지 메뉴의 키다.
+
+물러나는 관문이 둘인 것은 둘이 서로 다른 것을 덮기 때문이다. 하나는 포커스가 어느
+역할 위에 있는지를 보므로 위젯이 조용히 삼키는 키 — 메뉴의 타입어헤드 같은, `preventDefault`를
+부르지 않는 것 — 까지 덮지만 덮을 역할의 목록을 손으로 적어 두어야 한다. 다른 하나는
+목록 없이 "이미 누가 가져갔다"만 보므로, 여기 적히지 않은 위젯이 나중에 생겨도 리더가
+겹쳐 반응하지 않는다.
+✅ keys "the elements the reader yields its keys to" — 여섯 역할(`slider`, `menubar`,
+`menu`, `menuitem`, `menuitemcheckbox`, `menuitemradio`)마다 한 개씩 도는 테스트와,
+"a key pressed while typing a page number is the box’s", "a key pressed inside a menu item
+still belongs to the menu", "a key pressed on an ordinary button is the reader’s",
+reader/subscription "a key pressed on the page itself turns it", "a key pressed on a menu
+trigger is not the reader’s", "a key someone has already taken is not the reader’s",
+chrome/screen "the slider moves by step, by page and to either end", "reading right to
 left, the slider keys follow what the eye sees",
+reader/screen "walking the menubar with an arrow key does not turn the page",
 e2e "R-266 · 번호를 적는 동안 화살표는 페이지를 넘기지 않는다"
-📖 리더가 물러나는 쪽 — `messageForKeydown`의 `handlesKeysItself`가 그 일을 하지만,
-슬라이더에 포커스를 둔 채 재는 테스트는 없다
 🔍 2026-09-09 · 슬라이더에 포커스를 준 뒤 화살표가 한 번에 한 페이지만 넘기는 것을
 확인함
 
@@ -853,7 +912,7 @@ reader/story "picking a thumbnail jumps there and closes the grid"
 
 **R-275 · 북마크된 페이지는 그리드에서 테두리로 구분된다**
 북마크된 칸은 강조색 테두리를 두르고, 나머지는 테두리가 없다.
-📖 재는 테스트가 없다
+✅ thumbs/screen "a bookmarked page is marked out from the rest in the grid"
 
 **R-276 · 격자가 창 너비를 따라간다**
 잰 너비 하나에서 셋이 갈라져 나온다 — 한 행에 설 칸의 수, 칸의 너비, 행의 높이다.
@@ -1248,23 +1307,27 @@ Pages와 Netlify는 `_redirects`를, Vercel은 `vercel.json`을 읽는다. GitHu
 
 **F-501 · 실패는 상태줄에 4초간 머문다**
 "Couldn't do that — <이유>" 형태.
-✅ shelf/screen "a drop carrying no files is reported rather than imported"
-📖 4초 뒤에 스스로 사라지는 것 — 재는 테스트가 없다
+✅ shelf/screen "a drop carrying no files is reported rather than imported",
+shelfNotice/screen "a failure does not inherit the time left on the one before it"
 
 **F-502 · 새 실패가 앞선 실패의 시간을 잡아먹지 않는다**
 사이에 임포트가 끼어 상태 줄이 "Importing…"이나 빈 줄을 거쳐도 마찬가지다. 새 실패는
 새 객체라 앞선 대기가 정리되고 새로 시작한다.
-📖 재는 테스트가 없다
+✅ shelfNotice/screen "a failure does not inherit the time left on the one before it"
 
 **F-503 · 실패 메시지가 진행 중인 작업 안내를 지우지 않는다**
-📖 재는 테스트가 없다
+반대쪽도 같다. 임포트가 도는 동안 들어온 실패는 그 임포트가 끝나면서 지워지지 않는다 —
+끝난 작업은 자기가 세운 대기만 거둔다. 실패는 아직 제 4초를 다 쓰지 않았다.
+✅ shelfNotice/screen "an import that took the line over is not cleared by the wait of the failure before
+it",
+shelf/screen "a failure that arrived during an import survives it finishing"
 
 **F-504 · 책장을 읽지 못하면 빈 책장이 아니라 실패를 보여준다**
 "Couldn't open your shelf — <이유>"가 격자 자리에 선다.
-📖 재는 테스트가 없다
+✅ shelfNotice/screen "a shelf that failed to open says so instead of showing an empty grid"
 
 **F-505 · 다시 읽기가 실패해도 이미 있던 책은 남는다**
-📖 재는 테스트가 없다
+✅ shelfNotice/screen "a reload that fails keeps the books it already had"
 
 **F-506 · IndexedDB를 아예 열 수 없어도 실패로 보고된다**
 `indexedDB`가 없거나 시크릿 모드처럼 `open`이 던지는 환경에서도 defect가 아니라

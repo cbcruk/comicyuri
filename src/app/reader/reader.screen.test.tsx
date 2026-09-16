@@ -72,15 +72,14 @@ const makeGate = (): Gate => {
  * 가짜 페이지 하나. `read()`만 진짜로 하고 나머지는 쓰이지 않는다 — atom이 부르는 것이
  * 그것 하나이기 때문이다.
  */
-const gatedPage = (page: number, gate: Gate): Page => ({
+const gatedPage = (page: number, gate: Gate, bytes: Blob): Page => ({
   name: `page-${String(page + 1).padStart(3, '0')}.png`,
   load: () => Effect.succeed(''),
   unload: () => undefined,
-  release: () => undefined,
   read: () =>
     Effect.map(
       Effect.promise(() => gate.waited),
-      () => PAGE_BYTES,
+      () => bytes,
     ),
   measure: () => Effect.succeed(Option.none()),
 })
@@ -89,23 +88,43 @@ const gatedPage = (page: number, gate: Gate): Page => ({
 const makeGatedBook = (
   bookId: string,
   pageCount: number,
-): Readonly<{ pages: PageAtoms; gates: ReadonlyArray<Gate> }> => {
+): Readonly<{
+  pages: PageAtoms
+  gates: ReadonlyArray<Gate>
+  /** 지금 살아 있는 URL을 가진 페이지들, 번호 순서로. `R-215`가 이것을 잰다. */
+  livePages: () => ReadonlyArray<number>
+}> => {
   const gates = Array.from({ length: pageCount }, makeGate)
+
+  // 페이지마다 제 바이트 덩어리를 준다. 내용은 같아도 객체가 달라야 만들어진 URL이
+  // 어느 페이지의 것인지 되짚을 수 있다.
+  const bytes = gates.map(() => new Blob([PAGE_BYTES], { type: 'image/png' }))
+  const pageOf = new Map(bytes.map((blob, page) => [blob, page] as const))
+  const live = new Map<string, number>()
 
   const book: LoadedBook = {
     id: bookId,
     title: bookId,
     source: 'images',
-    pages: gates.map((gate, page) => gatedPage(page, gate)),
+    pages: gates.map((gate, page) => gatedPage(page, gate, bytes[page] ?? PAGE_BYTES)),
     pageSizes: gates.map(() => Option.some({ width: PAGE_WIDTH, height: PAGE_HEIGHT })),
   }
 
   return {
     gates,
+    livePages: () => [...live.values()].sort((a, b) => a - b),
     pages: makePageAtoms({
       openBook: () => Effect.succeed(book),
-      createUrl: (blob) => URL.createObjectURL(blob),
-      revokeUrl: (url) => URL.revokeObjectURL(url),
+      createUrl: (blob) => {
+        const url = URL.createObjectURL(blob)
+        const page = pageOf.get(blob)
+        if (page !== undefined) live.set(url, page)
+        return url
+      },
+      revokeUrl: (url) => {
+        live.delete(url)
+        URL.revokeObjectURL(url)
+      },
       decode: () => Effect.void,
     }),
   }
@@ -152,7 +171,7 @@ const renderReader = async (
   }> = {},
 ) => {
   const bookId = 'volume-1'
-  const { pages, gates } = makeGatedBook(bookId, options.pageCount ?? 4)
+  const { pages, gates, livePages } = makeGatedBook(bookId, options.pageCount ?? 4)
   const saved: Array<ReaderProgress> = []
   const onExit = vi.fn()
   const onOpenBook = vi.fn()
@@ -181,7 +200,7 @@ const renderReader = async (
     </Providers>,
   )
 
-  return { screen, gates, saved, onExit, onOpenBook }
+  return { screen, gates, saved, onExit, onOpenBook, livePages }
 }
 
 /** 그 페이지가 화면에 걸릴 때까지 기다린다. */
@@ -440,4 +459,49 @@ test('turning past the last page opens the book after this one', async () => {
 
   await userEvent.keyboard(FORWARD)
   await expect.poll(() => onOpenBook.mock.calls).toStrictEqual([['volume-2']])
+})
+
+test('walking the menubar with an arrow key does not turn the page', async () => {
+  // 메뉴바는 키를 스스로 처리한다. 리더의 키 구독은 document에 걸려 있으므로, 양보하지
+  // 않으면 옆 메뉴로 걸어가는 것만으로 읽던 자리가 움직인다(`R-265`).
+  const { screen, gates } = await renderReader({ pageCount: 6, page: 2 })
+
+  for (const gate of gates) gate.open()
+  await showsPage(screen, 3)
+  await expect.element(screen.getByText('3 / 6')).toBeVisible()
+
+  const book = screen.getByRole('menuitem', { name: 'Book' }).element()
+  if (book instanceof HTMLElement) book.focus()
+
+  // 오른쪽에서 왼쪽으로 읽는 중이라 리더에게 오른쪽 화살표는 "뒤로"다. 메뉴바 위에서는
+  // 옆 메뉴로 옮기는 키일 뿐이어야 한다.
+  await userEvent.keyboard('{ArrowRight}')
+  await expect
+    .poll(() => document.activeElement)
+    .toBe(screen.getByRole('menuitem', { name: 'View' }).element())
+
+  await expect.element(screen.getByText('3 / 6')).toBeVisible()
+  await showsPage(screen, 3)
+  expect(screen.getByAltText('Page 2').query()).toBeNull()
+})
+
+test('pages within three spreads keep their URLs, and the ones beyond let them go', async () => {
+  const { screen, gates, livePages } = await renderReader({ pageCount: 10 })
+  for (const gate of gates) gate.open()
+  await showsPage(screen, 1)
+
+  // 연 자리에서는 지금 장과 미리 읽은 다음 장뿐이다. 뒤로는 갈 곳이 없다.
+  await expect.poll(livePages).toEqual([0, 1])
+
+  for (let turn = 0; turn < 3; turn += 1) await userEvent.keyboard(FORWARD)
+  await showsPage(screen, 4)
+
+  // 지나온 셋이 그대로 살아 있다. 두 장 앞으로 갔다 돌아와도 다시 뽑지 않는다.
+  await expect.poll(livePages).toEqual([0, 1, 2, 3, 4])
+
+  for (let turn = 0; turn < 2; turn += 1) await userEvent.keyboard(FORWARD)
+  await showsPage(screen, 6)
+
+  // 세 스프레드 밖으로 밀려난 둘은 놓는다. 긴 책이 메모리를 채우지 않는 이유다.
+  await expect.poll(livePages).toEqual([2, 3, 4, 5, 6])
 })

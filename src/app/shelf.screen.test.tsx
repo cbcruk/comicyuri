@@ -206,3 +206,39 @@ test('a cover that both shelves hold is not dropped, and only the one that left 
   // 밀려난 표지는 놓인다. 그러지 않으면 지운 책의 표지가 샌다.
   await expect.poll(() => isAlive(gone!)).toBe(false)
 })
+
+/** 한 픽셀짜리 진짜 PNG. 들여오기가 표지를 뜨고 크기를 재므로 그릴 수 있어야 한다. */
+const PNG_BYTES =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+
+const onePageFile = (): File =>
+  new File([Uint8Array.from(atob(PNG_BYTES), (letter) => letter.codePointAt(0) ?? 0)], 'page.png', {
+    type: 'image/png',
+  })
+
+/** 그 파일들을 책장 위에 떨어뜨린다. 파일이 없으면 `S-119`의 실패가 난다. */
+const dropOn = (main: Element, files: ReadonlyArray<File>): void => {
+  const carried = new DataTransfer()
+  for (const file of files) carried.items.add(file)
+  main.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: carried }))
+}
+
+test('a failure that arrived during an import survives it finishing', async () => {
+  const screen = await renderShelf()
+  await expect.element(screen.getByText('Your shelf is empty')).toBeVisible()
+
+  const main = screen.getByRole('main', { name: 'Shelf' }).element()
+
+  dropOn(main, [onePageFile()])
+  // 들여오기는 이 줄에 오기 전에 이미 `await`에 걸려 있다. 같은 턴에 떨어뜨리므로
+  // 실패는 반드시 들여오기가 도는 도중에 선다.
+  dropOn(main, [])
+
+  const failure = screen.getByText("Couldn't do that — Only files can be dropped here")
+  await expect.element(failure).toBeVisible()
+
+  // 들여오기가 끝난다. 끝난 작업은 자기가 세운 대기만 거두어야지, 그 사이에 들어온
+  // 실패까지 지워서는 안 된다(`F-503`).
+  await expect.element(screen.getByRole('link', { name: 'Imported images' })).toBeVisible()
+  await expect.element(failure).toBeVisible()
+})

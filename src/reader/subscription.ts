@@ -119,8 +119,17 @@ export const roomOnStage = (): Room => {
  * 가져가겠다는 결정과 그것을 관철하는 `preventDefault`는 브라우저가 이벤트를
  * 흘리는 것과 같은 동기 턴 안에서 일어나야 한다. 뒤에서 결정하면 리더가 보기도
  * 전에 Space로 페이지가 스크롤되고, 모든 키를 가져가면 Ctrl+R까지 삼킨다.
+ *
+ * 물러나는 관문이 둘인 것은 두 관문이 서로 다른 것을 덮기 때문이다(`R-265`).
+ * {@linkcode handlesKeysItself}는 포커스가 어디에 있는지를 보므로 위젯이 조용히
+ * 삼키는 키 — 메뉴의 타입어헤드 같은 것 — 까지 덮지만, 덮는 위젯의 목록을 손으로
+ * 적어 두어야 한다. `defaultPrevented`는 목록 없이 "이미 누가 가져갔다"는 사실
+ * 하나만 보므로, 여기 적히지 않은 위젯이 나중에 생겨도 리더가 겹쳐 반응하지
+ * 않는다. 리더의 리스너는 document에 걸려 있어 언제나 맨 나중에 보고, 그래서 이
+ * 시점의 `defaultPrevented`는 "앞의 누군가가 처리했다"와 같은 말이다.
  */
 export const messageForKeydown = (event: KeyboardEvent): Option.Option<Message> => {
+  if (event.defaultPrevented) return Option.none()
   if (handlesKeysItself(event.target)) return Option.none()
 
   if (!isReaderKey(event.key, { ctrl: event.ctrlKey, meta: event.metaKey, alt: event.altKey })) {

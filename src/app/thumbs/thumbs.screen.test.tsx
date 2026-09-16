@@ -222,6 +222,26 @@ test('the whole grid offers no way to drop a bookmark, only the list does', asyn
   await expect.element(screen.getByRole('button', { name: 'Show bookmarks only' })).toBeVisible()
 })
 
+/** 테두리가 없는 칸의 색. 크로미움은 `transparent`를 이렇게 적는다. */
+const TRANSPARENT = 'rgba(0, 0, 0, 0)'
+
+test('a bookmarked page is marked out from the rest in the grid', async () => {
+  const bookId = await seed(record('volume-1', 6))
+
+  const { screen } = await renderThumbs(bookId, { bookmarks: [2] })
+
+  await expect.element(screen.getByRole('button', { name: 'Go to page 3' })).toBeVisible()
+
+  const marked = getComputedStyle(screen.getByRole('button', { name: 'Go to page 3' }).element())
+  const plain = getComputedStyle(screen.getByRole('button', { name: 'Go to page 4' }).element())
+
+  // 강조색은 같은 칸의 글자에도 걸려 있으므로, 색 값을 적어 두지 않고 그것과 견준다.
+  expect(marked.borderTopColor).toBe(marked.color)
+  expect(marked.borderTopColor).not.toBe(TRANSPARENT)
+  // 나머지 칸은 테두리가 없다. 자리는 잡되 보이지 않아야 격자가 흔들리지 않는다.
+  expect(plain.borderTopColor).toBe(TRANSPARENT)
+})
+
 test('closing the grid is asked of the parent', async () => {
   const bookId = await seed(record('volume-1', 6))
 

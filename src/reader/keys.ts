@@ -40,6 +40,28 @@ const COMMAND_KEYS: Readonly<Record<string, () => Message>> = {
 }
 
 /**
+ * 키를 스스로 처리하는 위젯을 고르는 선택자.
+ *
+ * 역할로 세는 이유는 그것이 "이 키는 내 것"이라고 위젯이 내건 간판이기 때문이다.
+ * 메뉴는 화살표로 항목 사이를 걷고, 아래 화살표와 Space로 열리고, 글자 하나로
+ * 항목을 찾는다(타입어헤드) — `h`나 `t` 같은 글자까지 메뉴의 키다. 이 가운데
+ * 타입어헤드는 `preventDefault`를 부르지 않으므로 {@linkcode messageForKeydown}의
+ * `defaultPrevented` 관문으로는 걸리지 않는다. 그래서 두 관문이 함께 선다.
+ *
+ * `menubar`와 `menu`까지 세는 것은 포커스가 항목이 아니라 그 그릇에 있는 순간
+ * (메뉴가 막 열려 아직 아무 항목도 잡지 않은 때)을 덮기 위한 것이다.
+ */
+const SELF_HANDLED = [
+  'input',
+  '[role="slider"]',
+  '[role="menubar"]',
+  '[role="menu"]',
+  '[role="menuitem"]',
+  '[role="menuitemcheckbox"]',
+  '[role="menuitemradio"]',
+].join(', ')
+
+/**
  * 키가 눌린 자리의 요소가 그 키를 스스로 처리하는지. 페이지 슬라이더는 화살표와
  * Home·End, 페이지 키를 가져가고 리더의 리스너는 document에 걸려 있어서, 이것이
  * 없으면 한 번 누른 키에 둘 다 반응한다 — 같은 방향으로 두 페이지가 넘어가거나,
@@ -47,9 +69,13 @@ const COMMAND_KEYS: Readonly<Record<string, () => Message>> = {
  *
  * 입력란도 마찬가지다. 번호를 적는 동안 화살표와 Space는 글자를 옮기는 키이지
  * 페이지를 넘기는 키가 아니다.
+ *
+ * 메뉴바도 같은 자리에 선다. 예전 툴바는 평범한 버튼 열넷이라 키를 가져가지
+ * 않았지만, 지금 그 자리는 `menubar` 하나와 `menuitem`들이다 — 양보하지 않으면
+ * 메뉴 안을 걸어 다니는 것만으로 읽던 자리가 움직인다(`R-265`).
  */
 export const handlesKeysItself = (target: EventTarget | null): boolean =>
-  target instanceof Element && target.closest('input, [role="slider"]') !== null
+  target instanceof Element && target.closest(SELF_HANDLED) !== null
 
 /** 키를 누를 때 함께 눌려 있던 수정키. */
 export type Modifiers = Readonly<{

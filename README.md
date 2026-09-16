@@ -17,10 +17,10 @@ Everything runs client-side — your files never leave the browser.
   switch that stops small pages from being stretched.
 - **Rotation** — turn a sideways scan upright; the angle is remembered per book
   and fit modes follow it.
-- **Zoom & pan** — pinch, `Ctrl`+wheel, the toolbar buttons, or double-tap;
-  drag to pan when zoomed in.
+- **Zoom & pan** — pinch, `Ctrl`+wheel, the View menu, or double-tap; drag to
+  pan when zoomed in.
 - **Navigation** — tap zones (left / centre / right), swipe, keyboard, the wheel,
-  or the page slider. A thumbnail grid lets you jump anywhere, and the toolbar
+  or the page slider. A thumbnail grid lets you jump anywhere, and the header
   names the files currently on screen.
 - **Scroll to read** — a page taller than the screen scrolls; with a mouse
   wheel, another notch at its end turns the page, and turning back lands at the
@@ -28,7 +28,8 @@ Everything runs client-side — your files never leave the browser.
 - **Bookmarks** — mark any page, jump between marks with `[` / `]`, or narrow
   the thumbnail grid to the marked pages.
 - **Slideshow** — turn pages on a timer, two to thirty seconds a page.
-- **Fullscreen**, an auto-hiding immersive UI, and a light / dark theme.
+- **Fullscreen**, a menubar you can hide to leave only the page, and a light /
+  dark theme.
 
 ## Keyboard shortcuts
 
@@ -60,26 +61,34 @@ rather than loading the whole archive into memory; deflated entries are inflated
 
 ## Architecture
 
-The UI is [Foldkit](https://foldkit.dev/) — The Elm Architecture on top of
-[Effect](https://effect.website/) (v4, pinned to the current release
-candidate). One Schema-defined Model is the source of truth, events become
-fact-named Messages, and every side effect is an explicit Command the runtime
-runs.
+The UI is [React](https://react.dev/) with
+[Effect Atom](https://github.com/tim-smart/effect-atom) over
+[Effect](https://effect.website/) (v4, pinned to the current release candidate),
+and [TanStack Router](https://tanstack.com/router) for the two routes. The
+reader keeps The Elm Architecture it was written with: one Model, fact-named
+Messages, and a single exhaustive `update`. What changed is who runs it — a
+`useReducer`-shaped atom rather than a framework runtime.
 
 ```
-src/entry.ts     Runtime.makeApplication + Runtime.run
-src/main.ts      Flags (settings, read before the first paint) and init
-src/model.ts     the Model schema
-src/message.ts   the Message union
-src/command.ts   Commands: the Effect core below, named and typed
-src/update.ts    the one exhaustive transition function
-src/route.ts     bidirectional routes: / and /book/:id
-src/view/        the shelf, and the root view that dispatches on the route
-src/page/reader/ the reader Submodel: its own Model, Messages, Commands,
-                 ManagedResource and keyboard Subscription
-src/domain/      BookSummary and the pure operations on it
-src/io/          IndexedDB, localStorage, ZIP reading, image headers, covers
+index.html          the document; it sets the stored theme before the first paint
+src/app/main.tsx    mounts React and the atom registry
+src/app/router.tsx  the routes: / and /book/:id, and the not-found page
+src/app/shelf.tsx   the shelf screen, with shelfAtoms.ts behind it
+src/app/reader/     the reader screen: layout, events, persistence, stage, spread
+src/app/chrome/     the menubar, the counter row and the footer
+src/app/settings/   the reading-settings dialog
+src/app/thumbs/     the thumbnail grid, over TanStack Virtual
+src/app/state/      settings, per-book settings, progress, neighbouring books
+src/reader/         the reader Model, Messages and update — no React, no atoms
+src/atoms/          the page-loading atoms: a book, a page URL, a spread
+src/domain/         BookSummary and the pure operations on it
+src/io/             IndexedDB, localStorage, ZIP reading, image headers, covers
 ```
+
+`src/reader/` is the part that does not know it is in a browser. Turning a page,
+zooming, pairing spreads, reading a gesture, deciding what a key means — all of
+it is pure functions over a Model, so `src/reader/story.test.ts` can drive the
+whole reader by sending Messages and reading the Model back out.
 
 Everything that can fail — IndexedDB, `localStorage`, ZIP parsing, image
 decoding — lives underneath as plain Effect, so the failure modes are in the
@@ -93,28 +102,29 @@ type rather than in a `catch` block:
 - Settings and reading progress are **decoded** through a schema
   (`src/types.ts`) instead of cast, so a corrupt or stale `localStorage` entry
   degrades to the defaults rather than reaching the UI.
-- `src/command.ts` is the seam: each of those Effects becomes a named Command,
-  and its success and failure arrive back in `update` as Messages.
+- `src/reader/command.ts` is the seam: what `update` cannot do itself becomes a
+  named Command, and its success or failure arrives back as a Message.
 
-The reader lives in `src/page/reader/` as a Submodel that reports up through
-three OutMessages: it asks to leave, hands back settings it changed, and
-reports the reading position for the application to persist. Its opened book —
-the parsed ZIP archive and the object URLs its pages hand out — is a
-ManagedResource keyed on Model state, so opening happens when the reader
-appears and every page URL is released when it goes away.
+Object URLs have no owner to forget them. Each page is one atom, keyed by book
+and page number, and the URL is made and revoked inside that atom's scope. When
+nothing wants that page any more — it fell too far behind, or the book was
+closed — the registry drops the atom and the URL goes with it. Holding a page is
+therefore the same thing as subscribing to it: the reader mounts the pages it
+draws, the ones it preloads, and the ones it is not ready to let go of yet.
 
-Pointer gestures live in `src/page/reader/gesture.ts` as pure functions over
+Pointer gestures live in `src/reader/gesture.ts` as pure functions over
 coordinates measured from the centre of the viewport — the same origin the pan
 offset uses — so `update` never has to know the size of anything. One press is
 deliberately undecided until it lifts: a tap on the outer thirds turns a page,
 a tap in the middle shows or hides the chrome, a sideways drag is a swipe, two
 taps zoom, and once zoomed the same drag pans instead.
 
-The thumbnail grid is `@foldkit/ui`'s `VirtualList` over rows of pages, and
-`src/page/reader/thumbs.ts` reads the window back out of the list's own scroll
-state to decide which pages to extract — so a five-hundred-page book draws a
-grid without unpacking five hundred images. Pages the grid is showing are
-added to what a page turn keeps loaded, or turning would blank it.
+The thumbnail grid is [TanStack Virtual](https://tanstack.com/virtual) over rows
+of pages, and `src/reader/thumbs.ts` turns a measured width into the three
+numbers a row needs — how many cells fit, how wide each is, how tall the row is
+— so a five-hundred-page book draws a grid without unpacking five hundred
+images. Each cell subscribes to the same page atom the reader uses, so a page
+turn cannot blank a grid that is showing it.
 
 ## Deploying
 
@@ -180,16 +190,25 @@ This project uses [Vite+](https://viteplus.dev/). With the `vp` CLI:
 vp install   # install dependencies
 vp dev       # start the dev server
 vp build     # production build
-vp check     # format, lint and type-check
-vp test      # story and scene tests
-vp run e2e   # browser tests, against a production build
+vp check          # format, lint and type-check
+vp test           # unit tests, under happy-dom
+vp run test:screen # component tests, in a real Chromium
+vp run e2e        # browser tests, against a production build
 ```
 
-`vp test` runs the update and view tests under happy-dom, which is as far as
-that environment goes: `Runtime.run` renders nothing there, so init, the
-subscriptions, the ManagedResource and routing are never exercised together.
+There are three rings, and each one covers what the ring inside it cannot.
 
-`vp run e2e` is where that gap is covered. Playwright builds the app, serves
+`vp test` runs under happy-dom: the reader's `update`, the pure calculations
+around it, and the IO layer against fakes. Nothing is rendered, so nothing here
+depends on a layout or a real pointer.
+
+`vp run test:screen` mounts components in a real Chromium through Vitest's
+browser mode. That is where the things a DOM has to answer live — what the
+accessibility tree says, how far a page can scroll, whether the stage takes the
+height a hidden menubar gave up. It stops short of the whole app: no router, no
+IndexedDB, and each screen stands on its own.
+
+`vp run e2e` is where that last gap is covered. Playwright builds the app, serves
 `dist` with `vp preview`, and drives the real thing in Chromium: layout and
 computed colour, pointer input including two-finger pinches over CDP, the
 Fullscreen API, the folder picker, and whether anything survives a reload.
@@ -204,18 +223,8 @@ installs them once:
 vp exec playwright install chromium
 ```
 
-Foldkit's own source, examples and docs are the reference this app was written
-against, and they are worth having on disk while working on it. They are not
-carried in this repository — that is 12 MB of files belonging to another
-project — so `repos/` is ignored, and a checkout adds them if it wants them,
-pinned to the release this app installs:
-
-```sh
-git clone --depth 1 \
-  --branch "foldkit@$(node -p "require('./node_modules/foldkit/package.json').version")" \
-  https://github.com/foldkit/foldkit.git repos/foldkit
-rm -rf repos/foldkit/.git repos/foldkit/repos
-```
-
-The last path is Foldkit's own vendored copy of Effect: 36 MB of source
-already sitting in `node_modules/effect` at the same pinned version.
+`SPEC.md` is the contract. Every behaviour this viewer has is one numbered item
+there, with the tests that hold it down named underneath. When behaviour
+changes, that item and the test names it cites change in the same commit — it is
+how a bug report can say "R-246 is wrong" and land on the test that was supposed
+to prevent it.
