@@ -7,20 +7,12 @@
 
 import { Array, Option, Order } from 'effect'
 
-import { Slider } from '@foldkit/ui'
-
 import { Reading } from '../domain/index.ts'
 import { bookmarkFrom } from '../page/reader/bookmark.ts'
 import { ORIGIN } from '../page/reader/gesture.ts'
 import { rotatedRight } from '../page/reader/rotation.ts'
 import { pannedBy, turnFromEdge } from '../page/reader/scroll.ts'
-import {
-  flipBinding,
-  indexOfPage,
-  mirrorForDirection,
-  pagesAt,
-  spreadsFor,
-} from '../page/reader/spread.ts'
+import { flipBinding, indexOfPage, pagesAt, spreadsFor } from '../page/reader/spread.ts'
 import { nudgedSlideSeconds, nudgedThreshold } from '../settings.ts'
 import type { FitMode } from '../types.ts'
 import { ToggleFullscreen } from './command.ts'
@@ -42,9 +34,6 @@ import {
   clickedRemoveBookmark,
   clickedToggleBookmarksOnly,
   clickedToggleThumbs,
-  completedLoadThumbs,
-  gotThumbsMessage,
-  measuredThumbsWidth,
   selectedThumb,
 } from './update/thumbs.ts'
 
@@ -102,37 +91,6 @@ const flipBindingHere = (model: Model): UpdateReturn =>
         },
       })
 
-/**
- * 슬라이더 값에 해당하는 페이지.
- *
- * 슬라이더는 자기 값으로 일하고, 오른쪽에서 왼쪽으로 읽을 때 그 값은 반대로 간다.
- * 이 매핑은 스스로의 역함수라서, 같은 호출이 뷰에서는 페이지를 값으로 바꾸고
- * 여기서는 값을 다시 페이지로 되돌린다.
- */
-export const sliderPage = (model: Model, value: number): number =>
-  mirrorForDirection(
-    value,
-    OpenState.$match(model.openState, {
-      Opening: () => 0,
-      Failed: () => 0,
-      Ready: ({ pageCount }) => pageCount,
-    }),
-    model.settings.direction,
-  )
-
-/**
- * 슬라이더가 알려 온 것을 접어 넣는다. 트랙 위의 값은 `sliderPage`로 페이지로
- * 되돌려 `goToPage`에 넘기므로, 넘길 때처럼 배율이 풀린다.
- */
-const foldSlider = (model: Model, message: Slider.Message): UpdateReturn => {
-  const folded = Slider.update(model.slider, message)
-  const next = evo(model, { slider: () => folded.model })
-
-  return folded.outMessage === undefined
-    ? { model: next }
-    : goToPage(next, sliderPage(next, folded.outMessage.value))
-}
-
 /** Message 하나를 리더에 접어 넣는다. */
 export const update = (model: Model, message: Message): UpdateReturn =>
   Message.$match(message, {
@@ -148,7 +106,6 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       const opened = showPage(
         evo(model, {
           openState: () => OpenState.Ready({ title, pageCount, ratios, names }),
-          slider: Slider.reflectRange({ min: 0, max: Math.max(0, pageCount - 1) }),
         }),
         model.page,
       )
@@ -298,8 +255,11 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       return moved ? turned : { model: evo(model, { isPlaying: () => false }) }
     },
 
-    GotSliderMessage: ({ message: sliderMessage }): UpdateReturn =>
-      foldSlider(model, sliderMessage),
+    /**
+     * 슬라이더가 페이지 하나에 섰다. 넘길 때와 같은 길로 가므로 배율이 풀린다 —
+     * 멀리 건너뛴 자리를 이전 페이지의 배율로 보여 줄 이유가 없다.
+     */
+    SelectedSliderPage: ({ page }): UpdateReturn => goToPage(model, page),
 
     /** 물어본 자리로 간다. 묻는 줄은 답을 받았으므로 사라진다. */
     ClickedResume: ({ page }): UpdateReturn =>
@@ -342,10 +302,6 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     }),
 
     ClickedToggleThumbs: (): UpdateReturn => clickedToggleThumbs(model),
-    GotThumbsMessage: ({ message: thumbsMessage }): UpdateReturn =>
-      gotThumbsMessage(model, thumbsMessage),
-    CompletedLoadThumbs: ({ panels }): UpdateReturn => completedLoadThumbs(model, panels),
-    MeasuredThumbsWidth: ({ width }): UpdateReturn => measuredThumbsWidth(model, width),
     ClickedToggleBookmarksOnly: (): UpdateReturn => clickedToggleBookmarksOnly(model),
     ClickedRemoveBookmark: ({ page }): UpdateReturn => clickedRemoveBookmark(model, page),
 
@@ -381,7 +337,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
      * 움직이는 데 쓰였고, 읽던 사람은 아직 페이지의 끝을 보지도 못했다.
      *
      * 넘긴 페이지가 아직 서지 않았는지는 여기서 묻지 않는다(`R-207`). 스프레드가
-     * 도착했는지를 아는 것은 atom이므로, 그동안은 화면이 `NO_ROOM`을 실어 보낸다.
+     * 도착했는지를 아는 것은 atom이므로, 그동안은 화면이 `room`에 `NO_ROOM`을
+     * 실어 보내기로 되어 있다 — 그 약속은 `Message.ScrolledStage`에 적혀 있고,
+     * 여기서는 검사할 길이 없다. 갈 곳이 없는 것으로 치면 이동도 일어나지 않고,
+     * 트랙패드는 멈추며 마우스 휠만 한 장 더 넘긴다.
      */
     ScrolledStage: ({ delta, room, device }): UpdateReturn => {
       const pan = pannedBy(model.pan, delta, room)

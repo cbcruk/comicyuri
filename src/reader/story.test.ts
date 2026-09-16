@@ -14,9 +14,8 @@ import { DOUBLE_TAP_ZOOM, ORIGIN, ZOOM_MIN } from '../page/reader/gesture.ts'
 import type { Point } from '../page/reader/gesture.ts'
 import { NO_ROOM } from '../page/reader/scroll.ts'
 import type { ScrollDevice } from '../page/reader/scroll.ts'
-import { perRowFor } from '../page/reader/thumbs.ts'
 import { defaultSettings } from '../types.ts'
-import { MeasureThumbsWidth, ToggleFullscreen } from './command.ts'
+import { ToggleFullscreen } from './command.ts'
 import { Message, OutMessage } from './message.ts'
 import { OpenState, init, spreadPages } from './model.ts'
 import type { Model } from './model.ts'
@@ -1181,6 +1180,24 @@ describe('scrolling to the edge of the page', () => {
     )
   })
 
+  test('handed no room at all, a scroll neither pans nor turns', () => {
+    // 넘긴 스프레드가 아직 서지 않았으면 화면이 `NO_ROOM`을 실어 보낸다(`R-207`).
+    // 화면에 남아 있는 것은 확대해 둔 이전 페이지라, 거기서 잰 거리로 굴리면 확대가
+    // 풀린 다음 페이지가 엉뚱한 자리에 앉는다. 트랙패드는 갈 곳이 없으면 멈춘다.
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ClickedZoomIn()),
+      message(Message.ClickedNext()),
+      scrolled({ x: 0, y: 50 }, NO_ROOM, 'trackpad'),
+      model((model) => {
+        expect(model.pan).toStrictEqual(ORIGIN)
+        expect(model.page).toBe(1)
+      }),
+    )
+  })
+
   test('one notch turns one page, however many follow it', () => {
     story(
       update,
@@ -1233,14 +1250,18 @@ describe('scrolling to the edge of the page', () => {
 })
 
 describe('page slider', () => {
-  test('opening a book gives the slider the book’s range', () => {
+  test('sliding to a page goes there, and lets go of the zoom the way a turn does', () => {
+    // 슬라이더는 페이지 번호를 그대로 실어 보낸다 — 오른쪽에서 왼쪽으로 읽을 때의
+    // 뒤집기는 `src/app/chrome/slider.tsx`가 스스로 한다(`R-264`).
     story(
       update,
-      given(openingModel()),
+      given({ ...openingModel(), zoom: 3, pan: { x: 20, y: 40 } }),
       ...opened(0),
+      message(Message.SelectedSliderPage({ page: 4 })),
       model((model) => {
-        expect(model.slider.min).toBe(0)
-        expect(model.slider.max).toBe(PAGE_COUNT - 1)
+        expect(model.page).toBe(4)
+        expect(model.zoom).toBe(ZOOM_MIN)
+        expect(model.pan).toStrictEqual(ORIGIN)
       }),
     )
   })
@@ -1332,7 +1353,6 @@ describe('bookmarks', () => {
           rotation: 0,
         }),
       ),
-      message(Message.CompletedLoadThumbs({ panels: [] })),
       model((model) => {
         expect(model.bookmarks).toStrictEqual([1])
         // 목록을 손보는 것이지 읽던 자리를 옮기는 것이 아니다.
@@ -1356,7 +1376,6 @@ describe('bookmarks', () => {
           rotation: 0,
         }),
       ),
-      message(Message.CompletedLoadThumbs({ panels: [] })),
       model((model) => {
         expect(model.bookmarks).toStrictEqual([])
         expect(model.page).toBe(0)
@@ -1700,7 +1719,9 @@ describe('fullscreen', () => {
 })
 
 describe('thumbnails', () => {
-  test('opening the grid asks only for the thumbnails it can show', () => {
+  test('opening and closing the grid is all the reader keeps of it', () => {
+    // 몇 칸이 서고 무엇을 뽑는지는 `src/app/thumbs/thumbs.tsx`가 정한다. 리더가
+    // 쥐는 것은 격자가 열려 있는지뿐이다.
     story(
       update,
       given(openingModel()),
@@ -1709,50 +1730,9 @@ describe('thumbnails', () => {
       model((model) => {
         expect(model.isThumbsOpen).toBe(true)
       }),
-      // 격자를 열면 폭부터 묻는다. 몇 칸이 서는지가 무엇을 뽑을지도 정한다.
-      Command.expectHas(MeasureThumbsWidth()),
-      Command.resolve('MeasureThumbsWidth', Message.MeasuredThumbsWidth({ width: 1280 })),
-      message(
-        Message.CompletedLoadThumbs({
-          panels: [{ page: 0, url: 'blob:t0' }],
-        }),
-      ),
-      model((model) => {
-        expect(model.thumbPanels).toStrictEqual([{ page: 0, url: 'blob:t0' }])
-      }),
-    )
-  })
-
-  test('a wider window stands more thumbnails in a row, a narrow one fewer', () => {
-    story(
-      update,
-      given(openingModel()),
-      ...opened(0),
       message(Message.ClickedToggleThumbs()),
-      Command.resolve('MeasureThumbsWidth', Message.MeasuredThumbsWidth({ width: 1680 })),
-      message(Message.CompletedLoadThumbs({ panels: [] })),
-      model((wide) => {
-        expect(perRowFor(wide.thumbsWidth)).toBe(14)
-      }),
-      // 창이 줄면 서 있던 칸도 줄어든다.
-      message(Message.MeasuredThumbsWidth({ width: 390 })),
-      message(Message.CompletedLoadThumbs({ panels: [] })),
-      model((narrow) => {
-        expect(perRowFor(narrow.thumbsWidth)).toBe(3)
-      }),
-    )
-  })
-
-  test('however narrow the window, the grid never falls to a single column', () => {
-    story(
-      update,
-      given(openingModel()),
-      ...opened(0),
-      message(Message.ClickedToggleThumbs()),
-      Command.resolve('MeasureThumbsWidth', Message.MeasuredThumbsWidth({ width: 120 })),
-      message(Message.CompletedLoadThumbs({ panels: [] })),
       model((model) => {
-        expect(perRowFor(model.thumbsWidth)).toBe(2)
+        expect(model.isThumbsOpen).toBe(false)
       }),
     )
   })
@@ -1766,8 +1746,6 @@ describe('thumbnails', () => {
       model((model) => {
         expect(model.page).toBe(3)
         expect(model.isThumbsOpen).toBe(false)
-        // 격자가 사라졌으므로 그 썸네일들은 놓아 주어도 된다.
-        expect(model.thumbPanels).toStrictEqual([])
       }),
     )
   })

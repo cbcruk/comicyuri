@@ -16,6 +16,7 @@ import { PAGE_ID, STAGE_ID } from '../page/reader/constant.ts'
 import { NO_ROOM, deviceFor } from '../page/reader/scroll.ts'
 import type { Room } from '../page/reader/scroll.ts'
 import type { Point } from '../page/reader/gesture.ts'
+import type { Half } from '../page/reader/half.ts'
 import { handlesKeysItself, isReaderKey } from './keys.ts'
 import { Message } from './message.ts'
 import type { Model } from './model.ts'
@@ -76,9 +77,12 @@ const viewOnStage = (
  * `getBoundingClientRect`는 transform까지 적용된 자리를 주므로, 확대와 이동이
  * 걸린 값이 그대로 나온다.
  *
- * 넘긴 페이지가 아직 서지 않았으면 이 값을 쓰지 않고 {@linkcode NO_ROOM}을
- * 보낸다(`R-207`). 그동안 화면에 남아 있는 것은 이전 페이지라, 여기서 잰 거리는
- * 다음 페이지에 대한 사실이 아니다.
+ * **이 함수는 재기만 한다. 재도 되는 때인지는 부르는 쪽이 안다.** 넘긴 스프레드가 아직
+ * 서지 않았으면 화면에 남아 있는 것은 이전 페이지라, 여기서 잰 거리는 다음 페이지에
+ * 대한 사실이 아니다(`R-207`) — 확대해 둔 이전 페이지의 거리로 굴리면 확대가 풀린 다음
+ * 페이지가 엉뚱한 자리에 앉는다. 그동안은 이 값을 아예 재지 말고 {@linkcode NO_ROOM}을
+ * {@linkcode messageForWheel}에 넘겨야 한다. 스프레드가 도착했는지를 아는 것은
+ * `src/atoms/pages.ts`의 atom뿐이라, 그 답을 여기로 가져올 길은 없다.
  */
 export const roomOnStage = (): Room => {
   const stage = document.getElementById(STAGE_ID)
@@ -146,8 +150,15 @@ export const messageForPointerCancel = (event: PointerEvent): Message =>
  *
  * 페이지 위의 굴림은 브라우저에서 빼앗는다. 그러지 않으면 문서가 함께 스크롤된다.
  *
- * @param room 지금 페이지가 갈 수 있는 거리. 다음 스프레드가 아직 서지 않았으면
- * 부르는 쪽이 {@linkcode NO_ROOM}을 넘긴다(`R-207`).
+ * `room`을 이 함수가 스스로 재지 않고 인자로 받는 이유는 `R-207` 하나다. 넘긴
+ * 스프레드가 아직 서지 않은 동안 화면에 걸려 있는 것은 이전 페이지이고, 거기서 잰
+ * 거리로 굴리면 확대가 풀린 다음 페이지가 엉뚱한 자리에 앉는다. 스프레드가 도착했는지를
+ * 아는 것은 `src/atoms/pages.ts`의 atom뿐이므로, 그 답은 부르는 쪽에서 내려온다.
+ *
+ * @param room 지금 페이지가 갈 수 있는 거리. 넘긴 스프레드가 아직 서지 않았으면
+ * {@linkcode roomOnStage}로 잰 값이 아니라 반드시 {@linkcode NO_ROOM}이어야
+ * 한다(`R-207`). 이 약속을 어겨도 update는 알아차리지 못한다 — 확대해 둔 이전 페이지의
+ * 거리로 굴린 것과 제대로 잰 거리는 값으로 구별되지 않는다.
  */
 export const messageForWheel = (event: WheelEvent, room: Room): Option.Option<Message> => {
   if (!isOnStage(event)) return Option.none()
@@ -183,19 +194,36 @@ export const messageForAbandon = (): Message => Message.AbandonedPointer()
 export const messageForFullscreenChange = (): Message =>
   Message.ChangedFullscreen({ isFullscreen: document.fullscreenElement !== null })
 
-/** 창 너비가 바뀌었다. 격자가 열려 있는 동안에만 듣는다. */
-export const messageForResize = (): Message =>
-  Message.MeasuredThumbsWidth({ width: window.innerWidth })
-
 /** 이동과 놓음은 제스처가 살아 있는 동안에만 존재한다. */
 export const isGesturing = (model: Model): boolean => model.gesture._tag !== 'Idle'
 
 /**
- * 슬라이드쇼가 다음 장을 기다리는 시간(초). 돌고 있지 않으면 없음이다.
+ * 슬라이드쇼가 한 번 기다리는 일. 이 값이 달라지면 기다림을 처음부터 다시 건다.
  *
- * 기다리는 것을 페이지와 반쪽에 매어 둔다. 그래야 넘어간 순간부터 다시 세고, 사람이
- * 손으로 넘긴 뒤에도 처음부터 센다 — 넘어가자마자 또 넘어가는 일이 없다. 반씩
- * 읽는 페이지에서 반쪽을 옮기는 것도 넘김이다.
+ * `seconds`만이 아니라 `page`와 `half`까지 지고 다니는 이유는 그것이 곧 "다시 세기
+ * 시작한다"는 뜻이기 때문이다. 넘어간 순간부터 다시 세고, 사람이 손으로 넘긴 뒤에도
+ * 처음부터 센다 — 넘어가자마자 또 넘어가는 일이 없다. 반씩 읽는 페이지에서 반쪽을
+ * 옮기는 것도 넘김이다.
  */
-export const slideshowSeconds = (model: Model): Option.Option<number> =>
-  model.isPlaying ? Option.some(model.settings.slideSeconds) : Option.none()
+export type SlideshowWait = Readonly<{
+  /** 다음 장까지 기다리는 시간(초). */
+  seconds: number
+  page: number
+  half: Half
+}>
+
+/**
+ * 슬라이드쇼가 지금 기다리고 있는 것. 돌고 있지 않으면 없음이다.
+ *
+ * 값 하나를 통째로 돌려주는 것이 이 함수의 요점이다. 초만 돌려주면 그것을 의존성으로
+ * 삼는 훅이 페이지가 넘어가도 타이머를 다시 걸지 않아 `R-2C1`이 소리 없이 깨진다.
+ * 부르는 쪽은 이 값 전체를 타이머의 키로 삼으면 된다.
+ */
+export const slideshowWait = (model: Model): Option.Option<SlideshowWait> =>
+  model.isPlaying
+    ? Option.some({
+        seconds: model.settings.slideSeconds,
+        page: model.page,
+        half: model.half,
+      })
+    : Option.none()

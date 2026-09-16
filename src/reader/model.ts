@@ -10,15 +10,11 @@
 
 import { Data, Option } from 'effect'
 
-import { Slider, VirtualList } from '@foldkit/ui'
-
 import { Reading } from '../domain/index.ts'
-import { SLIDER_ID, THUMBS_DEFAULT_WIDTH, THUMBS_ID } from '../page/reader/constant.ts'
 import { ORIGIN, ZOOM_MIN } from '../page/reader/gesture.ts'
 import type { Point, Side } from '../page/reader/gesture.ts'
 import type { Half } from '../page/reader/half.ts'
 import { indexOfPage, pagesAt, spreadsFor } from '../page/reader/spread.ts'
-import { rowHeightFor } from '../page/reader/thumbs.ts'
 import type { BookSettings, PageMark, Rotation, Settings } from '../types.ts'
 
 /**
@@ -57,9 +53,6 @@ export const OpenState = Data.taggedEnum<OpenState>()
  * 들어서든 가운데에 놓인다.
  */
 export type PageEntry = 'start' | 'end'
-
-/** 화면에 걸린 이미지 하나. */
-export type Panel = Readonly<{ page: number; url: string }>
 
 /**
  * 페이지를 넘긴 가장 최근의 탭. 화면이 어느 쪽에서 온 탭인지 보여 줄 수 있도록
@@ -108,6 +101,10 @@ export type Tracking = Extract<Gesture, { readonly _tag: 'Tracking' }>
  *
  * 페이지 이미지 URL은 여기에 없다. 그것을 부르고 놓아 주는 일은 `src/atoms/pages.ts`의
  * atom이 맡으므로, Model은 무엇을 보여 줄지만 말한다(`R-207`, `R-214`도 그쪽에 있다).
+ *
+ * 슬라이더와 썸네일 격자의 상태도 여기에 없다. 슬라이더는 `src/app/chrome/slider.tsx`가,
+ * 격자는 `src/app/thumbs/thumbs.tsx`가 각자 쥔다 — 트랙 위의 값도, 잰 너비도, 어느
+ * 칸이 서 있는지도 그리는 쪽에서만 뜻이 있다. Model에 두면 진실이 두 벌이 된다.
  */
 export type Model = Readonly<{
   bookId: string
@@ -167,26 +164,12 @@ export type Model = Readonly<{
   maybeLastTapAt: Option.Option<number>
   maybeTapFlash: Option.Option<TapFlash>
 
-  slider: Slider.Model
-
   isFullscreen: boolean
   /** 읽는 규칙을 한 번 정해 두는 패널. 툴바와 달리 읽는 동안 쓰는 것이 아니다. */
   isSettingsOpen: boolean
   isThumbsOpen: boolean
   /** 격자가 북마크한 페이지만 늘어놓고 있는지. 그것이 곧 북마크 목록이다. */
   showsBookmarksOnly: boolean
-  /**
-   * 격자가 놓인 곳의 너비(픽셀). 몇 칸이 서고 칸이 얼마나 넓고 행이 얼마나
-   * 높은지가 모두 여기서 나온다.
-   *
-   * 재어 둔 값 하나에서 갈라 내는 이유는 셋이 서로 맞물려 있기 때문이다. 따로
-   * 두면 어긋난 채로 그려지고, 그러면 보이지 않는 썸네일을 뽑거나 보이는 자리를
-   * 비워 둔다.
-   */
-  thumbsWidth: number
-  thumbs: VirtualList.Model
-  /** 지금까지 뽑아 둔 썸네일. 격자는 보여 줄 수 있는 것만 요청한다. */
-  thumbPanels: ReadonlyArray<Panel>
 }>
 
 /**
@@ -235,8 +218,9 @@ export type InitConfig = Readonly<{
 /**
  * `config.page`에 가 있는 리더를 만든다. 책은 그 뒤에서 아직 열리는 중이다.
  *
- * 슬라이더에는 아직 범위가 없다 — 페이지 수는 책과 함께 도착한다 — 그래서 그때가
- * 오기 전까지는 아무것도 끌 수 없다.
+ * 페이지 수는 책과 함께 도착하므로 그때까지 `openState`는 `Opening`이고
+ * {@linkcode spreadPages}는 비어 있다. 슬라이더와 격자는 그 값을 보고 스스로
+ * 자기 범위를 정한다 — Model에는 그 둘의 상태가 없다.
  */
 export const init = (config: InitConfig): Model => ({
   bookId: config.bookId,
@@ -257,16 +241,8 @@ export const init = (config: InitConfig): Model => ({
   isChromeVisible: true,
   maybeLastTapAt: Option.none(),
   maybeTapFlash: Option.none(),
-  // 책이 페이지 수를 말해 주기 전까지 범위는 비어 있다.
-  slider: Slider.init({ id: SLIDER_ID, min: 0, max: 0, step: 1 }),
   isFullscreen: false,
   isSettingsOpen: false,
   isThumbsOpen: false,
   showsBookmarksOnly: false,
-  thumbsWidth: THUMBS_DEFAULT_WIDTH,
-  thumbs: VirtualList.init({
-    id: THUMBS_ID,
-    rowHeightPx: rowHeightFor(THUMBS_DEFAULT_WIDTH),
-  }),
-  thumbPanels: [],
 })

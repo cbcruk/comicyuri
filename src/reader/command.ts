@@ -6,26 +6,19 @@
  * 실제로 부르는 것은 화면 쪽이고, 그 답은 다시 Message로 돌아온다.
  *
  * 페이지와 썸네일을 부르던 `LoadSpread`·`PreloadNeighbours`·`LoadThumbs`는 여기
- * 없다. 그 일은 `src/atoms/pages.ts`의 atom이 맡는다.
+ * 없다. 그 일은 `src/atoms/pages.ts`의 atom이 맡는다. 격자의 너비를 묻던
+ * `MeasureThumbsWidth`도 없다 — `src/app/thumbs/thumbs.tsx`가 `ResizeObserver`로
+ * 스스로 잰다.
  */
 
 import { Data } from 'effect'
 
 /** 리더가 바깥에 부탁하는 일. */
 export type Command = Data.TaggedEnum<{
-  MeasureThumbsWidth: {}
   ToggleFullscreen: { readonly wantFullscreen: boolean }
 }>
 
 const command = Data.taggedEnum<Command>()
-
-/**
- * 격자가 놓인 곳의 너비를 재 달라는 부탁.
- *
- * 격자는 `inset-0`이라 그 너비가 곧 창의 너비다. 가상 리스트는 높이만 재어 주므로
- * 너비는 이쪽에서 묻는다. 답은 `MeasuredThumbsWidth`로 돌아온다.
- */
-export const MeasureThumbsWidth = command.MeasureThumbsWidth
 
 /**
  * 전체화면에 들어가거나 나가 달라는 부탁.

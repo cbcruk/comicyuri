@@ -8,15 +8,15 @@
  * 페이지를 부르는 메시지(`CompletedLoadSpread`·`FailedLoadSpread`·
  * `CompletedPreloadNeighbours`)는 여기 없다. 스프레드가 도착했는지는 이제
  * `src/atoms/pages.ts`의 atom이 안다.
+ *
+ * 슬라이더와 격자의 자식 메시지도 없다. 그 둘은 React 컴포넌트가 스스로 쥐고, 리더에
+ * 말을 거는 것은 "몇 페이지에 섰다" 하나뿐이다(`SelectedSliderPage`·`SelectedThumb`).
  */
 
 import { Data, Option } from 'effect'
 
-import { Slider, VirtualList } from '@foldkit/ui'
-
 import type { Point } from '../page/reader/gesture.ts'
 import type { Room, ScrollDevice } from '../page/reader/scroll.ts'
-import type { Panel } from './model.ts'
 import type { AtBookEnd, PageMark, Resume, Rotation, Settings } from '../types.ts'
 
 /**
@@ -65,8 +65,14 @@ export type Message = Data.TaggedEnum<{
    * 휠이나 트랙패드로 굴렸다. 그때 페이지가 어느 쪽으로 얼마나 더 갈 수 있었는지와
    * 어느 장치에서 온 굴림인지를 함께 지고 온다 — 둘 다 브라우저에서만 알 수 있다.
    *
-   * 넘긴 페이지가 아직 서지 않았으면 화면이 `NO_ROOM`을 실어 보낸다(`R-207`).
-   * 그 판단은 스프레드가 도착했는지를 아는 atom 쪽에 있다.
+   * **`room`은 보내는 쪽의 약속이다.** 넘긴 스프레드가 아직 서지 않았으면 재어 온
+   * 값이 아니라 `NO_ROOM`을 실어야 한다(`R-207`). 그동안 화면에 걸려 있는 것은
+   * 이전 페이지라, 거기서 잰 거리는 다음 페이지에 대한 사실이 아니다 — 확대해 둔
+   * 이전 페이지의 거리로 굴리면 확대가 풀린 다음 페이지가 엉뚱한 자리에 앉는다.
+   *
+   * update는 이 약속을 검사할 수 없다. 스프레드가 도착했는지를 아는 것은
+   * `src/atoms/pages.ts`의 atom뿐이고, 그것을 `room`으로 옮겨 오는 것이
+   * `subscription.ts`의 `roomOnStage`와 `messageForWheel`을 부르는 쪽의 일이다.
    */
   ScrolledStage: { readonly delta: Point; readonly room: Room; readonly device: ScrollDevice }
 
@@ -79,7 +85,11 @@ export type Message = Data.TaggedEnum<{
   /** 툴바와 푸터를 숨기거나 되부른다. `Hide` 버튼과 `h` 키가 보낸다. */
   ClickedToggleChrome: {}
 
-  GotSliderMessage: { readonly message: Slider.Message }
+  /**
+   * 슬라이더가 페이지 하나에 섰다. 트랙 위의 값이 아니라 페이지 번호로 온다 —
+   * 오른쪽에서 왼쪽으로 읽을 때의 뒤집기는 슬라이더가 스스로 한다(`R-264`).
+   */
+  SelectedSliderPage: { readonly page: number }
 
   ClickedRotate: {}
 
@@ -105,12 +115,7 @@ export type Message = Data.TaggedEnum<{
   ClickedNudgeThreshold: { readonly by: number }
 
   ClickedToggleThumbs: {}
-  /** 격자가 놓인 곳의 너비를 쟀다. 열 때 한 번, 그 뒤로는 창이 바뀔 때마다. */
-  MeasuredThumbsWidth: { readonly width: number }
-  GotThumbsMessage: { readonly message: VirtualList.Message }
   SelectedThumb: { readonly page: number }
-  /** 격자가 보여 줄 썸네일이 도착했다. 뽑는 일은 atom이 한다. */
-  CompletedLoadThumbs: { readonly panels: ReadonlyArray<Panel> }
 }>
 
 /** {@linkcode Message} 유니온의 생성자와 `$match`. */

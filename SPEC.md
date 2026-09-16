@@ -411,9 +411,10 @@ CSS가 300ms 미루므로, 미리 읽어 둔 이웃으로 넘길 때는 보일 �
 
 ✅ reader/story "the page on screen stays until the next one can be drawn", "it keeps what
 it drew with, not what the next page will use", "a zoomed page stays zoomed until the next
-one can be drawn", "a scroll before it arrives does not move the page on its way", "turning
-again before it arrives keeps the page that is still on screen", "a jump holds on to the
-page on screen instead of releasing it",
+one can be drawn", "a scroll before it arrives does not move the page on its way", "handed
+no room at all, a scroll neither pans nor turns", "turning again before it arrives keeps the
+page that is still on screen", "a jump holds on to the page on screen instead of releasing
+it",
 reader/scene "the page on screen stays while the next one is on its way", "a zoomed page
 keeps its zoom while the next one is on its way", "with nothing on screen yet, the stage
 says it is loading",
@@ -745,7 +746,7 @@ e2e "R-252 · `h` 키가 툴바를 숨기면 스테이지가 그 높이를 가�
 ✅ reader/scene "reading left to right, it runs the usual way"
 
 **R-262 · 범위는 책을 연 순간 쪽수에 맞춰진다**
-✅ reader/story "opening a book gives the slider the book’s range"
+✅ chrome/screen "reading left to right, it runs the usual way"
 
 **R-263 · 키보드로도 움직인다**
 화살표, PageUp/Down, Home/End.
@@ -800,7 +801,7 @@ e2e "R-266 · 번호를 적고 Enter를 누르면 그 페이지로 간다", "R-2
 **R-272 · 화면에 보일 만큼만 추출한다**
 스크롤 위치에서 창을 계산해 그 주변 2행까지만 읽는다. 500쪽 책이 500장을 풀지 않는다.
 ✅ thumbs "scrolling asks for the rows around the new position, not the whole book",
-reader/story "opening the grid asks only for the thumbnails it can show",
+thumbs/screen "a long book stands only the rows around the window, not all of it",
 e2e "R-272 · 패널을 여는 순간 썸네일이 채워진다"
 
 **R-273 · 썸네일을 고르면 그 페이지로 가고 패널이 닫힌다**
@@ -839,6 +840,7 @@ just more of them", "a row is as tall as its columns are wide, with room for the
 "a column stays between one column wide and two",
 reader/story "a wider window stands more thumbnails in a row, a narrow one fewer",
 "however narrow the window, the grid never falls to a single column",
+thumbs/screen "the row stands as many columns as the measured width allows",
 e2e "R-276 · 넓은 창에는 더 많은 칸이 선다", "R-276 · 격자가 한쪽으로 몰리지 않는다",
 "R-276 · 칸이 넓어지면 행도 그만큼 높아진다", "R-276 · 좁은 창에서도 격자는 격자로
 남는다"
@@ -1008,7 +1010,7 @@ e2e "R-2B5 · 기본값은 조용히 읽던 자리로 간다" 외 5개
 
 키는 같은 일을 하는 버튼이 보내는 Message로 풀린다. 그래서 키와 버튼이 서로 어긋날
 수 없다 — 버튼의 동작을 고치면 키도 함께 간다.
-✅ keys `"d" is the same thing the ClickedToggleDirection control does` 외 11개,
+✅ keys(옮긴 리더와 Foldkit 리더 양쪽) `"d" is the same thing the ClickedToggleDirection control does` 외 11개,
 "Home and End are the ends of the book, whichever way it reads", "the bracket keys are the
 bookmarks either side"
 
@@ -1065,7 +1067,8 @@ e2e "R-2A5 · Shift와 함께 누른 넘김 키가 열 장을 건너뛴다", "R-
 no further", "escape stops it before it leaves anything else", "a wide page read in halves
 gives each half a turn of the wait", "starting it takes the chrome down, so only the page is
 left", "stopping it leaves the chrome down",
-reader/subscription "moving to the other half of a page starts the wait again",
+reader/subscription "moving to the other half of a page starts the wait again", "turning to
+another page starts the wait again",
 e2e "R-2C1 · 슬라이드쇼가 스스로 페이지를 넘긴다"
 
 ---
