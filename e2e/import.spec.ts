@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
 
 import { png } from './fixture/archive.ts'
-import { control, counter, importBook, openReader, openShelf } from './fixture/app.ts'
+import { control, counter, importBook, openReader, openShelf, use } from './fixture/app.ts'
 
 /**
  * 이 파일이 디스크에 만든 폴더들. 테스트가 끝나면 치운다.
@@ -76,7 +76,7 @@ test('S-115 · 같은 파일을 다시 열면 같은 책이고, 읽던 자리도
   await openReader(page, title)
   await control.next(page).click()
   await expect(counter(page)).toHaveText('2 / 6')
-  await control.shelf(page).click()
+  await use(page, 'shelf')
 
   await importBook(page)
 

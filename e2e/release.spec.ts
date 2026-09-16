@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, readBook, stage } from './fixture/app.ts'
+import { control, readBook, stage, use } from './fixture/app.ts'
 
 /**
  * 페이지 URL을 세기 시작한다. 표지 썸네일은 형식이 붙은 `Blob`이고 아카이브에서 푼
@@ -40,7 +40,7 @@ test('R-204 · 멀리 건너뛰었다가 책을 떠나도 페이지 URL이 남�
   await control.first(page).click()
   await expect(stage(page).getByRole('img', { name: 'Page 1' })).toBeVisible()
 
-  await control.shelf(page).click()
+  await use(page, 'shelf')
   await expect(page.getByRole('link', { name: title })).toBeVisible()
   await expect.poll(() => livePageUrls(page)).toBe(0)
 })
@@ -56,7 +56,7 @@ test('R-204 · 페이지를 풀고 있는 순간에 책을 떠나도 URL이 남�
   })
 
   await control.last(page).click()
-  await control.shelf(page).click()
+  await use(page, 'shelf')
   await expect(page.getByRole('link', { name: title })).toBeVisible()
 
   // 늦게 끝난 풀기가 URL을 만들 틈을 준 뒤에 센다.

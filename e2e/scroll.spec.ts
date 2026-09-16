@@ -3,7 +3,17 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, counter, readBook, stage } from './fixture/app.ts'
+import { counter, readBook, readMenuItem, stage, use } from './fixture/app.ts'
+import type { MenuControl } from './fixture/app.ts'
+
+/**
+ * 메뉴 항목 오른쪽 곁글에 적힌 지금 값을 본다. 예전 툴바 버튼에 적혀 있던 글자가
+ * 그리로 옮겨 갔다 — 항목 자체의 이름은 상태와 상관없이 그대로다.
+ */
+const expectHint = (page: Page, which: MenuControl, value: string): Promise<void> =>
+  readMenuItem(page, which, async (item) => {
+    await expect(item.locator('[aria-hidden="true"] > span')).toHaveText(value)
+  })
 
 /** 너비를 채우면 화면보다 훨씬 길어지는 페이지. */
 const TALL_BOOK = { fileName: 'volume-1.cbz', pageCount: 6, size: { width: 800, height: 4000 } }
@@ -35,8 +45,8 @@ const scrollToBottom = async (page: Page): Promise<void> => {
 /** 페이지를 너비에 맞춘 채로 연다. 그래야 화면보다 길어져 굴릴 것이 생긴다. */
 const readTall = async (page: Page): Promise<void> => {
   await readBook(page, TALL_BOOK)
-  await control.fit(page).click()
-  await expect(control.fit(page)).toHaveText('Width')
+  await use(page, 'fit')
+  await expectHint(page, 'fit', 'Width')
 
   const box = await boxOf(page, 'stage')
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
@@ -119,7 +129,7 @@ test('격자 위에서 굴리는 것은 격자를 굴린다', async ({ page }) =
   // 격자는 스테이지 밖에 있으므로 리더가 그 굴림을 가져가지 않는다. 가져가면
   // 격자를 훑는 동안 뒤에서 페이지가 넘어간다.
   await readBook(page, { fileName: 'volume-1.cbz', pageCount: 40 })
-  await control.everyPage(page).click()
+  await use(page, 'everyPage')
 
   const grid = page.locator('#reader-thumbs')
   const box = await grid.boundingBox()

@@ -53,13 +53,12 @@ class BlobPage implements Page {
   readonly name: string
   private readonly blob: Blob
   private url: string | null = null
-  private isReleased = false
   constructor(name: string, blob: Blob) {
     this.name = name
     this.blob = blob
   }
   load(): Effect.Effect<string> {
-    return Effect.sync(() => this.url ?? this.cache(URL.createObjectURL(this.blob)))
+    return Effect.sync(() => (this.url ??= URL.createObjectURL(this.blob)))
   }
   unload(): void {
     if (this.url) {
@@ -67,18 +66,8 @@ class BlobPage implements Page {
       this.url = null
     }
   }
-  release(): void {
-    this.isReleased = true
-    this.unload()
-  }
-  /** 막 만든 URL을 캐시한다. 책이 이미 닫혔다면 캐시하지 않고 놓는다. */
-  private cache(url: string): string {
-    if (this.isReleased) {
-      URL.revokeObjectURL(url)
-    } else {
-      this.url = url
-    }
-    return url
+  read(): Effect.Effect<Blob> {
+    return Effect.succeed(this.blob)
   }
   measure(): Effect.Effect<Option.Option<ImageSize>, ArchiveError> {
     return Effect.tryPromise({
@@ -104,7 +93,6 @@ class ZipPage implements Page {
    * 기다린 호출은 앞선 호출이 캐시한 URL을 받으므로 압축도 한 번만 풀린다.
    */
   private readonly loading = Semaphore.makeUnsafe(1)
-  private isReleased = false
   constructor(name: string, archive: ZipArchive, entry: ZipEntry) {
     this.name = name
     this.archive = archive
@@ -118,7 +106,7 @@ class ZipPage implements Page {
           ? Effect.succeed(this.url)
           : this.archive
               .extract(this.entry)
-              .pipe(Effect.map((bytes) => this.cache(URL.createObjectURL(new Blob([bytes]))))),
+              .pipe(Effect.map((bytes) => (this.url = URL.createObjectURL(new Blob([bytes]))))),
       ),
     )
   }
@@ -128,18 +116,8 @@ class ZipPage implements Page {
       this.url = null
     }
   }
-  release(): void {
-    this.isReleased = true
-    this.unload()
-  }
-  /** 막 만든 URL을 캐시한다. 푸는 사이에 책이 닫혔다면 캐시하지 않고 놓는다. */
-  private cache(url: string): string {
-    if (this.isReleased) {
-      URL.revokeObjectURL(url)
-    } else {
-      this.url = url
-    }
-    return url
+  read(): Effect.Effect<Blob, ArchiveError> {
+    return Effect.map(this.archive.extract(this.entry), (bytes) => new Blob([bytes]))
   }
   /**
    * 엔트리를 풀어 페이지 크기를 잰다.

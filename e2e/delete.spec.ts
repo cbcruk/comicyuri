@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, counter, importBook, importBooks, openReader, openShelf } from './fixture/app.ts'
+import { counter, importBook, importBooks, openReader, openShelf, use } from './fixture/app.ts'
 
 const bin = (page: Page, title: string) =>
   page.getByRole('button', { name: `Remove ${title} from shelf…` })
@@ -80,7 +80,7 @@ test('S-131 · 다른 책을 열었다 돌아오면 묻던 것이 남아 있지 
   await expect(page.getByRole('group', { name: `Remove ${first}?` })).toBeVisible()
 
   await openReader(page, second!)
-  await control.shelf(page).click()
+  await use(page, 'shelf')
 
   await expect(page.getByRole('group', { name: `Remove ${first}?` })).toHaveCount(0)
   await expect(page.getByRole('link', { name: first! })).toBeVisible()

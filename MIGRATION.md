@@ -1,0 +1,95 @@
+# Foldkit → React + Effect Atom 이관 지침
+
+이 브랜치(`migrate/react-atom`)는 앱을 Foldkit에서 React와 Effect Atom으로 옮긴다. 옮기는
+동안 두 앱이 각자의 문서로 나란히 선다. `index.html`이 Foldkit, `app.html`이 React이고, 다
+옮기면 뒤쪽이 `index.html`이 되고 Foldkit 쪽 파일과 의존성이 사라진다.
+
+## 원칙
+
+1. **기계적으로 옮긴다.** 동작을 바꾸지 않는다. 더 나은 설계가 보여도 이관 중에는 적지
+   않는다. `SPEC.md`의 규칙 번호(`R-207`, `S-142` 같은 것)가 그대로 지켜져야 한다.
+2. **테스트가 정답지다.** e2e 108개와 story 테스트가 옮기기 전과 같은 것을 말해야 한다.
+   테스트를 고쳐서 통과시키지 않는다. 테스트가 틀렸다고 판단되면 고치지 말고 보고한다.
+3. **줄일 것은 나중에 줄인다.** 이관이 끝나고 e2e가 모두 통과한 뒤에 정리한다.
+
+## 무엇이 무엇이 되나
+
+| Foldkit                   | 옮긴 뒤                                                          |
+| ------------------------- | ---------------------------------------------------------------- |
+| `Runtime.makeApplication` | `src/app/main.tsx` (React root + `RegistryProvider`)             |
+| `view` (`h.div` 빌더)     | React 컴포넌트 (`.tsx`), 스타일은 Tailwind 클래스 그대로         |
+| `@foldkit/ui` 컴포넌트    | `@astryxdesign/core` (Slider·Switch·Dialog·FileInput·Toolbar 등) |
+| `VirtualList`             | `@tanstack/react-virtual`                                        |
+| `Route` / `foldkit/url`   | `@tanstack/react-router` (`src/app/router.tsx`)                  |
+| `Command`                 | `Atom.fn` 또는 이벤트 핸들러에서 `Effect.runPromise`             |
+| `ManagedResource`(책)     | `src/atoms/pages.ts`의 책·페이지 atom (이미 옮김)                |
+| `Subscription`            | 이름 붙인 훅 (`useReaderKeys`, `useSlideshow` 같은 것)           |
+| `Submodel`                | 컴포넌트 지역 상태 또는 atom                                     |
+| scene 테스트              | `*.screen.test.tsx` (실제 Chromium, `vp run test:screen`)        |
+| story 테스트              | 그대로 둔다. `update`가 순수 함수로 남기 때문이다                |
+
+## 상태를 두는 자리
+
+- **리더의 상호작용 상태**(페이지, 배율, 이동, 제스처, 툴바 표시, 슬라이드쇼)는 **atom 하나**에
+  담고, 그 atom은 지금의 순수 `update(model, message)`로만 바꾼다. 여러 필드가 한 번에
+  움직여야 하는 규칙(`R-207`, `R-214`, 가운데 탭)이 거기 달려 있다. story 테스트 2,400여 줄이
+  그대로 사는 것도 이 때문이다.
+- **리소스와 비동기**(책 열기, 페이지 로딩, 썸네일)는 atom이 맡는다. 이미 옮긴
+  `src/atoms/pages.ts`가 본보기다.
+- **화면 순간의 상태**(메뉴가 열렸는지, 슬라이더를 끄는 중인지, 포커스)는 Astryx 컴포넌트에
+  맡긴다. Model에 넣지 않는다.
+- `SPEC.md`가 말하는 것은 Model에, 말하지 않는 것은 컴포넌트에 둔다고 보면 대체로 맞다.
+
+## 옮기지 않는 것
+
+`src/io/`, `src/domain/`, `src/spreads.ts`, `src/settings.ts`, `src/types.ts`, `src/errors.ts`,
+그리고 `src/page/reader/`의 순수 계산(`spread.ts`, `gesture.ts`, `keys.ts`, `half.ts`,
+`scroll.ts`, `rotation.ts`, `thumbs.ts`, `bookmark.ts`)은 Foldkit을 불러오지 않는다. 그대로 쓴다.
+
+## 규칙
+
+- 주석·커밋·`SPEC.md`는 한국어다. 백틱 안의 인용과 테스트 이름은 영어로 둔다.
+- 내보내는 모든 심벌에 JSDoc을 단다(`.claude/rules/jsdoc.md`).
+- 동작이 바뀌면 `SPEC.md`의 해당 항목과 근거로 적힌 테스트 이름을 같이 고친다.
+- 검증: `vp check`, `vp test`, `vp run test:screen`, `vp run e2e`.
+- Foldkit Vite 플러그인은 `src/` 아래 모든 함수를 감싸므로, 다 옮기기 전까지 React 쪽 번들에도
+  Foldkit 조각이 섞인다. 크기를 재려면 플러그인을 뺀 별도 빌드로 재야 한다.
+
+## 되돌려 놓아야 할 증거
+
+옮기면서 근거가 사라진 것들이다. 갈아타기 전에 다시 세운다.
+
+- ~~로딩 관련 story 테스트 8개~~ 되살렸다. `R-214`는 `src/atoms/pages.test.ts`가, 나머지는
+  `src/app/reader/reader.screen.test.tsx`가 잰다.
+- ~~`R-207`의 스크롤 부분~~ `events.ts`의 `roomFor`가 맡고, 화면 테스트가 잰다.
+- ~~Escape를 두 곳이 처리하게 됐다.~~ 한 번에 한 겹만 벗기는 것을 화면 테스트가 잰다. 원래는
+  이랬다: Astryx `Dialog`가 스스로 닫고, 리더의 키 구독도
+  `R-2A3`대로 한 겹씩 벗긴다. 붙이는 쪽에서 한 번만 처리되게 막아야 한다 — 설정 패널이
+  열린 채 Escape를 누르면 패널만 닫혀야지 전체화면까지 벗겨져서는 안 된다.
+- ~~메뉴로 접힌 컨트롤의 역할이 버튼에서 메뉴 항목으로 바뀌었다.~~ `e2e/fixture/app.ts`의
+  `MENU_OF`·`ITEM_NAME`이 그 자리를 맡고, `SPEC.md`의 해당 항목도 메뉴 이름으로 고쳐졌다.
+- ~~메뉴 안으로 접히면서 지금 값(방향·한 장/두 장·맞춤·슬라이드쇼)이 화면에서도 접근성
+  트리에서도 사라졌다.~~ 헤더의 상태 줄이 그것을 도로 꺼내 놓는다(`R-218`).
+- ~~메뉴바가 키를 가져가지 않아 메뉴 안을 걸어 다니는 것만으로 페이지가 넘어갔다.~~
+  `handlesKeysItself`가 메뉴 역할을 함께 세고, `defaultPrevented`가 두 번째 관문으로
+  선다(`R-265`).
+
+## 진행 상태
+
+- [x] 기반: 의존성, 스타일 레이어, `app.html`, 라우터, 프로바이더, 화면 테스트 하네스
+- [x] 페이지 로딩 atom (`src/atoms/pages.ts`, `browser.ts`)
+- [x] 책장 화면 (`src/app/shelf.tsx`, `shelfAtoms.ts`) — 표지 URL 수명을 atom이 쥔다
+- [x] 리더 상태 (`src/reader/`) — Model·Message·update가 Foldkit 없이 순수하게 선다
+- [x] 툴바를 메뉴바로 (`src/app/chrome/`) — Astryx `Toolbar`는 쓸 수 없어 같은 훅으로 조립
+- [x] 설정 패널 (`src/app/settings/`) — Astryx `Dialog`와 `Switch`
+- [x] 리더 화면 붙이기 (`src/app/reader/`): 남은 스프레드가 자기 값을 쥐고, 굴림·키보드·제스처·슬라이드쇼 구독을 잇는다
+- [x] 저장 계층 (`src/app/state/`): 설정·책별 설정·진행 상태·이웃 책
+- [x] 썸네일 격자 (`src/app/thumbs/`, TanStack Virtual)
+- [x] scene 테스트를 `*.screen.test.tsx`로 옮기기
+- [x] e2e를 React 앱으로 돌려 통과시키기 (chromium 105 + github-pages 4)
+- [x] 갈아타기: `app.html` → `index.html`, Foldkit 파일과 의존성 삭제
+- [x] 이관 검토에서 나온 것 고치기 — 메뉴바 키 누수, `F-503`, 지금 값 줄, 메뉴 라벨,
+      슬라이더 Escape, `R-215`의 해제 범위, 남은 죽은 코드
+- [x] `SPEC.md`·`README.md` 갱신
+
+이관은 끝났다. 이 문서는 무엇을 왜 그렇게 옮겼는지에 대한 기록으로 남는다.

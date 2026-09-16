@@ -2,10 +2,24 @@
 # 빌드하지 않아도 msgpackr는 JS 구현으로 돈다. pnpm 11은 정하지 않은 빌드
 # 스크립트를 CI에서 오류로 멈추므로, 돌리지 않는다고 적어 둔다.
 allowBuilds:
+  # Astryx의 postinstall은 `astryx init`을 돌려 보라는 안내문만 출력한다. 설치에
+  # 필요한 일은 하지 않으므로 돌리지 않는다.
+  '@astryxdesign/core': false
   msgpackr-extract: false
 catalog:
   vite: npm:@voidzero-dev/vite-plus-core@latest
   vite-plus: latest
+minimumReleaseAgeExclude:
+  - '@astryxdesign/core@0.6.2'
+  - '@astryxdesign/theme-neutral@0.6.2'
+  - '@stylexjs/stylex@0.19.1'
+  - '@vitest/browser-playwright@5.0.1'
+  - '@vitest/browser@5.0.1'
+  - '@vitest/mocker@5.0.1'
+  - '@vitest/pretty-format@5.0.1'
+  - '@vitest/spy@5.0.1'
+  - '@vitest/ui@5.0.1'
+  - '@vitest/utils@5.0.1'
 overrides:
   vite: 'catalog:'
 peerDependencyRules:

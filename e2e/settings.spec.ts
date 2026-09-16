@@ -14,17 +14,43 @@ import {
   openReader,
   openShelf,
   readBook,
+  openMenu,
+  readMenuItem,
   stage,
+  use,
 } from './fixture/app.ts'
+
+/**
+ * 설정 패널을 여닫는다.
+ *
+ * `use(page, 'settings')`를 쓰지 못한다. 이 항목은 상태를 지므로
+ * `menuitemcheckbox`인데, 픽스처의 `openMenu`는 이름에 `bookmark`·`fullscreen`·
+ * `slideshow`가 든 것만 그 역할로 찾기 때문이다. 픽스처가 그것을 알게 되면
+ * 이 helper는 `use(page, 'settings')` 한 줄로 줄어든다.
+ */
+const useSettings = async (page: Page): Promise<void> => {
+  await openMenu(page, 'settings')
+  await page.getByRole('menuitemcheckbox', { name: 'Reading settings' }).click()
+}
 
 const panel = (page: Page) => page.getByRole('dialog', { name: 'Reading settings' })
 const coverAlone = (page: Page) => page.getByRole('switch', { name: 'Cover on its own' })
+
+/**
+ * 방향 항목이 곁글에 적고 있는 지금 값. 예전에는 툴바 버튼의 글자였고, 지금은
+ * 메뉴 항목 오른쪽의 곁글이다 — 항목의 이름은 `Toggle reading direction`으로
+ * 고정이라 값은 그 옆에 선다.
+ */
+const expectDirection = (page: Page, value: string) =>
+  readMenuItem(page, 'direction', async (item) => {
+    await expect(item.locator('span[aria-hidden="true"] > span')).toHaveText(value)
+  })
 
 test('R-2B1 · ⚙ 버튼이 패널을 열고 닫는다', async ({ page }) => {
   await readBook(page)
 
   await expect(panel(page)).toHaveCount(0)
-  await control.settings(page).click()
+  await useSettings(page)
   await expect(panel(page)).toBeVisible()
 
   await page.getByRole('button', { name: 'Close' }).click()
@@ -35,10 +61,10 @@ test('R-2B1 · 표지를 혼자 두지 않기로 하면 배치가 바로 바뀌�
   page,
 }) => {
   await readBook(page)
-  await control.view(page).click()
+  await use(page, 'view')
   await expect(stage(page).getByRole('img')).toHaveCount(1)
 
-  await control.settings(page).click()
+  await useSettings(page)
   await coverAlone(page).click()
   await expect(coverAlone(page)).toHaveAttribute('aria-checked', 'false')
 
@@ -53,7 +79,7 @@ test('R-2B1 · 표지를 혼자 두지 않기로 하면 배치가 바로 바뀌�
 test('R-2B1 · 책 끝 동작을 고르면 그대로 남는다', async ({ page }) => {
   await readBook(page)
 
-  await control.settings(page).click()
+  await useSettings(page)
   await page.getByRole('button', { name: 'Stay put' }).click()
   await expect(page.getByRole('button', { name: 'Stay put' })).toHaveAttribute(
     'aria-pressed',
@@ -61,7 +87,7 @@ test('R-2B1 · 책 끝 동작을 고르면 그대로 남는다', async ({ page }
   )
 
   await page.reload()
-  await control.settings(page).click()
+  await useSettings(page)
   await expect(page.getByRole('button', { name: 'Stay put' })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -78,44 +104,44 @@ test('R-2B3 · 책마다 기억하기를 켜면 방향이 그 책에만 남는�
   ])
 
   await openReader(page, titles[0]!)
-  await control.settings(page).click()
+  await useSettings(page)
   await remember(page).click()
   await page.getByRole('button', { name: 'Close' }).click()
 
   // 1권만 서양 코믹스처럼 읽는다.
-  await expect(control.direction(page)).toHaveText('RTL')
-  await control.direction(page).click()
-  await expect(control.direction(page)).toHaveText('LTR')
+  await expectDirection(page, 'RTL')
+  await use(page, 'direction')
+  await expectDirection(page, 'LTR')
 
   // 2권은 전역 기본값 그대로다.
-  await control.shelf(page).click()
+  await use(page, 'shelf')
   await openReader(page, titles[1]!)
-  await expect(control.direction(page)).toHaveText('RTL')
+  await expectDirection(page, 'RTL')
 
   // 1권으로 돌아오면 그 책이 정한 대로다.
-  await control.shelf(page).click()
+  await use(page, 'shelf')
   await openReader(page, titles[0]!)
-  await expect(control.direction(page)).toHaveText('LTR')
+  await expectDirection(page, 'LTR')
 })
 
 test('R-2B3 · 스위치를 끄면 전역 기본값으로 돌아간다', async ({ page }) => {
   await readBook(page)
 
-  await control.settings(page).click()
+  await useSettings(page)
   await remember(page).click()
   await page.getByRole('button', { name: 'Close' }).click()
-  await control.direction(page).click()
-  await expect(control.direction(page)).toHaveText('LTR')
+  await use(page, 'direction')
+  await expectDirection(page, 'LTR')
 
-  await control.settings(page).click()
+  await useSettings(page)
   await remember(page).click()
   await page.getByRole('button', { name: 'Close' }).click()
 
   // 이 책이 정한 것을 놓는다. 그러지 않으면 그대로 전역 기본값이 되어 버린다.
-  await expect(control.direction(page)).toHaveText('RTL')
+  await expectDirection(page, 'RTL')
 
   await page.reload()
-  await expect(control.direction(page)).toHaveText('RTL')
+  await expectDirection(page, 'RTL')
 })
 
 test('R-2B6 · 책장에서 정한 기본값이 그 뒤에 여는 책에 걸린다', async ({ page }) => {
@@ -130,7 +156,7 @@ test('R-2B6 · 책장에서 정한 기본값이 그 뒤에 여는 책에 걸린�
   await openReader(page, title)
   await control.next(page).click()
   await expect(counter(page)).toHaveText('2 / 6')
-  await control.shelf(page).click()
+  await use(page, 'shelf')
 
   // 처음부터 보기로 했으므로 읽던 자리로 가지 않는다.
   await openReader(page, title)
@@ -157,7 +183,7 @@ test('R-2B6 · 책장에서 정한 것이 새로고침을 넘기고, 리더의 �
 
   // 같은 값을 리더의 패널이 그대로 보여 준다. 한 자리를 두 곳에서 여는 것이다.
   await openReader(page, title)
-  await control.settings(page).click()
+  await useSettings(page)
   await expect(page.getByRole('switch', { name: 'Cover on its own' })).toHaveAttribute(
     'aria-checked',
     'false',
