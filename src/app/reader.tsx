@@ -1,133 +1,82 @@
 /**
- * 리더. 지금은 페이지를 걸고 넘기는 데까지만 옮겼다.
+ * 책 한 권을 읽는 자리. 라우터가 부르는 겉면이다.
  *
- * 규칙은 Foldkit 리더와 같다. 스프레드는 모든 페이지를 그릴 수 있게 된 뒤에 걸리고
- * (`R-206`), 다음 것이 설 때까지 이전 것이 화면에 남으며(`R-207`), 양옆 스프레드를 하나씩
- * 미리 읽어 둔다(`R-215`). 다만 그 일들을 update가 아니라 atom 구독이 맡는다.
+ * 하는 일은 셋이다. 저장된 자리와 설정을 읽어 리더가 걸 첫 Model을 세우고, 화면을
+ * 세우고, 리더가 떠나거나 이웃한 책을 열어 달라고 할 때 라우터를 움직인다. 읽는 일
+ * 자체는 `src/app/reader/`의 {@linkcode ReaderView}가 맡는다.
  *
- * 제스처·확대·툴바·설정은 아직 Foldkit 쪽에 있다.
+ * 저장된 자리를 안 뒤에 Model을 만드는 것이 이 자리의 요점이다. 그러지 않으면 첫 장을
+ * 그렸다가 읽던 자리로 건너뛰는 프레임이 생긴다(`R-2B5`).
  */
 
 import { Option } from 'effect'
-import { AsyncResult } from 'effect/unstable/reactivity'
-import { useAtomMount, useAtomValue } from '@effect/atom-react'
-import { Link } from '@tanstack/react-router'
-import { useEffect, useMemo, useState } from 'react'
+import { RegistryContext } from '@effect/atom-react'
+import type { AtomRegistry } from 'effect/unstable/reactivity'
+import { useNavigate } from '@tanstack/react-router'
+import { useContext, useMemo } from 'react'
 
-import { pageAtoms } from '../atoms/browser.ts'
-import type { SpreadPanel } from '../atoms/pages.ts'
-import { indexOfPage, pagesAt, spreadsFor } from '../page/reader/spread.ts'
-import { defaultSettings } from '../types.ts'
-import type { LoadedBook } from '../types.ts'
+import { Reading } from '../domain/index.ts'
+import { init } from '../reader/model.ts'
+import type { Model } from '../reader/model.ts'
+import { browserPersistence } from './reader/persistence.ts'
+import type { ReaderPersistence, ReaderProgress } from './reader/persistence.ts'
+import { ReaderView } from './reader/reader.tsx'
 
-/** 스프레드 하나를 구독만 한다. 그리지는 않고, 그 페이지 URL이 놓이지 않게 쥔다. */
-const Hold = ({ bookId, pages }: Readonly<{ bookId: string; pages: ReadonlyArray<number> }>) => {
-  useAtomMount(pageAtoms.spread(bookId, pages))
-  return null
+export { ReaderView } from './reader/reader.tsx'
+export type { ReaderViewProps } from './reader/reader.tsx'
+
+/** 한 번도 연 적 없는 책이 받는 자리. */
+const NEVER_OPENED: ReaderProgress = {
+  page: 0,
+  bookmarks: [],
+  marks: [],
+  rotation: 0,
 }
 
-/** 마지막으로 그릴 수 있었던 스프레드. 다음 것이 설 때까지 화면에 남는다(`R-207`). */
-type Shown = Readonly<{ pages: ReadonlyArray<number>; panels: ReadonlyArray<SpreadPanel> }>
+/**
+ * 저장된 것을 읽어 리더의 첫 Model을 세운다.
+ *
+ * 구독하지 않고 그 자리에서 한 번만 읽는다. 읽는 동안 설정이 바뀌면 그것은 리더 안의
+ * Model이 이미 쥐고 있으므로, 여기서 다시 읽으면 도리어 읽던 자리가 되감긴다.
+ */
+const openingModel = (
+  registry: AtomRegistry.AtomRegistry,
+  persistence: ReaderPersistence,
+  bookId: string,
+): Model => {
+  const settings = registry.get(persistence.settingsAtom)
+  const saved = Option.getOrElse(registry.get(persistence.progressFor(bookId)), () => NEVER_OPENED)
+  const { page, maybeOffer } = Reading.opening(settings, saved.page)
 
-const Pages = ({ bookId, book }: Readonly<{ bookId: string; book: LoadedBook }>) => {
-  const spreads = useMemo(
-    () =>
-      spreadsFor(
-        {
-          pageCount: book.pages.length,
-          ratios: book.pageSizes.map(Option.map(({ width, height }) => width / height)),
-          marks: [],
-        },
-        defaultSettings,
-      ),
-    [book],
+  return init({
+    bookId,
+    page,
+    maybeResumePage: maybeOffer,
+    bookmarks: saved.bookmarks,
+    marks: saved.marks,
+    rotation: saved.rotation,
+    maybeBookSettings: registry.get(persistence.bookSettingsFor(bookId)),
+    settings,
+  })
+}
+
+/** 리더 화면을 세우고 라우터에 잇는다. */
+export const ReaderScreen = ({ bookId }: Readonly<{ bookId: string }>) => {
+  const navigate = useNavigate()
+  const registry = useContext(RegistryContext)
+  const initial = useMemo(
+    () => openingModel(registry, browserPersistence, bookId),
+    [registry, bookId],
   )
-  const [page, setPage] = useState(0)
-  const index = indexOfPage(spreads, page)
-  const pages = pagesAt(spreads, index)
-
-  const current = useAtomValue(pageAtoms.spread(bookId, pages))
-  const [shown, setShown] = useState<Shown | null>(null)
-  useEffect(() => {
-    if (AsyncResult.isSuccess(current)) setShown({ pages, panels: current.value })
-    // `pages`는 렌더마다 새 배열이라 의존성에서 뺀다. `current`가 바뀌는 것이 곧 스프레드가
-    // 바뀌는 것이다.
-  }, [current])
-
-  const isReady = AsyncResult.isSuccess(current)
-  const panels = isReady ? current.value : (shown?.panels ?? [])
-  const neighbours = [index - 1, index + 1]
-    .map((at) => pagesAt(spreads, at))
-    .filter((spread) => spread.length > 0)
-
-  const goToSpread = (at: number) => {
-    const target = pagesAt(spreads, Math.min(Math.max(at, 0), spreads.length - 1))
-    if (target[0] !== undefined) setPage(target[0])
-  }
-
-  const first = (pages[0] ?? 0) + 1
-  const last = (pages.at(-1) ?? 0) + 1
 
   return (
-    <main className="relative flex h-full flex-col">
-      <header className="flex items-center gap-2 border-b border-edge px-4 py-2">
-        <Link to="/" className="text-sm text-ink underline-offset-4 hover:underline">
-          ← Shelf
-        </Link>
-        <span className="mx-auto text-sm text-muted">
-          {first === last ? `${first}` : `${first}–${last}`} / {book.pages.length}
-        </span>
-      </header>
-      <div
-        id="reader-stage"
-        className="relative flex flex-1 items-center justify-center overflow-hidden bg-black/20 p-2"
-      >
-        <div id="reader-page" className="flex h-full w-full items-center justify-center">
-          {panels.length === 0 ? (
-            <p className="text-sm text-muted">Loading…</p>
-          ) : (
-            panels.map((panel) => (
-              <img
-                key={panel.page}
-                alt={`Page ${panel.page + 1}`}
-                src={panel.url}
-                draggable={false}
-                className="max-h-full max-w-full object-contain"
-              />
-            ))
-          )}
-        </div>
-      </div>
-      {!isReady && shown !== null ? <Hold bookId={bookId} pages={shown.pages} /> : null}
-      {neighbours.map((spread) => (
-        <Hold key={spread.join(',')} bookId={bookId} pages={spread} />
-      ))}
-      <footer className="flex items-center justify-between gap-2 border-t border-edge px-4 py-2">
-        <button type="button" onClick={() => goToSpread(0)}>
-          First
-        </button>
-        <button type="button" onClick={() => goToSpread(index - 1)}>
-          Previous
-        </button>
-        <button type="button" onClick={() => goToSpread(index + 1)}>
-          Next
-        </button>
-        <button type="button" onClick={() => goToSpread(spreads.length - 1)}>
-          Last
-        </button>
-      </footer>
-    </main>
+    // 이웃한 책으로 건너가면 리더를 새로 세운다(`R-216`). 그 책은 자기 자리에서
+    // 시작해야 하므로, 앞 책의 Model을 고쳐 쓰는 것이 아니라 처음부터 여는 것이다.
+    <ReaderView
+      key={bookId}
+      initial={initial}
+      onExit={() => void navigate({ to: '/' })}
+      onOpenBook={(id) => void navigate({ to: '/book/$id', params: { id } })}
+    />
   )
-}
-
-/** 리더가 떠 있는 동안 책 atom을 쥔다. 스프레드 사이의 틈에 책을 다시 열지 않는다. */
-export const ReaderScreen = ({ bookId }: Readonly<{ bookId: string }>) => {
-  const bookAtom = pageAtoms.book(bookId)
-  useAtomMount(bookAtom)
-
-  return AsyncResult.match(useAtomValue(bookAtom), {
-    onInitial: () => <p className="p-6 text-sm text-muted">Opening…</p>,
-    onFailure: () => <p className="p-6 text-sm text-danger">Could not open the book</p>,
-    onSuccess: ({ value }) => <Pages bookId={bookId} book={value} />,
-  })
 }

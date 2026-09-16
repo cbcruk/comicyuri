@@ -2,5 +2,5 @@
 
 export { progressFor, saveProgress } from './progress.ts'
 export type { SavedProgress } from './progress.ts'
-export { bookSettingsFor, settingsAtom } from './settings.ts'
+export { bookSettingsFor, settingsAtom, writeBookSettings } from './settings.ts'
 export { neighbourBookId } from './shelf.ts'

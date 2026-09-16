@@ -47,3 +47,18 @@ export const bookSettingsFor: (bookId: string) => Atom.Writable<Option.Option<Bo
       },
     ),
   )
+
+/**
+ * 이 책의 설정을 저장한다. 레지스트리가 없는 자리 — 리더의 OutMessage를 접는 곳 — 에서
+ * 부른다. `None`은 이 책이 정해 둔 것을 놓는다는 뜻이다(`R-2B3`).
+ *
+ * {@linkcode bookSettingsFor}를 쥔 화면이 이것으로 쓰면 그 atom은 뒤처진다. 쥐고 있는
+ * 동안에는 atom으로 쓰는 편이 낫다.
+ */
+export const writeBookSettings = (
+  bookId: string,
+  maybeSettings: Option.Option<BookSettings>,
+): Effect.Effect<void> =>
+  Effect.sync(() => {
+    Effect.runSync(saveBookSettings(bookId, Option.getOrNull(maybeSettings)))
+  })
