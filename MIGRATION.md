@@ -55,14 +55,30 @@
 - Foldkit Vite 플러그인은 `src/` 아래 모든 함수를 감싸므로, 다 옮기기 전까지 React 쪽 번들에도
   Foldkit 조각이 섞인다. 크기를 재려면 플러그인을 뺀 별도 빌드로 재야 한다.
 
+## 되돌려 놓아야 할 증거
+
+옮기면서 근거가 사라진 것들이다. 갈아타기 전에 다시 세운다.
+
+- 로딩 관련 story 테스트 8개(`R-207`의 이전 스프레드 붙잡기, 확대 유지, 늦은 답 버리기,
+  격자가 쥔 페이지 지키기)가 빠졌다. 그 동작은 이제 atom과 화면의 몫이므로 증거도 화면
+  테스트와 e2e로 옮긴다.
+- `R-207`의 스크롤 부분: 이전에는 update가 `holdsEarlierSpread`를 보고 갈 곳을 없앴다.
+  이제 화면이 로딩 중일 때 `NO_ROOM`을 넘겨야 한다. 붙이는 쪽에서 반드시 확인한다.
+- Escape를 두 곳이 처리하게 됐다. Astryx `Dialog`가 스스로 닫고, 리더의 키 구독도
+  `R-2A3`대로 한 겹씩 벗긴다. 붙이는 쪽에서 한 번만 처리되게 막아야 한다 — 설정 패널이
+  열린 채 Escape를 누르면 패널만 닫혀야지 전체화면까지 벗겨져서는 안 된다.
+- 메뉴로 접힌 컨트롤의 역할이 버튼에서 메뉴 항목으로 바뀌었다. `e2e/fixture/app.ts`와
+  `SPEC.md`의 해당 항목을 갈아타는 시점에 함께 고친다.
+
 ## 진행 상태
 
 - [x] 기반: 의존성, 스타일 레이어, `app.html`, 라우터, 프로바이더, 화면 테스트 하네스
 - [x] 페이지 로딩 atom (`src/atoms/pages.ts`, `browser.ts`)
-- [ ] 책장: 들여오기(FileInput·드롭), 카드와 표지, 지우기, 정렬
-- [ ] 리더: Model·Message·update 이관, 제스처와 확대, 키보드
-- [ ] 툴바와 메뉴바(`Toolbar` + `DropdownMenu`), 푸터와 슬라이더
-- [ ] 설정 패널(`Dialog`, `Switch`)
+- [x] 책장 화면 (`src/app/shelf.tsx`, `shelfAtoms.ts`) — 표지 URL 수명을 atom이 쥔다
+- [x] 리더 상태 (`src/reader/`) — Model·Message·update가 Foldkit 없이 순수하게 선다
+- [x] 툴바를 메뉴바로 (`src/app/chrome/`) — Astryx `Toolbar`는 쓸 수 없어 같은 훅으로 조립
+- [x] 설정 패널 (`src/app/settings/`) — Astryx `Dialog`와 `Switch`
+- [ ] 리더 화면 붙이기: 상태·메뉴바·설정·격자를 한 화면으로, 제스처와 키보드 구독 연결
 - [ ] 썸네일 격자(TanStack Virtual)
 - [ ] 저장(진행 상태·설정·테마) 연결
 - [ ] scene 테스트를 `*.screen.test.tsx`로 옮기기
