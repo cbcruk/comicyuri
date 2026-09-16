@@ -1,4 +1,4 @@
-import { Effect, Option } from 'effect'
+import { Effect, Option, Semaphore } from 'effect'
 import type { LoadedBook, Page } from '../types.ts'
 import type { StoredBook } from './db.ts'
 import { ArchiveError, EmptyBookError, NoComicFilesError } from '../errors.ts'
@@ -53,18 +53,32 @@ class BlobPage implements Page {
   readonly name: string
   private readonly blob: Blob
   private url: string | null = null
+  private isReleased = false
   constructor(name: string, blob: Blob) {
     this.name = name
     this.blob = blob
   }
   load(): Effect.Effect<string> {
-    return Effect.sync(() => (this.url ??= URL.createObjectURL(this.blob)))
+    return Effect.sync(() => this.url ?? this.cache(URL.createObjectURL(this.blob)))
   }
   unload(): void {
     if (this.url) {
       URL.revokeObjectURL(this.url)
       this.url = null
     }
+  }
+  release(): void {
+    this.isReleased = true
+    this.unload()
+  }
+  /** 막 만든 URL을 캐시한다. 책이 이미 닫혔다면 캐시하지 않고 놓는다. */
+  private cache(url: string): string {
+    if (this.isReleased) {
+      URL.revokeObjectURL(url)
+    } else {
+      this.url = url
+    }
+    return url
   }
   measure(): Effect.Effect<Option.Option<ImageSize>, ArchiveError> {
     return Effect.tryPromise({
@@ -79,19 +93,33 @@ class ZipPage implements Page {
   private readonly archive: ZipArchive
   private readonly entry: ZipEntry
   private url: string | null = null
+  /**
+   * `load`를 한 번에 하나씩 돌린다.
+   *
+   * URL이 있는지 보는 것과 만드는 것 사이에 압축 풀기가 끼어 있다. 그 사이에 같은 페이지를
+   * 또 부르면 둘 다 URL이 없다고 보고 각자 만들고, 캐시는 나중 것만 기억한다. 먼저 만든
+   * URL은 화면에 걸린 채 끝내 해제되지 않는다(`R-204`). 미리 읽지 않은 페이지로 갈 때마다
+   * 화면에 걸 스프레드와 미리 읽을 이웃이 같은 페이지를 한꺼번에 부르므로 매번 일어났다.
+   *
+   * 기다린 호출은 앞선 호출이 캐시한 URL을 받으므로 압축도 한 번만 풀린다.
+   */
+  private readonly loading = Semaphore.makeUnsafe(1)
+  private isReleased = false
   constructor(name: string, archive: ZipArchive, entry: ZipEntry) {
     this.name = name
     this.archive = archive
     this.entry = entry
   }
   load(): Effect.Effect<string, ArchiveError> {
-    // 만들 때가 아니라 실행할 때 캐시를 보도록 suspend 한다.
-    return Effect.suspend(() =>
-      this.url !== null
-        ? Effect.succeed(this.url)
-        : this.archive
-            .extract(this.entry)
-            .pipe(Effect.map((bytes) => (this.url = URL.createObjectURL(new Blob([bytes]))))),
+    // 만들 때가 아니라 자물쇠를 쥔 뒤에 캐시를 보도록 suspend 한다.
+    return this.loading.withPermits(1)(
+      Effect.suspend(() =>
+        this.url !== null
+          ? Effect.succeed(this.url)
+          : this.archive
+              .extract(this.entry)
+              .pipe(Effect.map((bytes) => this.cache(URL.createObjectURL(new Blob([bytes]))))),
+      ),
     )
   }
   unload(): void {
@@ -99,6 +127,19 @@ class ZipPage implements Page {
       URL.revokeObjectURL(this.url)
       this.url = null
     }
+  }
+  release(): void {
+    this.isReleased = true
+    this.unload()
+  }
+  /** 막 만든 URL을 캐시한다. 푸는 사이에 책이 닫혔다면 캐시하지 않고 놓는다. */
+  private cache(url: string): string {
+    if (this.isReleased) {
+      URL.revokeObjectURL(url)
+    } else {
+      this.url = url
+    }
+    return url
   }
   /**
    * 엔트리를 풀어 페이지 크기를 잰다.

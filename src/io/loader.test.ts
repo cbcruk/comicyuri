@@ -7,7 +7,7 @@
  */
 
 import { Effect, Option } from 'effect'
-import { describe, expect, test } from 'vite-plus/test'
+import { describe, expect, test, vi } from 'vite-plus/test'
 
 import type { ArchiveError, EmptyBookError, NoComicFilesError } from '../errors.ts'
 import {
@@ -255,6 +255,76 @@ describe('opening a record as a book', () => {
     expect(await failureOf(bookFromStored(storedZip('volume-1', ['readme.txt'])))).toBe(
       'EmptyBookError',
     )
+  })
+
+  test('a page asked for twice at once makes one URL', async () => {
+    // 화면에 걸 스프레드와 미리 읽을 이웃이 같은 페이지를 한꺼번에 부르는 경우다. 둘이
+    // 각자 URL을 만들면 캐시는 하나만 기억하고, 나머지 하나는 해제될 길이 없다.
+    const created: Array<string> = []
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
+      const url = `blob:${created.length}`
+      created.push(url)
+      return url
+    })
+    const book = await Effect.runPromise(bookFromStored(storedZip('volume-1', ['01.png'])))
+    const [page] = book.pages
+
+    const urls = await Effect.runPromise(
+      Effect.all([page!.load(), page!.load()], { concurrency: 'unbounded' }),
+    )
+    createObjectURL.mockRestore()
+
+    expect(created).toStrictEqual(['blob:0'])
+    expect(urls).toStrictEqual(['blob:0', 'blob:0'])
+  })
+
+  test('a page closed while it is still unpacking keeps no URL', async () => {
+    // 책을 떠나는 순간 풀고 있던 페이지다. 푸는 일은 닫힌 뒤에 끝나고, 그때 캐시한 URL은
+    // 페이지와 함께 버려져 해제될 길이 없었다.
+    const live = new Set<string>()
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
+      const url = `blob:${live.size}`
+      live.add(url)
+      return url
+    })
+    const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation((url) => {
+      live.delete(url)
+    })
+    const book = await Effect.runPromise(bookFromStored(storedZip('volume-1', ['01.png'])))
+    const [page] = book.pages
+
+    // 푸는 일은 `Blob`을 읽느라 첫 await에서 멈춘다. 그 사이에 책을 닫는다.
+    const unpacking = Effect.runPromise(page!.load())
+    page!.release()
+    await unpacking
+    createObjectURL.mockRestore()
+    revokeObjectURL.mockRestore()
+
+    expect(live.size).toBe(0)
+  })
+
+  test('a page let go by the preloader can still be loaded again', async () => {
+    // 닫힘과 달리 미리 읽기가 놓는 것은 잠시 쥐지 않는 것일 뿐이다. 다음에 부르면 캐시한다.
+    const created: Array<string> = []
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
+      const url = `blob:${created.length}`
+      created.push(url)
+      return url
+    })
+    const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+    const book = await Effect.runPromise(bookFromStored(storedZip('volume-1', ['01.png'])))
+    const [page] = book.pages
+
+    const unpacking = Effect.runPromise(page!.load())
+    page!.unload()
+    const first = await unpacking
+    const second = await Effect.runPromise(page!.load())
+    const revokes = revokeObjectURL.mock.calls.length
+    createObjectURL.mockRestore()
+    revokeObjectURL.mockRestore()
+
+    expect(second).toBe(first)
+    expect(revokes).toBe(0)
   })
 
   test('a record that lost its bytes says the same', async () => {
