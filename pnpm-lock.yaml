@@ -26,9 +26,6 @@ importers:
       '@effect/atom-react':
         specifier: 4.0.0-rc.115
         version: 4.0.0-rc.115(effect@4.0.0-rc.115)(react@19.3.0)(scheduler@0.27.0)
-      '@foldkit/ui':
-        specifier: ^0.160.0
-        version: 0.160.0(effect@4.0.0-rc.115)(foldkit@0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115))
       '@stylexjs/stylex':
         specifier: 0.19.1
         version: 0.19.1
@@ -44,9 +41,6 @@ importers:
       effect:
         specifier: 4.0.0-rc.115
         version: 4.0.0-rc.115
-      foldkit:
-        specifier: ^0.160.0
-        version: 0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115)
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -60,15 +54,6 @@ importers:
       '@effect/platform-browser':
         specifier: 4.0.0-rc.115
         version: 4.0.0-rc.115(effect@4.0.0-rc.115)
-      '@foldkit/devtools':
-        specifier: ^0.160.0
-        version: 0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(@foldkit/ui@0.160.0(effect@4.0.0-rc.115)(foldkit@0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115)))(effect@4.0.0-rc.115)(foldkit@0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115))
-      '@foldkit/oxlint-plugin':
-        specifier: ^0.13.0
-        version: 0.13.0(effect@4.0.0-rc.115)
-      '@foldkit/vite-plugin':
-        specifier: ^0.22.0
-        version: 0.22.0(@voidzero-dev/vite-plus-core@0.3.2(@types/node@26.5.0)(jiti@2.7.0)(typescript@6.0.3))(effect@4.0.0-rc.115)(foldkit@0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115))
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
@@ -150,43 +135,6 @@ packages:
     resolution: {integrity: sha512-RwpnxRYSBHBL1HYYlRwIrwz0+1hwmn5RvgqkKI0Tb+ChOIR9UCMpXsAhnwQcGP+mBidrC7dlloL42poGHZW4yw==}
     peerDependencies:
       effect: ^4.0.0-rc.115
-
-  '@floating-ui/core@1.8.0':
-    resolution: {integrity: sha512-0CIZ5itps/8x7BG8dEIhs53BvCUH2PCoogtakwRTut+Arm58sJooJ0AuZhLw2HJYIR5cMLNPBSS728sPho2khQ==}
-
-  '@floating-ui/dom@1.8.0':
-    resolution: {integrity: sha512-yXSrzeHZBTZadLOlfyhCkJHNeLJnHRnRInwdZ40L7ZiaAtrBwoYlsDrX3v5zB1Utk7CLfzcOVnVVWoXEky7Ceg==}
-
-  '@floating-ui/utils@0.2.12':
-    resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
-
-  '@foldkit/devtools@0.160.0':
-    resolution: {integrity: sha512-JqXRs1XxWjvEpVj+ljkMEzHngkxhqeO/g2mh3zGkNDzm+jvzOsYKUI7PI4tCul+Ny3lX+akTWAqDUfxJ1nfSFg==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      '@effect/platform-browser': 4.0.0-rc.115
-      '@foldkit/ui': ^0
-      effect: 4.0.0-rc.115
-      foldkit: '>=0.153.0'
-
-  '@foldkit/oxlint-plugin@0.13.0':
-    resolution: {integrity: sha512-x1vLNMMKGg3PZzOPc2z4AjB+pBfD5IrfYOHU8hUaDWFqmNT8ryRrtOy1kI13odHkYhpSxPjslneSnKMBW7c88g==}
-    engines: {node: '>=20.19.0 || >=22.12.0'}
-
-  '@foldkit/ui@0.160.0':
-    resolution: {integrity: sha512-7wT2UmutzdH9j7WyJrmp0RsqX2izSSOTnIztaeNs/s16I4GZ5SdewcJvZVPsDRqoPXJNe/hM2GmLgMVqL5MsRg==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      effect: 4.0.0-rc.115
-      foldkit: '>=0.160.0'
-
-  '@foldkit/vite-plugin@0.22.0':
-    resolution: {integrity: sha512-coow4jpk/Byi6tHBcqyWlf3KSlWw25P1qfTI6TjEEWYu4XzX9NsmPQuZuAr4cqC1P6tllSMc0DLzG6FR+eWzxg==}
-    engines: {node: '>=20.19.0'}
-    peerDependencies:
-      effect: 4.0.0-rc.115
-      foldkit: '>=0.159.0'
-      vite: ^7.0.0 || ^8.0.0
 
   '@formatjs/fast-memoize@3.1.7':
     resolution: {integrity: sha512-zXfhLpvA6T7+efdt9JLbBwZ00tT7NsBMDVnDu8rpHeNNv8KfRZAMo2gkG0k9lK/Nzc//3kJ9pImsfuJxk3KhUA==}
@@ -496,10 +444,6 @@ packages:
 
   '@oxlint/plugins@1.79.0':
     resolution: {integrity: sha512-S0uyoxakDINJ4DPgqxGlEEvrdSMeQb7Z2lKVjxoY2gwsbZbfg2Xr8Klfeo5ZeraHmmdBCELFUHkSe6KEmBpMvg==}
-    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
-
-  '@oxlint/plugins@1.81.0':
-    resolution: {integrity: sha512-HhD8kd3r6XpelZkhxhRty/po8V6yK1VV63Eq4kSsOS2IoHUywG3DV2EX+z/ZHw46aLI74Y6aA604NRiAqLKW9w==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
   '@playwright/test@1.63.0':
@@ -1021,11 +965,6 @@ packages:
   dom-accessibility-api@0.5.16:
     resolution: {integrity: sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg==}
 
-  effect-oxlint@0.3.4:
-    resolution: {integrity: sha512-VaI72NhDI+OBk8rkWBxR3D+k8iQN5KX4caiTRtWR/KDlif4KdxmjPelQqflwwprxkGldEpLry9fQvvzlBWY6bA==}
-    peerDependencies:
-      effect: ^4.0.0-rc.112
-
   effect@4.0.0-rc.115:
     resolution: {integrity: sha512-ogYulZ5ffeOzrJqQrG0XOkDO5lKn2s9KNHhoxJy/6wKUkF0i12dlVXWA9TgsgQ+zV/JzizyG0+XMPepZEQX6vw==}
 
@@ -1036,10 +975,6 @@ packages:
   entities@7.0.1:
     resolution: {integrity: sha512-TWrgLOFUQTH994YUyl1yT4uyavY5nNB5muff+RtWaqNVCAK408b5ZnnbNAUEWLTCpum9w6arT70i1XdQ4UeOPA==}
     engines: {node: '>=0.12'}
-
-  entities@8.0.0:
-    resolution: {integrity: sha512-zwfzJecQ/Uej6tusMqwAqU/6KL2XaB2VZ2Jg54Je6ahNBGNH6Ek6g3jjNCF0fG9EWQKGZNddNjU5F1ZQn/sBnA==}
-    engines: {node: '>=20.19.0'}
 
   es-module-lexer@2.3.2:
     resolution: {integrity: sha512-poHGpORABojJJucnV9KbOavETW8lBVnphkW77ER5/BQ5Fz7oXSoCNek7IH3vR5nRjdsEz926ibFYX8KtLQmdyw==}
@@ -1059,13 +994,6 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
-
-  foldkit@0.160.0:
-    resolution: {integrity: sha512-laMBs/PhOYraz03vNqerZUbOxtEGUKsejuBtpMUd/xNyaHgi74Y7IP2qKgXbRmWb5QyqEODNQ69zQG2ufx39Ug==}
-    engines: {node: '>=20.19.0'}
-    peerDependencies:
-      '@effect/platform-browser': 4.0.0-rc.115
-      effect: 4.0.0-rc.115
 
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -1260,9 +1188,6 @@ packages:
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
-  magic-string@1.2.3:
-    resolution: {integrity: sha512-Bpb0W2TbLKOZ7vJnOUnVRGq3WL2p+ISV29M6hYPL1AFCpyKZpdr5ytiXoTSSxRVhg8YW7f65+6gbG8WG6PCa/g==}
-
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
     engines: {node: '>=10'}
@@ -1305,9 +1230,6 @@ packages:
         optional: true
       vite-plus:
         optional: true
-
-  parse5@8.0.1:
-    resolution: {integrity: sha512-z1e/HMG90obSGeidlli3hj7cbocou0/wa5HacvI3ASx34PecNjNQeaHNo5WIZpWofN9kgkqV1q5YvXe3F0FoPw==}
 
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
@@ -1567,48 +1489,6 @@ snapshots:
     dependencies:
       effect: 4.0.0-rc.115
 
-  '@floating-ui/core@1.8.0':
-    dependencies:
-      '@floating-ui/utils': 0.2.12
-
-  '@floating-ui/dom@1.8.0':
-    dependencies:
-      '@floating-ui/core': 1.8.0
-      '@floating-ui/utils': 0.2.12
-
-  '@floating-ui/utils@0.2.12': {}
-
-  '@foldkit/devtools@0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(@foldkit/ui@0.160.0(effect@4.0.0-rc.115)(foldkit@0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115)))(effect@4.0.0-rc.115)(foldkit@0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115))':
-    dependencies:
-      '@effect/platform-browser': 4.0.0-rc.115(effect@4.0.0-rc.115)
-      '@foldkit/ui': 0.160.0(effect@4.0.0-rc.115)(foldkit@0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115))
-      clsx: 2.1.1
-      effect: 4.0.0-rc.115
-      foldkit: 0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115)
-
-  '@foldkit/oxlint-plugin@0.13.0(effect@4.0.0-rc.115)':
-    dependencies:
-      effect-oxlint: 0.3.4(effect@4.0.0-rc.115)
-    transitivePeerDependencies:
-      - effect
-
-  '@foldkit/ui@0.160.0(effect@4.0.0-rc.115)(foldkit@0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115))':
-    dependencies:
-      '@floating-ui/dom': 1.8.0
-      effect: 4.0.0-rc.115
-      foldkit: 0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115)
-
-  '@foldkit/vite-plugin@0.22.0(@voidzero-dev/vite-plus-core@0.3.2(@types/node@26.5.0)(jiti@2.7.0)(typescript@6.0.3))(effect@4.0.0-rc.115)(foldkit@0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115))':
-    dependencies:
-      effect: 4.0.0-rc.115
-      foldkit: 0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115)
-      magic-string: 1.2.3
-      vite: '@voidzero-dev/vite-plus-core@0.3.2(@types/node@26.5.0)(jiti@2.7.0)(typescript@6.0.3)'
-      ws: 8.21.3
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
   '@formatjs/fast-memoize@3.1.7': {}
 
   '@formatjs/icu-messageformat-parser@3.5.18':
@@ -1773,8 +1653,6 @@ snapshots:
     optional: true
 
   '@oxlint/plugins@1.79.0': {}
-
-  '@oxlint/plugins@1.81.0': {}
 
   '@playwright/test@1.63.0':
     dependencies:
@@ -2172,11 +2050,6 @@ snapshots:
 
   dom-accessibility-api@0.5.16: {}
 
-  effect-oxlint@0.3.4(effect@4.0.0-rc.115):
-    dependencies:
-      '@oxlint/plugins': 1.81.0
-      effect: 4.0.0-rc.115
-
   effect@4.0.0-rc.115: {}
 
   enhanced-resolve@5.24.5:
@@ -2185,8 +2058,6 @@ snapshots:
       tapable: 2.3.3
 
   entities@7.0.1: {}
-
-  entities@8.0.0: {}
 
   es-module-lexer@2.3.2: {}
 
@@ -2199,12 +2070,6 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
       picomatch: 4.0.7
-
-  foldkit@0.160.0(@effect/platform-browser@4.0.0-rc.115(effect@4.0.0-rc.115))(effect@4.0.0-rc.115):
-    dependencies:
-      '@effect/platform-browser': 4.0.0-rc.115(effect@4.0.0-rc.115)
-      effect: 4.0.0-rc.115
-      parse5: 8.0.1
 
   fsevents@2.3.3:
     optional: true
@@ -2351,10 +2216,6 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  magic-string@1.2.3:
-    dependencies:
-      '@jridgewell/sourcemap-codec': 1.6.0
-
   mrmime@2.0.1: {}
 
   nanoid@3.3.18: {}
@@ -2418,10 +2279,6 @@ snapshots:
       '@oxlint/binding-win32-x64-msvc': 1.82.0
       oxlint-tsgolint: 7.0.2001
       vite-plus: 0.3.2(@types/node@26.5.0)(@vitest/browser-playwright@4.1.11)(happy-dom@20.14.0)(jiti@2.7.0)(typescript@6.0.3)
-
-  parse5@8.0.1:
-    dependencies:
-      entities: 8.0.0
 
   pathe@2.0.3: {}
 

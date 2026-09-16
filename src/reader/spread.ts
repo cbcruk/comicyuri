@@ -1,8 +1,8 @@
 import { Array, Option } from 'effect'
 
-import { buildSpreads, spreadOfPage } from '../../spreads.ts'
-import type { Binding } from '../../spreads.ts'
-import type { PageMark, Settings } from '../../types.ts'
+import { buildSpreads, spreadOfPage } from '../spreads.ts'
+import type { Binding } from '../spreads.ts'
+import type { PageMark, Settings } from '../types.ts'
 
 /** 읽는 자리 양옆으로 미리 데워 둘 스프레드 수, 그리고 계속 쥐고 있을 수. */
 const PRELOAD = 1

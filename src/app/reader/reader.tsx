@@ -10,7 +10,6 @@
  * 모두 이 파일과 이웃한 훅들에 들어 있다.
  */
 
-// oxlint-disable foldkit/no-child-message-construction-in-root
 /*
  * 위의 한 줄에 대하여.
  *

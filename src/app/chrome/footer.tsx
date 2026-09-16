@@ -9,7 +9,7 @@ import { Button } from '@astryxdesign/core/Button'
 import clsx from 'clsx'
 import type { KeyboardEvent, Ref } from 'react'
 
-import { GOTO_ID } from '../../page/reader/constant.ts'
+import { GOTO_ID } from '../../reader/constant.ts'
 import { PageSlider } from './slider.tsx'
 import type { ChromeActions, ChromeState } from './types.ts'
 

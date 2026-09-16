@@ -2,7 +2,7 @@
  * 페이지 위의 포인터 제스처를 update로 읽는 자리. 누름과 움직임과 놓음이 탭,
  * 스와이프, 이동, 핀치가 된다.
  *
- * 좌표와 거리 같은 순수한 계산은 `src/page/reader/gesture.ts`에 있고, 여기는 그것을
+ * 좌표와 거리 같은 순수한 계산은 `src/reader/gesture.ts`에 있고, 여기는 그것을
  * Model에 거는 쪽이다.
  */
 
@@ -23,8 +23,8 @@ import {
   translate,
   zoomAround,
   zoneAt,
-} from '../../page/reader/gesture.ts'
-import type { Point, Side } from '../../page/reader/gesture.ts'
+} from '../../reader/gesture.ts'
+import type { Point, Side } from '../../reader/gesture.ts'
 import { Gesture } from '../model.ts'
 import type { Model, Tracking } from '../model.ts'
 import { evo } from '../struct.ts'

@@ -8,8 +8,8 @@
 
 import { Array, Option } from 'effect'
 
-import { indexOfPage, pagesAt, spreadsFor } from '../../page/reader/spread.ts'
-import type { Layout } from '../../page/reader/spread.ts'
+import { indexOfPage, pagesAt, spreadsFor } from '../../reader/spread.ts'
+import type { Layout } from '../../reader/spread.ts'
 import { OpenState } from '../../reader/model.ts'
 import type { Model } from '../../reader/model.ts'
 

@@ -9,7 +9,7 @@
 
 import { Option, Record } from 'effect'
 
-import { SKIP_PAGES } from '../page/reader/constant.ts'
+import { SKIP_PAGES } from '../reader/constant.ts'
 import { Message } from './message.ts'
 import type { Model } from './model.ts'
 

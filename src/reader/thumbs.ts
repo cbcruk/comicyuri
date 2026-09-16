@@ -1,17 +1,13 @@
-import { Array, Option } from 'effect'
-
-import { VirtualList } from '@foldkit/ui'
+import { Array } from 'effect'
 
 import {
   THUMBS_PER_ROW_MIN,
   THUMB_GAP,
   THUMB_INSET,
   THUMB_LABEL_HEIGHT,
-  THUMB_OVERSCAN,
   THUMB_RATIO,
   THUMB_WIDTH,
 } from './constant.ts'
-import type { Panel } from './model.ts'
 
 /**
  * 격자가 늘어놓을 페이지들. 북마크만 보는 중이면 그 페이지들뿐이다.
@@ -72,48 +68,3 @@ export const rowsFor = (
   pages: ReadonlyArray<number>,
   perRow: number,
 ): ReadonlyArray<ReadonlyArray<number>> => Array.chunksOf(pages, perRow)
-
-/**
- * 지금 격자가 보여 줄 수 있는 페이지들. 리스트 자신의 스크롤 상태에서 읽어 낸다.
- * 창을 그리는 것은 컴포넌트이고, 그 창에 무엇을 뽑아 줄지 정하는 것이 여기다.
- *
- * 창은 행 번호로 잡으므로, 답은 늘어놓기로 한 목록에서 그 자리를 잘라 낸 것이다.
- * 북마크만 보는 중이라면 그 목록이 곧 북마크들이다.
- */
-export const pagesInView = (
-  list: VirtualList.Model,
-  pages: ReadonlyArray<number>,
-  perRow: number,
-): ReadonlyArray<number> => {
-  const containerHeight =
-    list.measurement._tag === 'Measured' ? list.measurement.containerHeight : 0
-
-  const firstRow = Math.floor(list.scrollTop / list.rowHeightPx)
-  const rowsOnScreen = Math.ceil(containerHeight / list.rowHeightPx) + 1
-
-  const from = Math.max(0, firstRow - THUMB_OVERSCAN)
-  const to = firstRow + rowsOnScreen + THUMB_OVERSCAN
-
-  return Array.take(Array.drop(pages, from * perRow), (to - from) * perRow)
-}
-
-/**
- * 필요한 페이지 중 아직 도착하지 않은 것. 요청 중인 페이지는 기록하지 않으므로,
- * 답이 오기 전에 다시 스크롤하면 같은 페이지를 또 요청한다.
- */
-export const missingFrom = (
-  loaded: ReadonlyArray<Panel>,
-  wanted: ReadonlyArray<number>,
-): ReadonlyArray<number> =>
-  Array.filter(wanted, (page) => !Array.some(loaded, (panel) => panel.page === page))
-
-/** 페이지의 썸네일. 뽑기 전까지는 없다. */
-export const urlFor = (loaded: ReadonlyArray<Panel>, page: number): Option.Option<string> =>
-  Option.map(
-    Array.findFirst(loaded, (panel) => panel.page === page),
-    (panel) => panel.url,
-  )
-
-/** 이미 뽑아 둔 모든 페이지. 놓아 주는 쪽이 이것을 기준으로 삼는다. */
-export const loadedPages = (loaded: ReadonlyArray<Panel>): ReadonlyArray<number> =>
-  Array.map(loaded, (panel) => panel.page)

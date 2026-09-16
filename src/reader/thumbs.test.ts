@@ -1,27 +1,9 @@
 import { describe, expect, test } from 'vite-plus/test'
 
-import { VirtualList } from '@foldkit/ui'
-
-import { THUMBS_DEFAULT_WIDTH, THUMBS_ID } from './constant.ts'
-import {
-  cellWidthFor,
-  missingFrom,
-  pagesInView,
-  perRowFor,
-  rowHeightFor,
-  rowsFor,
-  shownPages,
-  urlFor,
-} from './thumbs.ts'
+import { THUMBS_DEFAULT_WIDTH } from './constant.ts'
+import { cellWidthFor, perRowFor, rowHeightFor, rowsFor, shownPages } from './thumbs.ts'
 
 const THUMBS_PER_ROW_DEFAULT = perRowFor(THUMBS_DEFAULT_WIDTH)
-const THUMB_ROW_HEIGHT = rowHeightFor(THUMBS_DEFAULT_WIDTH)
-
-const listAt = (scrollTop: number, containerHeight: number) => ({
-  ...VirtualList.init({ id: THUMBS_ID, rowHeightPx: THUMB_ROW_HEIGHT }),
-  scrollTop,
-  measurement: { _tag: 'Measured' as const, containerHeight },
-})
 
 const allOf = (pageCount: number) => shownPages(pageCount, [], false)
 
@@ -104,64 +86,5 @@ describe('how many stand in a row', () => {
       // 이보다 넓으면 한 칸이 더 들어갔어야 한다.
       expect(cellWidthFor(width)).toBeLessThan(104 * 2 + 12)
     }
-  })
-})
-
-describe('windowing', () => {
-  test('an unmeasured list still asks for the overscan around the top', () => {
-    const pages = pagesInView(
-      VirtualList.init({ id: THUMBS_ID, rowHeightPx: THUMB_ROW_HEIGHT }),
-      allOf(100),
-      THUMBS_PER_ROW_DEFAULT,
-    )
-    expect(pages[0]).toBe(0)
-    // 화면에 무엇이 있는지 아직 모르므로 미리 읽는 몫만 나온다.
-    expect(pages.length).toBeLessThan(100)
-  })
-
-  test('scrolling asks for the rows around the new position, not the whole book', () => {
-    const pages = pagesInView(
-      listAt(THUMB_ROW_HEIGHT * 10, THUMB_ROW_HEIGHT * 3),
-      allOf(500),
-      THUMBS_PER_ROW_DEFAULT,
-    )
-
-    // 10번 행, 화면에 세 행, 양옆으로 두 행씩 미리 읽기.
-    expect(pages[0]).toBe(8 * THUMBS_PER_ROW_DEFAULT)
-    expect(pages.length).toBeLessThan(500)
-    expect(pages).not.toContain(0)
-  })
-
-  test('the window never runs past the end of the book', () => {
-    const pages = pagesInView(
-      listAt(THUMB_ROW_HEIGHT * 100, THUMB_ROW_HEIGHT * 3),
-      allOf(12),
-      THUMBS_PER_ROW_DEFAULT,
-    )
-    expect(pages).toStrictEqual([])
-  })
-
-  test('a filtered grid windows over the bookmarks, not over the page numbers', () => {
-    const bookmarks = shownPages(500, [8, 40, 120], true)
-    const pages = pagesInView(listAt(0, THUMB_ROW_HEIGHT * 3), bookmarks, THUMBS_PER_ROW_DEFAULT)
-
-    // 북마크가 셋뿐이므로 창이 아무리 넓어도 그 셋이 전부다.
-    expect(pages).toStrictEqual([8, 40, 120])
-  })
-})
-
-describe('what is already loaded', () => {
-  const loaded = [
-    { page: 1, url: 'blob:1' },
-    { page: 3, url: 'blob:3' },
-  ]
-
-  test('only the pages without a thumbnail are asked for again', () => {
-    expect(missingFrom(loaded, [1, 2, 3, 4])).toStrictEqual([2, 4])
-  })
-
-  test('a loaded page hands back its url', () => {
-    expect(urlFor(loaded, 3)._tag).toBe('Some')
-    expect(urlFor(loaded, 2)._tag).toBe('None')
   })
 })

@@ -1,6 +1,6 @@
 /** 페이지를 세우는 각도에 대한 계산. */
 
-import type { Rotation } from '../../types.ts'
+import type { Rotation } from '../types.ts'
 
 /** 시계 방향으로 한 번 더 돈 각도. 한 바퀴를 채우면 처음으로 돌아온다. */
 export const rotatedRight = (rotation: Rotation): Rotation =>

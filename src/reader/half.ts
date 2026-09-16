@@ -2,7 +2,7 @@
 
 import { Schema } from 'effect'
 
-import type { Settings } from '../../types.ts'
+import type { Settings } from '../types.ts'
 
 /**
  * 나뉜 페이지에서 지금 보고 있는 반쪽. 읽는 순서대로 붙인 이름이라, 어느 쪽이

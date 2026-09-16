@@ -2,7 +2,7 @@
  * 모든 페이지를 한눈에 늘어놓는 격자와 그 안의 북마크 목록(`R-271`, `R-284`).
  *
  * Foldkit의 `VirtualList` 자리에 `@tanstack/react-virtual`이 선다. 늘어놓을 페이지를
- * 고르고 몇 칸에 세울지 재는 순수한 계산은 `src/page/reader/thumbs.ts` 그대로다 —
+ * 고르고 몇 칸에 세울지 재는 순수한 계산은 `src/reader/thumbs.ts` 그대로다 —
  * 격자가 창 너비를 따라간다는 것(`R-276`)이 거기 적혀 있다.
  *
  * 썸네일은 스테이지가 거는 것과 같은 페이지 atom이다. 그래서 칸을 세우는 것이 곧
@@ -24,14 +24,8 @@ import {
   THUMBS_ID,
   THUMB_OVERSCAN,
   THUMB_RATIO,
-} from '../../page/reader/constant.ts'
-import {
-  cellWidthFor,
-  perRowFor,
-  rowHeightFor,
-  rowsFor,
-  shownPages,
-} from '../../page/reader/thumbs.ts'
+} from '../../reader/constant.ts'
+import { cellWidthFor, perRowFor, rowHeightFor, rowsFor, shownPages } from '../../reader/thumbs.ts'
 
 /**
  * 격자가 놓인 자리의 너비(픽셀). 열 때 한 번 재고, 그 자리가 넓어지거나 좁아지면

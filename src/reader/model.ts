@@ -11,10 +11,10 @@
 import { Data, Option } from 'effect'
 
 import { Reading } from '../domain/index.ts'
-import { ORIGIN, ZOOM_MIN } from '../page/reader/gesture.ts'
-import type { Point, Side } from '../page/reader/gesture.ts'
-import type { Half } from '../page/reader/half.ts'
-import { indexOfPage, pagesAt, spreadsFor } from '../page/reader/spread.ts'
+import { ORIGIN, ZOOM_MIN } from '../reader/gesture.ts'
+import type { Point, Side } from '../reader/gesture.ts'
+import type { Half } from '../reader/half.ts'
+import { indexOfPage, pagesAt, spreadsFor } from '../reader/spread.ts'
 import type { BookSettings, PageMark, Rotation, Settings } from '../types.ts'
 
 /**

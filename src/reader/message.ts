@@ -15,8 +15,8 @@
 
 import { Data, Option } from 'effect'
 
-import type { Point } from '../page/reader/gesture.ts'
-import type { Room, ScrollDevice } from '../page/reader/scroll.ts'
+import type { Point } from '../reader/gesture.ts'
+import type { Room, ScrollDevice } from '../reader/scroll.ts'
 import type { AtBookEnd, PageMark, Resume, Rotation, Settings } from '../types.ts'
 
 /**

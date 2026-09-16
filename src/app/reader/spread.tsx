@@ -18,8 +18,8 @@ import { useEffect, useRef } from 'react'
 import type { PageAtoms, SpreadPanel } from '../../atoms/pages.ts'
 import { describe } from '../../errors.ts'
 import type { AppError } from '../../errors.ts'
-import type { Point } from '../../page/reader/gesture.ts'
-import type { Half } from '../../page/reader/half.ts'
+import type { Point } from '../../reader/gesture.ts'
+import type { Half } from '../../reader/half.ts'
 import type { Model, PageEntry } from '../../reader/model.ts'
 
 /**

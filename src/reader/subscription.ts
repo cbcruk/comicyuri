@@ -12,11 +12,11 @@
 
 import { Option } from 'effect'
 
-import { PAGE_ID, STAGE_ID } from '../page/reader/constant.ts'
-import { EDGE_SLACK, NO_ROOM, deviceFor } from '../page/reader/scroll.ts'
-import type { Room } from '../page/reader/scroll.ts'
-import type { Point } from '../page/reader/gesture.ts'
-import type { Half } from '../page/reader/half.ts'
+import { PAGE_ID, STAGE_ID } from '../reader/constant.ts'
+import { EDGE_SLACK, NO_ROOM, deviceFor } from '../reader/scroll.ts'
+import type { Room } from '../reader/scroll.ts'
+import type { Point } from '../reader/gesture.ts'
+import type { Half } from '../reader/half.ts'
 import { handlesKeysItself, isReaderKey } from './keys.ts'
 import { Message } from './message.ts'
 import type { Model } from './model.ts'

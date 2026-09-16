@@ -8,8 +8,8 @@
 
 import { Match, Number, Option } from 'effect'
 
-import { ORIGIN, ZOOM_MIN } from '../../page/reader/gesture.ts'
-import { halfAfterStep, staysOnPage } from '../../page/reader/half.ts'
+import { ORIGIN, ZOOM_MIN } from '../../reader/gesture.ts'
+import { halfAfterStep, staysOnPage } from '../../reader/half.ts'
 import {
   indexOfPage,
   pageAfterStep,
@@ -17,7 +17,7 @@ import {
   pagesAt,
   splitRatio,
   spreadsFor,
-} from '../../page/reader/spread.ts'
+} from '../../reader/spread.ts'
 import type { Command } from '../command.ts'
 import { OutMessage } from '../message.ts'
 import { OpenState } from '../model.ts'

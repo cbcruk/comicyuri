@@ -19,7 +19,7 @@ import { expect, test, vi } from 'vite-plus/test'
 
 import { makePageAtoms } from '../../atoms/pages.ts'
 import type { PageAtoms } from '../../atoms/pages.ts'
-import { PAGE_ID, STAGE_ID } from '../../page/reader/constant.ts'
+import { PAGE_ID, STAGE_ID } from '../../reader/constant.ts'
 import { init } from '../../reader/model.ts'
 import type { BookProgress, BookSettings, LoadedBook, Page, Settings } from '../../types.ts'
 import { defaultSettings } from '../../types.ts'

@@ -10,14 +10,11 @@
  * 아니라 document에서 듣는다 — Foldkit 구독이 그랬던 것과 같다.
  */
 
-// oxlint-disable foldkit/no-child-message-construction-in-root
-// 까닭은 `reader.tsx` 머리에 적혀 있다. 이 리더에는 Message를 가로챌 부모가 없다.
-
 import { Option } from 'effect'
 import { useEffect, useRef } from 'react'
 
-import { NO_ROOM } from '../../page/reader/scroll.ts'
-import type { Room } from '../../page/reader/scroll.ts'
+import { NO_ROOM } from '../../reader/scroll.ts'
+import type { Room } from '../../reader/scroll.ts'
 import type { Command } from '../../reader/command.ts'
 import { Message } from '../../reader/message.ts'
 import type { Model } from '../../reader/model.ts'

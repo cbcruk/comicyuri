@@ -15,7 +15,7 @@ import { beforeEach, expect, test, vi } from 'vite-plus/test'
 
 import { deleteBook, getAllBooks, putBook } from '../../io/db.ts'
 import type { StoredBook } from '../../io/db.ts'
-import { cellWidthFor, perRowFor, rowHeightFor } from '../../page/reader/thumbs.ts'
+import { cellWidthFor, perRowFor, rowHeightFor } from '../../reader/thumbs.ts'
 // 격자는 자리를 재어 창을 잡으므로 스타일이 서야 한다. 스타일 없이는 모든 칸이
 // 한꺼번에 서고, 그러면 볼 것이 없다.
 import '../../styles.css'
