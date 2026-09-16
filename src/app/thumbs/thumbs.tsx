@@ -126,13 +126,6 @@ const Thumb = ({
 export type ThumbsProps = Readonly<{
   bookId: string
   pageCount: number
-  /**
-   * 리더가 서 있는 페이지.
-   *
-   * 격자는 이것으로 아무것도 하지 않는다 — 언제나 맨 위에서 열리고, 고른 페이지만
-   * 부모에게 알린다. 부모가 이미 쥐고 있는 값이라 자리만 잡아 둔다.
-   */
-  page: number
   bookmarks: ReadonlyArray<number>
   /** 북마크만 늘어놓는 중인지(`R-284`). */
   showsBookmarksOnly: boolean

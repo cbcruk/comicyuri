@@ -71,7 +71,6 @@ const renderThumbs = async (
         <ThumbsPanel
           bookId={bookId}
           pageCount={6}
-          page={0}
           bookmarks={[]}
           showsBookmarksOnly={false}
           {...actions}
