@@ -21,7 +21,14 @@ import {
   DropdownMenuDivider,
   DropdownMenuItem,
 } from '@astryxdesign/core/DropdownMenu'
+import * as stylex from '@stylexjs/stylex'
 import { useListFocus } from '@astryxdesign/core/hooks'
+import {
+  colorVars,
+  radiusVars,
+  spacingVars,
+  textSizeVars,
+} from '@astryxdesign/core/theme/tokens.stylex'
 import type { KeyboardEvent, ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 
@@ -62,6 +69,31 @@ export const FIT_LABEL: Readonly<Record<FitMode, string>> = {
   original: '1:1',
 }
 
+/** 메뉴바와 곁글의 모양. */
+const styles = stylex.create({
+  menubar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacingVars['--spacing-1'],
+  },
+  hint: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacingVars['--spacing-2'],
+    paddingInlineStart: spacingVars['--spacing-6'],
+    fontSize: textSizeVars['--font-size-sm'],
+    color: colorVars['--color-text-secondary'],
+  },
+  key: {
+    paddingInline: spacingVars['--spacing-1'],
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: colorVars['--color-border'],
+    borderRadius: radiusVars['--radius-inner'],
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+  },
+})
+
 /**
  * 메뉴 항목 오른쪽에 붙는 곁글. 지금 걸린 값과 단축키다.
  *
@@ -70,10 +102,10 @@ export const FIT_LABEL: Readonly<Record<FitMode, string>> = {
  * 버튼을 찾는 시험들이 모두 어긋난다.
  */
 const MenuHint = ({ value, shortcut }: Readonly<{ value?: string; shortcut?: string }>) => (
-  <span aria-hidden="true" className="flex items-center gap-2 pl-6 text-xs text-muted">
+  <span aria-hidden="true" {...stylex.props(styles.hint)}>
     {value === undefined ? null : <span>{value}</span>}
     {shortcut === undefined ? null : (
-      <kbd data-shortcut={shortcut} className="rounded border border-edge px-1 font-mono">
+      <kbd data-shortcut={shortcut} {...stylex.props(styles.key)}>
         {shortcut}
       </kbd>
     )}
@@ -176,7 +208,7 @@ export const ReaderMenubar = ({ state, actions, onFocusGoToPage }: MenubarProps)
       role="menubar"
       aria-label="Reader menus"
       aria-orientation="horizontal"
-      className="flex items-center gap-1"
+      {...stylex.props(styles.menubar)}
       onKeyDown={handleMenubarKeyDown}
       onFocus={handleFocus}
     >

@@ -91,6 +91,24 @@ const trackAndFill = (container: HTMLElement): readonly [HTMLElement, HTMLElemen
 }
 
 /**
+ * 토큰이 그 자리에서 실제로 풀리는 색.
+ *
+ * 클래스 이름은 StyleX가 해시로 지으므로 무엇으로 칠했는지는 계산된 색으로만 잴 수 있다.
+ * 견줄 색도 같은 테마 안의 같은 자리에서 칠해 읽는다 — 토큰의 값은 테마와 모드에 따라 달라서
+ * 숫자로 박아 둘 수 없다.
+ */
+const tokenColour = (near: HTMLElement, token: string): string => {
+  const probe = document.createElement('span')
+  probe.style.backgroundColor = `var(${token})`
+  near.append(probe)
+  const colour = getComputedStyle(probe).backgroundColor
+  probe.remove()
+  return colour
+}
+
+const backgroundOf = (element: HTMLElement): string => getComputedStyle(element).backgroundColor
+
+/**
  * 슬라이더가 옮긴 자리를 그대로 되먹이는 크롬. 끄는 시험만 이것으로 세운다 —
  * 무르는 것을 재려면 값이 손을 따라 움직여야 한다.
  */
@@ -280,14 +298,14 @@ test('the row of controls turns around with the reading direction', async () => 
   const { screen } = await renderChrome({ direction: 'rtl' })
 
   const footer = screen.container.querySelector('footer')
-  expect(footer?.className).toContain('flex-row-reverse')
+  expect(footer && getComputedStyle(footer).flexDirection).toBe('row-reverse')
 })
 
 test('and reading left to right it stays as written', async () => {
   const { screen } = await renderChrome({ direction: 'ltr' })
 
   const footer = screen.container.querySelector('footer')
-  expect(footer?.className).not.toContain('flex-row-reverse')
+  expect(footer && getComputedStyle(footer).flexDirection).toBe('row')
 })
 
 test('the counter and the file name sit above the reader', async () => {
@@ -453,8 +471,10 @@ test('reading right to left, the filled part of the track sits on the right', as
 
   const [track, fill] = trackAndFill(screen.container)
 
-  expect(track.className).toContain('bg-accent')
-  expect(fill.className).toContain('bg-edge')
+  // 둘이 같은 색으로 풀리면 아래 비교는 무엇도 재지 못한다.
+  expect(backgroundOf(track)).not.toBe(backgroundOf(fill))
+  expect(backgroundOf(track)).toBe(tokenColour(track, '--color-accent'))
+  expect(backgroundOf(fill)).toBe(tokenColour(track, '--color-track'))
   // 3페이지까지 읽었으니 왼쪽 3/5는 아직 읽지 않은 몫이다.
   expect(fill.style.width).toBe('60%')
 })
@@ -464,8 +484,8 @@ test('reading left to right, the fill is the fill', async () => {
 
   const [track, fill] = trackAndFill(screen.container)
 
-  expect(track.className).toContain('bg-edge')
-  expect(fill.className).toContain('bg-accent')
+  expect(backgroundOf(track)).toBe(tokenColour(track, '--color-track'))
+  expect(backgroundOf(fill)).toBe(tokenColour(track, '--color-accent'))
   expect(fill.style.width).toBe('40%')
 })
 

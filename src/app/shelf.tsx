@@ -14,6 +14,7 @@
  * 사라진다.
  */
 
+import * as stylex from '@stylexjs/stylex'
 import { Effect, Option } from 'effect'
 import { AsyncResult } from 'effect/unstable/reactivity'
 import { useAtom, useAtomMount, useAtomSet, useAtomValue } from '@effect/atom-react'
@@ -23,6 +24,17 @@ import type { DragEvent } from 'react'
 
 import { AlertDialog } from '@astryxdesign/core/AlertDialog'
 import { Button } from '@astryxdesign/core/Button'
+import { EmptyState } from '@astryxdesign/core/EmptyState'
+import { Text } from '@astryxdesign/core/Text'
+import {
+  colorVars,
+  durationVars,
+  easeVars,
+  fontWeightVars,
+  radiusVars,
+  spacingVars,
+  textSizeVars,
+} from '@astryxdesign/core/theme/tokens.stylex'
 import { TopNav, TopNavHeading } from '@astryxdesign/core/TopNav'
 import { VisuallyHidden } from '@astryxdesign/core/VisuallyHidden'
 
@@ -51,29 +63,125 @@ import { settingsAtom } from './state/index.ts'
 const themeToggleLabel = (theme: Theme): string =>
   theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
 
-/** 카드 모서리 버튼과 묻는 자리 버튼의 겉모습. */
-const cornerButtonClassName = 'text-xs'
+/**
+ * 책장 화면의 모양.
+ *
+ * 크기와 색은 모두 Astryx 토큰에서 온다. 숫자로 박은 것은 격자 칸의 최소 너비와 표지 비율뿐인데,
+ * 둘은 테마가 아니라 책의 모양에서 나온 값이다.
+ */
+const styles = stylex.create({
+  screen: {
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+  },
+  notice: {
+    paddingInline: spacingVars['--spacing-6'],
+    paddingTop: spacingVars['--spacing-4'],
+    fontSize: textSizeVars['--font-size-base'],
+    color: colorVars['--color-text-secondary'],
+  },
+  noticeFailed: {
+    color: colorVars['--color-text-red'],
+  },
+  dropZone: {
+    display: 'flex',
+    flex: '1',
+    flexDirection: 'column',
+    overflowY: 'auto',
+    margin: spacingVars['--spacing-4'],
+    padding: spacingVars['--spacing-4'],
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: 'transparent',
+    borderRadius: radiusVars['--radius-container'],
+    transitionProperty: 'border-color, background-color',
+    transitionDuration: durationVars['--duration-fast'],
+    transitionTimingFunction: easeVars['--ease-standard'],
+  },
+  dropZoneOver: {
+    borderColor: colorVars['--color-accent'],
+    backgroundColor: `color-mix(in srgb, ${colorVars['--color-accent']} 5%, transparent)`,
+  },
+  placeholder: {
+    margin: 'auto',
+  },
+  grid: {
+    display: 'grid',
+    // 칸은 표지가 읽힐 만큼은 넓어야 하고, 남는 폭은 칸들이 고르게 나눠 가진다.
+    gridTemplateColumns: 'repeat(auto-fill, minmax(9.5rem, 1fr))',
+    alignContent: 'start',
+    gap: spacingVars['--spacing-5'],
+    margin: 0,
+    padding: 0,
+    listStyle: 'none',
+  },
+  card: {
+    position: 'relative',
+  },
+  cardLink: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacingVars['--spacing-2'],
+    borderRadius: radiusVars['--radius-element'],
+    color: 'inherit',
+    textDecoration: 'none',
+    transform: {
+      default: null,
+      '@media (hover: hover)': { ':hover': 'translateY(-2px)' },
+    },
+    transitionProperty: 'transform',
+    transitionDuration: durationVars['--duration-fast'],
+    transitionTimingFunction: easeVars['--ease-standard'],
+    outlineStyle: { default: 'none', ':focus-visible': 'solid' },
+    outlineWidth: 2,
+    outlineOffset: 2,
+    outlineColor: colorVars['--color-accent'],
+  },
+  cover: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    aspectRatio: '2 / 3',
+    objectFit: 'cover',
+    borderRadius: radiusVars['--radius-element'],
+    backgroundColor: colorVars['--color-background-gray'],
+    fontSize: textSizeVars['--font-size-3xl'],
+  },
+  title: {
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+    fontSize: textSizeVars['--font-size-base'],
+    fontWeight: fontWeightVars['--font-weight-medium'],
+  },
+  bin: {
+    position: 'absolute',
+    top: spacingVars['--spacing-2'],
+    right: spacingVars['--spacing-2'],
+    // 평소에는 숨었다가 카드에 손이 오거나 포커스가 카드 안에 들어오면 선다(`S-131`).
+    opacity: {
+      default: 0,
+      '@media (hover: hover)': { [stylex.when.ancestor(':hover')]: 1 },
+      [stylex.when.ancestor(':focus-within')]: 1,
+    },
+    transitionProperty: 'opacity',
+    transitionDuration: durationVars['--duration-fast'],
+  },
+})
 
 const Cover = ({ bookId }: Readonly<{ bookId: string }>) => {
   const maybeUrl = Option.flatten(AsyncResult.value(useAtomValue(coverUrlAtom(bookId))))
 
   return Option.match(maybeUrl, {
     onNone: () => (
-      <div
-        aria-hidden={true}
-        className="flex aspect-2/3 items-center justify-center rounded-lg bg-surface-2 text-3xl"
-      >
+      <div aria-hidden={true} {...stylex.props(styles.cover)}>
         📖
       </div>
     ),
-    onSome: (url) => (
-      <img
-        alt=""
-        src={url}
-        loading="lazy"
-        className="aspect-2/3 w-full rounded-lg bg-surface-2 object-cover"
-      />
-    ),
+    onSome: (url) => <img alt="" src={url} loading="lazy" {...stylex.props(styles.cover)} />,
   })
 }
 
@@ -121,27 +229,29 @@ const ConfirmDelete = ({
  * 형제로 둔다.
  */
 const Card = ({ book, onAsk }: Readonly<{ book: ShelfBook; onAsk: () => void }>) => (
-  <li className="group relative">
+  // 카드가 🗑의 조상 표지다. 🗑은 카드에 손이 오거나 포커스가 들어올 때 선다.
+  <li {...stylex.props(stylex.defaultMarker(), styles.card)}>
     <Link
       to="/book/$id"
       params={{ id: book.id }}
       aria-label={book.title}
-      className="flex flex-col gap-2 rounded-lg transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      {...stylex.props(styles.cardLink)}
     >
       <Cover bookId={book.id} />
-      <span className="truncate text-sm font-medium" title={book.title}>
+      <span title={book.title} {...stylex.props(styles.title)}>
         {book.title}
       </span>
-      <span className="text-xs text-muted">{book.countLabel}</span>
+      <Text size="sm" color="secondary">
+        {book.countLabel}
+      </Text>
     </Link>
-    <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+    <div {...stylex.props(styles.bin)}>
       <Button
         label={`Remove ${book.title} from shelf…`}
         icon={<span aria-hidden={true}>🗑</span>}
         isIconOnly={true}
         variant="ghost"
         size="sm"
-        className={cornerButtonClassName}
         onClick={onAsk}
       />
     </div>
@@ -149,20 +259,17 @@ const Card = ({ book, onAsk }: Readonly<{ book: ShelfBook; onAsk: () => void }>)
 )
 
 const Empty = () => (
-  <div className="m-auto max-w-md text-center">
-    <p className="text-lg font-medium">Your shelf is empty</p>
-    <p className="mt-2 text-sm text-muted">
-      Open <strong className="text-ink">.cbz / .zip</strong> archives, image files, or a folder — or
-      drop them here.
-    </p>
-    <p className="mt-4 text-xs text-muted">
-      Files stay in your browser, and the shelf survives a reload.
-    </p>
-  </div>
+  <EmptyState
+    title="Your shelf is empty"
+    description="Open .cbz / .zip archives, image files, or a folder — or drop them here. Files stay in your browser, and the shelf survives a reload."
+    xstyle={styles.placeholder}
+  />
 )
 
 const Placeholder = ({ text }: Readonly<{ text: string }>) => (
-  <p className="m-auto text-sm text-muted">{text}</p>
+  <div {...stylex.props(styles.placeholder)}>
+    <Text color="secondary">{text}</Text>
+  </div>
 )
 
 /** 책장을 그린다. 헤더, 상태 줄, 그리고 임포트를 받는 드롭 존 안의 책 격자. */
@@ -230,7 +337,7 @@ export const ShelfScreen = () => {
   const maybeError = AsyncResult.error(shelf)
 
   return (
-    <div className="relative flex h-full flex-col">
+    <div {...stylex.props(styles.screen)}>
       {/*
         화면의 제목은 보이지 않게 둔다. `TopNavHeading`은 제목을 `div` 안의 글자로만 그려
         `h1`로 감쌀 수 없는데, 책장에 제목 수준의 헤딩이 없으면 보조기기로 화면을 훑는 길이
@@ -303,7 +410,7 @@ export const ShelfScreen = () => {
       <p
         role="status"
         aria-live="polite"
-        className={`px-6 pt-4 text-sm ${notice?.tone === 'failed' ? 'text-danger' : 'text-muted'}`}
+        {...stylex.props(styles.notice, notice?.tone === 'failed' && styles.noticeFailed)}
       >
         {notice === null
           ? ''
@@ -330,7 +437,7 @@ export const ShelfScreen = () => {
         }}
         onDragOver={(event) => event.preventDefault()}
         onDrop={onDrop}
-        className="m-4 flex flex-1 flex-col overflow-y-auto rounded-xl border-2 border-dashed border-transparent p-4 transition-colors data-drag-over:border-accent data-drag-over:bg-accent/5"
+        {...stylex.props(styles.dropZone, isDragOver && styles.dropZoneOver)}
       >
         {Option.match(maybeBooks, {
           onNone: () =>
@@ -342,7 +449,7 @@ export const ShelfScreen = () => {
             books.length === 0 ? (
               <Empty />
             ) : (
-              <ul className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] content-start gap-5">
+              <ul {...stylex.props(styles.grid)}>
                 {books.map((book) => (
                   <Card key={book.id} book={book} onAsk={() => setPendingDelete(book)} />
                 ))}

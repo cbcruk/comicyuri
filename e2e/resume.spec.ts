@@ -27,7 +27,7 @@ const readThenChoose = async (
   await expect(counter(page)).toHaveText('3 / 6')
 
   await openSettings(page)
-  await page.getByRole('button', { name: choice, exact: true }).click()
+  await page.getByRole('radio', { name: choice, exact: true }).click()
   await page.getByRole('button', { name: 'Close' }).click()
   await use(page, 'shelf')
 
@@ -93,7 +93,7 @@ test('R-2B5 · 처음부터 보기는 읽던 자리를 무시할 뿐 지우지 �
 
   // 다시 이어 읽기로 바꾸면 3쪽이 그대로 남아 있다.
   await openSettings(page)
-  await page.getByRole('button', { name: 'Go there', exact: true }).click()
+  await page.getByRole('radio', { name: 'Go there', exact: true }).click()
   await page.getByRole('button', { name: 'Close' }).click()
   await use(page, 'shelf')
 

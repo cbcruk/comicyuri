@@ -13,9 +13,17 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Atom, AsyncResult } from 'effect/unstable/reactivity'
 import { useAtomValue } from '@effect/atom-react'
+import * as stylex from '@stylexjs/stylex'
 import { Button } from '@astryxdesign/core/Button'
-import clsx from 'clsx'
 import { useState } from 'react'
+
+import {
+  colorVars,
+  durationVars,
+  radiusVars,
+  spacingVars,
+  textSizeVars,
+} from '@astryxdesign/core/theme/tokens.stylex'
 
 import { pageAtoms } from '../../atoms/browser.ts'
 import {
@@ -25,6 +33,113 @@ import {
   THUMB_RATIO,
 } from '../../reader/constant.ts'
 import { cellWidthFor, perRowFor, rowHeightFor, rowsFor, shownPages } from '../../reader/thumbs.ts'
+
+/** 격자 패널의 모양. */
+const styles = stylex.create({
+  panel: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: `color-mix(in srgb, ${colorVars['--color-background-body']} 95%, transparent)`,
+    backdropFilter: 'blur(4px)',
+  },
+  topBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacingVars['--spacing-2'],
+    paddingInline: spacingVars['--spacing-4'],
+    paddingBlock: spacingVars['--spacing-2'],
+    borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
+    borderBottomColor: colorVars['--color-border'],
+  },
+  title: {
+    marginInlineEnd: 'auto',
+    fontSize: textSizeVars['--font-size-base'],
+    color: colorVars['--color-text-secondary'],
+  },
+  empty: {
+    margin: 0,
+    padding: spacingVars['--spacing-6'],
+    textAlign: 'center',
+    fontSize: textSizeVars['--font-size-base'],
+    color: colorVars['--color-text-secondary'],
+  },
+  scroller: {
+    flex: '1',
+    overflowY: 'auto',
+  },
+  track: {
+    position: 'relative',
+    width: '100%',
+  },
+  // 칸이 남는 자리를 고르게 나눠 가져서 행이 폭을 남김없이 쓴다. 그래서 마지막 줄의 남은 칸도
+  // 위 줄의 열을 그대로 따라 왼쪽부터 찬다.
+  row: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    display: 'flex',
+    justifyContent: 'flex-start',
+    gap: spacingVars['--spacing-3'],
+    width: '100%',
+    paddingInline: spacingVars['--spacing-1'],
+  },
+  cell: {
+    position: 'relative',
+    display: 'flex',
+    flexShrink: 0,
+  },
+  thumb: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: spacingVars['--spacing-1'],
+    width: '100%',
+    padding: spacingVars['--spacing-1'],
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: {
+      default: 'transparent',
+      '@media (hover: hover)': { ':hover': colorVars['--color-border'] },
+    },
+    borderRadius: radiusVars['--radius-element'],
+    backgroundColor: 'transparent',
+    color: colorVars['--color-text-secondary'],
+    fontSize: textSizeVars['--font-size-sm'],
+    cursor: 'pointer',
+    transitionProperty: 'border-color, color',
+    transitionDuration: durationVars['--duration-fast'],
+    outlineStyle: { default: 'none', ':focus-visible': 'solid' },
+    outlineWidth: 2,
+    outlineOffset: 2,
+    outlineColor: colorVars['--color-accent'],
+  },
+  // 북마크된 칸은 강조색 테두리를 두른다(`R-275`). 손이 와도 그 테두리는 그대로다.
+  bookmarked: {
+    borderColor: colorVars['--color-accent'],
+    color: colorVars['--color-accent'],
+  },
+  image: {
+    flex: '1',
+    minHeight: 0,
+    objectFit: 'contain',
+    borderRadius: radiusVars['--radius-inner'],
+  },
+  placeholder: {
+    flex: '1',
+    width: '100%',
+    borderRadius: radiusVars['--radius-inner'],
+    backgroundColor: colorVars['--color-background-gray'],
+  },
+  remove: {
+    position: 'absolute',
+    top: spacingVars['--spacing-1'],
+    right: spacingVars['--spacing-1'],
+  },
+})
 
 /**
  * 격자가 놓인 자리의 너비(픽셀). 열 때 한 번 재고, 그 자리가 넓어지거나 좁아지면
@@ -97,35 +212,36 @@ const Thumb = ({
   const url = useAtomValue(pageAtoms.pageUrl(bookId, page))
 
   return (
-    <div className="relative flex shrink-0" style={{ width: `${cellWidth}px` }}>
+    <div {...stylex.props(styles.cell)} style={{ width: `${cellWidth}px` }}>
+      {/*
+        칸 전체가 누르는 자리라 Astryx `Button`이 아니라 네이티브 버튼에 모양만 입힌다. `Button`은
+        제 안쪽 여백과 높이를 가져서, 이미지와 번호를 담는 칸의 크기를 폭에서 정할 수 없다.
+      */}
       <button
         type="button"
         aria-label={`Go to page ${page + 1}`}
         onClick={() => onSelect(page)}
+        {...stylex.props(styles.thumb, isBookmarked && styles.bookmarked)}
         style={{ height: `${Math.round(cellWidth * THUMB_RATIO)}px` }}
-        className={clsx(
-          'flex w-full cursor-pointer flex-col items-center gap-1 rounded-lg border p-1 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
-          isBookmarked
-            ? 'border-accent text-accent'
-            : 'border-transparent text-muted hover:border-edge',
-        )}
       >
         {AsyncResult.isSuccess(url) ? (
-          <img className="min-h-0 flex-1 rounded object-contain" src={url.value} alt="" />
+          <img {...stylex.props(styles.image)} src={url.value} alt="" />
         ) : (
-          <div className="w-full flex-1 rounded bg-surface-2" />
+          <div {...stylex.props(styles.placeholder)} />
         )}
         <span>{page + 1}</span>
       </button>
       {canRemove ? (
-        <button
-          type="button"
-          aria-label={`Remove the bookmark on page ${page + 1}`}
-          onClick={() => onRemoveBookmark(page)}
-          className="absolute top-1 right-1 cursor-pointer rounded-md bg-bg/80 px-1.5 py-0.5 text-xs text-muted transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
-        >
-          ✕
-        </button>
+        <div {...stylex.props(styles.remove)}>
+          <Button
+            label={`Remove the bookmark on page ${page + 1}`}
+            icon={<span aria-hidden={true}>✕</span>}
+            isIconOnly={true}
+            variant="secondary"
+            size="sm"
+            onClick={() => onRemoveBookmark(page)}
+          />
+        </div>
       ) : null}
     </div>
   )
@@ -184,13 +300,9 @@ export const ThumbsPanel = ({
   const isEmpty = showsBookmarksOnly && rows.length === 0
 
   return (
-    <div
-      role="dialog"
-      aria-label={title}
-      className="absolute inset-0 z-10 flex flex-col bg-bg/95 backdrop-blur-sm"
-    >
-      <div className="flex items-center gap-2 border-b border-edge px-4 py-2">
-        <span className="mr-auto text-sm text-muted">{title}</span>
+    <div role="dialog" aria-label={title} {...stylex.props(styles.panel)}>
+      <div {...stylex.props(styles.topBar)}>
+        <span {...stylex.props(styles.title)}>{title}</span>
         {/*
           툴바의 "Show every page"와 이름이 겹치지 않아야 한다. 격자가 열려 있는
           동안에는 둘 다 화면에 있다.
@@ -206,14 +318,11 @@ export const ThumbsPanel = ({
         <Button label="Close" variant="secondary" size="sm" onClick={onClose} />
       </div>
       {isEmpty ? (
-        <p className="p-6 text-center text-sm text-muted">Nothing is bookmarked in this book yet</p>
+        <p {...stylex.props(styles.empty)}>Nothing is bookmarked in this book yet</p>
       ) : null}
-      <div ref={setScrollElement} id={THUMBS_ID} className="flex-1 overflow-y-auto">
-        <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
+      <div ref={setScrollElement} id={THUMBS_ID} {...stylex.props(styles.scroller)}>
+        <div {...stylex.props(styles.track)} style={{ height: `${virtualizer.getTotalSize()}px` }}>
           {virtualizer.getVirtualItems().map((row) => (
-            // 칸이 남는 자리를 고르게 나눠 가져서 행이 폭을 남김없이 쓴다. 그래서
-            // 마지막 줄의 남은 칸도 위 줄의 열을 그대로 따라 왼쪽부터 찬다.
-            //
             // 행의 높이는 리스트가 잡아 둔 값이 아니라 폭에서 나온 값으로 그리고, 리스트는
             // 그것을 `measureElement`로 도로 잰다. 폭이 바뀌면 그려진 높이가 먼저 바뀌고
             // 리스트가 그것을 알아차리므로, 잡아 둔 자리를 손으로 다시 셈하게 할 일이 없다.
@@ -221,7 +330,8 @@ export const ThumbsPanel = ({
               key={row.key}
               ref={virtualizer.measureElement}
               data-index={row.index}
-              className="absolute top-0 left-0 flex w-full justify-start gap-3 px-1"
+              data-thumb-row=""
+              {...stylex.props(styles.row)}
               style={{ height: `${rowHeight}px`, transform: `translateY(${row.start}px)` }}
             >
               {(rows[row.index] ?? []).map((page) => (

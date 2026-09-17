@@ -158,6 +158,35 @@ const elementById = (id: string): HTMLElement => {
  */
 const chromeRows = (): number => document.querySelectorAll('header, footer').length
 
+/** 페이지 상자의 `flex-wrap`. 뒤로 넘겨 들어섰으면 `wrap-reverse`다(`R-247`). */
+const pageWrap = (): string => getComputedStyle(elementById(PAGE_ID)).flexWrap
+
+/**
+ * 페이지 상자가 서 있는지 누웠는지. 상자의 높이가 스테이지 안쪽의 높이와 같으면 서 있고, 안쪽의
+ * 너비와 같으면 누웠다(`R-228`).
+ *
+ * 너비로는 가리지 않는다. 눕힌 상자는 화면의 높이만큼 넓어지려 하지만 스테이지의 flex 아이템이라
+ * 안쪽 너비에 맞춰 줄어든다. 높이는 줄지 않는다. 그리고 상자의 크기는 transform의 영향을 받지
+ * 않는 레이아웃 크기로 잰다 — 세운 각도는 transform이다.
+ *
+ * 시험의 자리는 세로가 길어서 안쪽의 너비와 높이가 다르다. 같다면 이 판정은 무엇도 가리지 못한다.
+ */
+const pageBoxStands = (): 'upright' | 'on its side' | 'neither' => {
+  const stage = elementById(STAGE_ID)
+  const style = getComputedStyle(stage)
+  const innerWidth =
+    stage.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+  const innerHeight =
+    stage.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
+  const height = elementById(PAGE_ID).offsetHeight
+
+  if (Math.abs(innerWidth - innerHeight) <= 1)
+    throw new Error('스테이지가 정사각형이라 가를 수 없다')
+  if (Math.abs(height - innerHeight) <= 1) return 'upright'
+  if (Math.abs(height - innerWidth) <= 1) return 'on its side'
+  return 'neither'
+}
+
 /** 페이지 상자에 걸린 transform. 확대·이동·세운 각도가 한 줄에 들어 있다. */
 const pageTransform = (): string => elementById(PAGE_ID).style.transform
 
@@ -279,15 +308,15 @@ test('it keeps what it drew with, not what the next page will use', async () => 
 
   gates[1]?.open()
   await showsPage(screen, 2)
-  expect(elementById(PAGE_ID).className).not.toContain('flex-wrap-reverse')
+  expect(pageWrap()).not.toBe('wrap-reverse')
 
   await userEvent.keyboard(BACK)
   await expect.element(screen.getByAltText('Page 2')).toBeVisible()
-  expect(elementById(PAGE_ID).className).not.toContain('flex-wrap-reverse')
+  expect(pageWrap()).not.toBe('wrap-reverse')
 
   gates[0]?.open()
   await showsPage(screen, 1)
-  await expect.poll(() => elementById(PAGE_ID).className).toContain('flex-wrap-reverse')
+  await expect.poll(pageWrap).toBe('wrap-reverse')
 })
 
 test('a scroll before it arrives does not move the page on its way', async () => {
@@ -428,11 +457,11 @@ test('rotating stands the page in a box that swapped its sides', async () => {
 
   gates[0]?.open()
   await showsPage(screen, 1)
-  expect(elementById(PAGE_ID).className).toContain('h-full w-full')
+  expect(pageBoxStands()).toBe('upright')
 
   await userEvent.keyboard('r')
   await expect.poll(pageTransform).toContain('rotate(90deg)')
-  expect(elementById(PAGE_ID).className).toContain('h-[100cqw] w-[100cqh]')
+  await expect.poll(pageBoxStands).toBe('on its side')
 })
 
 test('the offer names the page and takes you there', async () => {

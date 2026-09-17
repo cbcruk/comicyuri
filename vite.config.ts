@@ -4,8 +4,6 @@ import { join } from 'node:path'
 import { defineConfig } from 'vite-plus'
 import type { Plugin } from 'vite-plus'
 
-import tailwindcss from '@tailwindcss/vite'
-
 import { CSS_TARGET, astryxFromSource, stylexPlugins } from './vite.stylex.ts'
 
 // `repos/`에는 다른 프로젝트를 참고용으로 받아 둘 때 그 체크아웃이 들어간다.
@@ -29,7 +27,7 @@ const pagesFallback = (): Plugin => ({
 
 export default defineConfig(({ mode }) => ({
   base: mode === GITHUB_PAGES ? '/comicyuri/' : '/',
-  plugins: [...stylexPlugins(), tailwindcss(), pagesFallback()],
+  plugins: [...stylexPlugins(), pagesFallback()],
   resolve: astryxFromSource.resolve,
   build: { cssTarget: CSS_TARGET },
   optimizeDeps: {

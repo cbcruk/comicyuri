@@ -21,9 +21,14 @@
  * Foldkit과 이 플러그인이 저장소에서 사라지면 이 줄도 함께 사라진다(`MIGRATION.md`).
  */
 
+import * as stylex from '@stylexjs/stylex'
 import { Array, Option } from 'effect'
 import { useAtomMount, useAtomSet, useAtomValue } from '@effect/atom-react'
 import { useState } from 'react'
+
+import { Button } from '@astryxdesign/core/Button'
+import { Text } from '@astryxdesign/core/Text'
+import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex'
 
 import { pageAtoms } from '../../atoms/browser.ts'
 import type { PageAtoms } from '../../atoms/pages.ts'
@@ -40,20 +45,45 @@ import type { ReaderPersistence } from './persistence.ts'
 import { makeReaderSession } from './session.ts'
 import { ReaderStage } from './stage.tsx'
 
-/**
- * 리더가 직접 세우는 버튼의 겉모습. 앱의 다른 버튼과 같은 색이어야 하므로 Astryx의
- * `Button`이 아니라 `styles.css`의 토큰을 쓴다.
- */
-const controlClassName =
-  'cursor-pointer rounded-lg border border-edge bg-surface-2 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-accent/60 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+/** 리더 화면의 틀과, 크롬 바깥에 서는 두 자리의 모양. */
+const styles = stylex.create({
+  reader: {
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+  },
+  opening: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacingVars['--spacing-3'],
+    height: '100%',
+    padding: spacingVars['--spacing-6'],
+  },
+  resume: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacingVars['--spacing-2'],
+    paddingInline: spacingVars['--spacing-4'],
+    paddingBlock: spacingVars['--spacing-2'],
+    borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
+    borderBottomColor: colorVars['--color-border'],
+    backgroundColor: colorVars['--color-background-gray'],
+  },
+  resumeText: {
+    marginInlineEnd: 'auto',
+  },
+})
 
 /** 책을 여는 동안과, 끝내 열지 못했을 때 서는 화면. */
 const OpeningScreen = ({ text, onExit }: Readonly<{ text: string; onExit: () => void }>) => (
-  <main className="flex h-full flex-col items-center justify-center gap-3 p-6">
-    <p className="text-sm text-muted">{text}</p>
-    <button type="button" className={controlClassName} onClick={onExit}>
-      ← Shelf
-    </button>
+  <main {...stylex.props(styles.opening)}>
+    <Text color="secondary">{text}</Text>
+    <Button label="← Shelf" variant="secondary" onClick={onExit} />
   </main>
 )
 
@@ -68,22 +98,15 @@ const ResumeRow = ({
   onResume,
   onDismiss,
 }: Readonly<{ page: number; onResume: () => void; onDismiss: () => void }>) => (
-  <div
-    role="status"
-    className="flex flex-wrap items-center gap-2 border-b border-edge bg-surface-2 px-4 py-2 text-sm"
-  >
-    <span className="mr-auto text-muted">{`You left this book on page ${page + 1}`}</span>
-    <button type="button" className={controlClassName} onClick={onResume}>
-      Go there
-    </button>
-    <button
-      type="button"
-      aria-label="Stay on the first page"
-      className={controlClassName}
-      onClick={onDismiss}
-    >
+  <div role="status" {...stylex.props(styles.resume)}>
+    <span {...stylex.props(styles.resumeText)}>
+      <Text color="secondary">{`You left this book on page ${page + 1}`}</Text>
+    </span>
+    <Button label="Go there" variant="secondary" size="sm" onClick={onResume} />
+    {/* 보이는 글자는 짧게, 이름은 무엇을 하는지 끝까지 말한다. */}
+    <Button label="Stay on the first page" variant="secondary" size="sm" onClick={onDismiss}>
       Stay
-    </button>
+    </Button>
   </div>
 )
 
@@ -189,7 +212,7 @@ export const ReaderView = ({
       }
 
       return (
-        <main className="relative flex h-full flex-col" aria-label={drawn.title}>
+        <main aria-label={drawn.title} {...stylex.props(styles.reader)}>
           <ReaderChrome state={state} actions={actions}>
             {Option.match(model.maybeResumePage, {
               onNone: () => null,

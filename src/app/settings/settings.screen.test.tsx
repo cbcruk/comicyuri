@@ -4,7 +4,7 @@
  * Foldkit의 reader/scene 테스트가 하던 일을 이것이 이어받는다. 보는 것은 두
  * 가지다. 툴바에 버튼이 없던 설정들이 저마다 같은 이름으로 서 있는 것(`R-2B1`,
  * `R-2B6`)과, 누른 것이 부르는 쪽에 그대로 전해지고 고른 결과가 켜짐·
- * `aria-pressed`·`aria-disabled`로 드러나는 것이다 — e2e가 그 이름과 속성으로
+ * `aria-checked`·`aria-disabled`로 드러나는 것이다 — e2e가 그 이름과 속성으로
  * 패널을 몬다.
  */
 
@@ -125,15 +125,20 @@ test('the settings that have no toolbar button live here', async () => {
     'Pair fewer pages',
     'Spend less time on a page',
     'Spend more time on a page',
-    'Next book',
-    'Back to start',
-    'Stay put',
-    'Go there',
-    'Ask',
-    'Start over',
     'Close',
   ]) {
     await expect.element(screen.getByRole('button', { name, exact: true })).toBeVisible()
+  }
+
+  // 여럿 중 하나를 고르는 것은 라디오 묶음이다. 묶음의 이름이 무엇을 고르는지 말한다.
+  for (const [group, names] of [
+    ['At the end of a book', ['Next book', 'Back to start', 'Stay put']],
+    ['Opening a book you were part way through', ['Go there', 'Ask', 'Start over']],
+  ] as const) {
+    const radiogroup = screen.getByRole('radiogroup', { name: group })
+    for (const name of names) {
+      await expect.element(radiogroup.getByRole('radio', { name, exact: true })).toBeVisible()
+    }
   }
 
   // 기본값이 그대로 보인다. 문턱은 두 자리, 슬라이드쇼는 초다.
@@ -176,13 +181,16 @@ test('nudging the threshold moves it one step, not to a long decimal', async () 
 
 test('the threshold stops at the ends of its range', async () => {
   const { screen } = await renderPanel({ singleThreshold: 0.5 })
+  const pairMore = screen.getByRole('button', { name: 'Pair more pages' })
 
-  await expect
-    .element(screen.getByRole('button', { name: 'Pair more pages' }))
-    .toHaveAttribute('aria-disabled', 'true')
+  await expect.element(pairMore).toHaveAttribute('aria-disabled', 'true')
+  // 막혔어도 포커스는 받는다. 키보드로 읽는 사람이 끝에 닿았다는 것을 그 자리에서 듣는다.
+  const element = pairMore.element()
+  if (element instanceof HTMLElement) element.focus()
+  await expect.element(pairMore).toHaveFocus()
   await expect
     .element(screen.getByRole('button', { name: 'Pair fewer pages' }))
-    .toHaveAttribute('aria-disabled', 'false')
+    .not.toHaveAttribute('aria-disabled', 'true')
 })
 
 test('the slideshow delay stops at the ends too', async () => {
@@ -197,38 +205,38 @@ test('the slideshow delay stops at the ends too', async () => {
   await expect.element(screen.getByText('29s')).toBeVisible()
   await expect
     .element(screen.getByRole('button', { name: 'Spend more time on a page' }))
-    .toHaveAttribute('aria-disabled', 'false')
+    .not.toHaveAttribute('aria-disabled', 'true')
 })
 
 test('picking what happens at the end of a book reports it', async () => {
   const { handlers, screen } = await renderPanel()
-  const stayPut = screen.getByRole('button', { name: 'Stay put', exact: true })
+  const stayPut = screen.getByRole('radio', { name: 'Stay put', exact: true })
 
   await expect
-    .element(screen.getByRole('button', { name: 'Next book', exact: true }))
-    .toHaveAttribute('aria-pressed', 'true')
+    .element(screen.getByRole('radio', { name: 'Next book', exact: true }))
+    .toHaveAttribute('aria-checked', 'true')
 
   await stayPut.click()
 
   expect(handlers.onSelectAtBookEnd).toHaveBeenCalledWith('stop')
-  await expect.element(stayPut).toHaveAttribute('aria-pressed', 'true')
+  await expect.element(stayPut).toHaveAttribute('aria-checked', 'true')
   await expect
-    .element(screen.getByRole('button', { name: 'Next book', exact: true }))
-    .toHaveAttribute('aria-pressed', 'false')
+    .element(screen.getByRole('radio', { name: 'Next book', exact: true }))
+    .toHaveAttribute('aria-checked', 'false')
 })
 
 test('choosing how a part-read book opens reports it', async () => {
   const { handlers, screen } = await renderPanel()
-  const startOver = screen.getByRole('button', { name: 'Start over', exact: true })
+  const startOver = screen.getByRole('radio', { name: 'Start over', exact: true })
 
   await expect
-    .element(screen.getByRole('button', { name: 'Go there', exact: true }))
-    .toHaveAttribute('aria-pressed', 'true')
+    .element(screen.getByRole('radio', { name: 'Go there', exact: true }))
+    .toHaveAttribute('aria-checked', 'true')
 
   await startOver.click()
 
   expect(handlers.onSelectResume).toHaveBeenCalledWith('restart')
-  await expect.element(startOver).toHaveAttribute('aria-pressed', 'true')
+  await expect.element(startOver).toHaveAttribute('aria-checked', 'true')
 })
 
 test('the close button hands the panel back to whoever opened it', async () => {

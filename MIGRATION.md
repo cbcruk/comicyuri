@@ -17,7 +17,7 @@
 | Foldkit                   | 옮긴 뒤                                                          |
 | ------------------------- | ---------------------------------------------------------------- |
 | `Runtime.makeApplication` | `src/app/main.tsx` (React root + `RegistryProvider`)             |
-| `view` (`h.div` 빌더)     | React 컴포넌트 (`.tsx`), 스타일은 Tailwind 클래스 그대로         |
+| `view` (`h.div` 빌더)     | React 컴포넌트 (`.tsx`), 스타일은 StyleX와 Astryx 컴포넌트       |
 | `@foldkit/ui` 컴포넌트    | `@astryxdesign/core` (Slider·Switch·Dialog·FileInput·Toolbar 등) |
 | `VirtualList`             | `@tanstack/react-virtual`                                        |
 | `Route` / `foldkit/url`   | `@tanstack/react-router` (`src/app/router.tsx`)                  |

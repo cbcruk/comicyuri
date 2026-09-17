@@ -6,12 +6,68 @@
  * 스테이지가 그대로 작기 때문이다.
  */
 
+import * as stylex from '@stylexjs/stylex'
 import type { ReactNode } from 'react'
 import { useRef } from 'react'
+
+import { colorVars, spacingVars, textSizeVars } from '@astryxdesign/core/theme/tokens.stylex'
 
 import { ReaderFooter } from './footer.tsx'
 import { FIT_LABEL, ReaderMenubar } from './menubar.tsx'
 import type { ChromeProps, ChromeState } from './types.ts'
+
+/** 리더 머리의 모양. 크기와 색은 모두 Astryx 토큰에서 온다. */
+const styles = stylex.create({
+  header: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacingVars['--spacing-2'],
+    paddingInline: spacingVars['--spacing-4'],
+    paddingBlock: spacingVars['--spacing-2'],
+    borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
+    borderBottomColor: colorVars['--color-border'],
+  },
+  // 카운터가 DOM에서는 먼저, 눈에는 메뉴바 오른쪽에 선다. 그 이유는 `Counter`에 있다.
+  center: {
+    order: 2,
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacingVars['--spacing-3'],
+    minWidth: 0,
+    marginInline: 'auto',
+  },
+  menus: {
+    order: 1,
+  },
+  counterBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    minWidth: 0,
+  },
+  counter: {
+    fontSize: textSizeVars['--font-size-base'],
+    color: colorVars['--color-text-secondary'],
+  },
+  // 파일 이름과 지금 값은 카운터보다 한 겹 더 물러선다.
+  faint: {
+    fontSize: textSizeVars['--font-size-sm'],
+    color: colorVars['--color-text-secondary'],
+    opacity: 0.7,
+  },
+  fileNames: {
+    maxWidth: '28ch',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+  },
+  status: {
+    margin: 0,
+    whiteSpace: 'nowrap',
+  },
+})
 
 /**
  * 긴 파일 이름을 줄일 때 남길 글자 수. 한 장이면 넉넉하고, 두 장이면 둘이 나란히
@@ -44,10 +100,10 @@ const Counter = ({
   const names = fileNames.map((name) => clipStart(name, tail)).join(' · ')
 
   return (
-    <div className="flex min-w-0 flex-col items-center">
-      <span className="text-sm text-muted">{counter}</span>
+    <div {...stylex.props(styles.counterBox)}>
+      <span {...stylex.props(styles.counter)}>{counter}</span>
       {names === '' ? null : (
-        <span className="max-w-[28ch] truncate text-xs text-muted/70" title={fileNames.join(' · ')}>
+        <span title={fileNames.join(' · ')} {...stylex.props(styles.faint, styles.fileNames)}>
           {names}
         </span>
       )}
@@ -83,7 +139,7 @@ const statusParts = (state: ChromeState): ReadonlyArray<string> => [
  * 그것들과 가려낼 길이 없다.
  */
 const ReaderStatus = ({ state }: Readonly<{ state: ChromeState }>) => (
-  <p role="status" aria-label="Reading state" className="text-xs whitespace-nowrap text-muted/70">
+  <p role="status" aria-label="Reading state" {...stylex.props(styles.faint, styles.status)}>
     {statusParts(state).join(' · ')}
   </p>
 )
@@ -94,12 +150,12 @@ export const ReaderHeader = ({
   actions,
   onFocusGoToPage,
 }: ChromeProps & Readonly<{ onFocusGoToPage?: () => void }>) => (
-  <header className="flex flex-wrap items-center gap-2 border-b border-edge px-4 py-2">
-    <div className="order-2 mx-auto flex min-w-0 items-center gap-3">
+  <header {...stylex.props(styles.header)}>
+    <div {...stylex.props(styles.center)}>
       <Counter counter={state.counter} fileNames={state.fileNames} />
       <ReaderStatus state={state} />
     </div>
-    <div className="order-1">
+    <div {...stylex.props(styles.menus)}>
       <ReaderMenubar state={state} actions={actions} onFocusGoToPage={onFocusGoToPage} />
     </div>
   </header>

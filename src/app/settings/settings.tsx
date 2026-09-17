@@ -10,10 +10,20 @@
  * 타입이라, 그것을 여기서 고르면 한쪽에서만 쓸 수 있는 패널이 된다.
  */
 
+import * as stylex from '@stylexjs/stylex'
 import type { ReactNode } from 'react'
 
+import { Button } from '@astryxdesign/core/Button'
 import { Dialog } from '@astryxdesign/core/Dialog'
+import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl'
 import { Switch } from '@astryxdesign/core/Switch'
+import {
+  colorVars,
+  fontWeightVars,
+  spacingVars,
+  textSizeVars,
+  typeScaleVars,
+} from '@astryxdesign/core/theme/tokens.stylex'
 
 import {
   SLIDE_MAX,
@@ -41,61 +51,116 @@ const RESUME_LABEL: Readonly<Record<Resume, string>> = {
 
 const RESUME_ORDER: ReadonlyArray<Resume> = ['continue', 'ask', 'restart']
 
-/**
- * 패널에 선 버튼 하나의 겉모습. Foldkit 쪽 `controlView`가 쓰던 토큰 그대로다.
- *
- * Astryx의 `Button`을 쓰지 않는 이유는 이 패널의 버튼이 앱의 다른 버튼과 같은
- * 색이어야 하기 때문이다. 그 색은 Astryx 토큰이 아니라 `styles.css`의 것이다.
- */
-const controlClassName =
-  'cursor-pointer rounded-lg border border-edge bg-surface-2 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-accent/60 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
-
-const settingRowClassName =
-  'flex flex-wrap items-center justify-between gap-3 border-b border-edge py-3'
+/** 설정 패널의 모양. 크기와 색은 모두 Astryx 토큰에서 온다. */
+const styles = stylex.create({
+  panel: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    backgroundColor: colorVars['--color-background-body'],
+    color: colorVars['--color-text-primary'],
+  },
+  topBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacingVars['--spacing-2'],
+    paddingInline: spacingVars['--spacing-4'],
+    paddingBlock: spacingVars['--spacing-2'],
+    borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
+    borderBottomColor: colorVars['--color-border'],
+  },
+  title: {
+    marginInlineEnd: 'auto',
+    fontSize: textSizeVars['--font-size-base'],
+    color: colorVars['--color-text-secondary'],
+  },
+  rows: {
+    flex: '1',
+    overflowY: 'auto',
+    paddingInline: spacingVars['--spacing-4'],
+  },
+  row: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacingVars['--spacing-3'],
+    paddingBlock: spacingVars['--spacing-3'],
+    borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
+    borderBottomColor: colorVars['--color-border'],
+  },
+  // 스위치 줄의 라벨(Astryx `FieldLabel`)과 같은 글자다. 따로 두면 줄마다 크기와 색이 갈린다.
+  rowLabel: {
+    fontSize: typeScaleVars['--text-label-size'],
+    lineHeight: typeScaleVars['--text-label-leading'],
+    fontWeight: fontWeightVars['--font-weight-medium'],
+    color: colorVars['--color-text-secondary'],
+  },
+  nudge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacingVars['--spacing-2'],
+  },
+  nudgeValue: {
+    minWidth: spacingVars['--spacing-12'],
+    textAlign: 'center',
+    fontSize: textSizeVars['--font-size-base'],
+    fontVariantNumeric: 'tabular-nums',
+    color: colorVars['--color-text-secondary'],
+  },
+})
 
 /** 설정 한 줄. 왼쪽에 무엇을 정하는지, 오른쪽에 그것을 정하는 것. */
 const SettingRow = ({ label, children }: Readonly<{ label: string; children: ReactNode }>) => (
-  <div className={settingRowClassName}>
-    <span className="text-sm text-ink">{label}</span>
+  <div {...stylex.props(styles.row)}>
+    <span {...stylex.props(styles.rowLabel)}>{label}</span>
     {children}
   </div>
 )
 
 /**
- * 여럿 중 하나를 고르는 줄. 고른 것이 `aria-pressed`로 드러나므로, 어느 것이
- * 켜져 있는지 보이지 않고도 읽힌다.
+ * 여럿 중 하나를 고르는 줄. Astryx `SegmentedControl`이라 `radiogroup` 안의 `radio`로 서고,
+ * 고른 것이 `aria-checked`로 드러난다.
+ *
+ * `SegmentedControl`은 고른 값을 문자열로 돌려준다. 받은 값을 선택지 목록에서 다시 찾아
+ * 넘기므로, 목록 밖의 값이 부르는 쪽으로 새어 나가지 않는다.
  */
 const ChoiceRow = <A extends string>({
+  label,
   options,
   chosen,
   labels,
   onSelect,
 }: Readonly<{
+  label: string
   options: ReadonlyArray<A>
   chosen: A
   labels: Readonly<Record<A, string>>
   onSelect: (option: A) => void
 }>) => (
-  <div className="flex flex-wrap gap-2">
-    {options.map((option) => (
-      <button
-        key={option}
-        type="button"
-        className={controlClassName}
-        aria-pressed={option === chosen}
-        onClick={() => onSelect(option)}
-      >
-        {labels[option]}
-      </button>
-    ))}
-  </div>
+  <SettingRow label={label}>
+    <SegmentedControl
+      label={label}
+      value={chosen}
+      onChange={(value) => {
+        const option = options.find((candidate) => candidate === value)
+        if (option !== undefined) onSelect(option)
+      }}
+    >
+      {options.map((option) => (
+        <SegmentedControlItem key={option} value={option} label={labels[option]} />
+      ))}
+    </SegmentedControl>
+  </SettingRow>
 )
 
 /** 숫자를 한 걸음 옮기는 버튼 하나가 필요한 것. */
 type NudgeEnd = Readonly<{
   /** 버튼의 접근 가능한 이름. 적히는 글자는 `−`와 `+`뿐이라 이름을 따로 준다. */
   label: string
-  /** 범위의 그쪽 끝에 닿았는지. `aria-disabled`가 된다. */
+  /** 범위의 그쪽 끝에 닿았는지. 버튼이 `aria-disabled`가 된다. */
   isBlocked: boolean
   onNudge: () => void
 }>
@@ -103,34 +168,40 @@ type NudgeEnd = Readonly<{
 /**
  * 숫자를 한 걸음씩 옮기는 줄. 범위의 끝에서는 그쪽 버튼이 막힌다(`R-2B2`).
  *
- * 막힌 버튼도 눌리기는 한다. 값을 끊는 것은 `nudgedThreshold`와
- * `nudgedSlideSeconds`의 일이라, 여기서 한 번 더 끊으면 범위가 두 곳에 적힌다.
+ * 막힌 버튼은 포커스를 잃지 않는다. Astryx `Button`은 툴팁이 있을 때만 막힘을 네이티브
+ * `disabled` 대신 `aria-disabled`로 싣고, 그래야 키보드로 읽는 사람이 끝에 닿았다는 것을 그
+ * 버튼에서 들을 수 있다. 그래서 두 버튼 모두 이름을 툴팁으로도 단다.
+ *
+ * 막힌 버튼을 눌러도 부르지 않는다. 값을 범위 안에서 끊는 것은 여전히 `nudgedThreshold`와
+ * `nudgedSlideSeconds`의 일이라, 여기서 부르든 말든 값은 끝을 넘지 않는다.
  */
 const NudgeRow = ({
   shown,
   down,
   up,
 }: Readonly<{ shown: string; down: NudgeEnd; up: NudgeEnd }>) => (
-  <div className="flex items-center gap-2">
-    <button
-      type="button"
-      className={controlClassName}
-      aria-label={down.label}
-      aria-disabled={down.isBlocked}
+  <div {...stylex.props(styles.nudge)}>
+    <Button
+      label={down.label}
+      icon={<span aria-hidden={true}>−</span>}
+      isIconOnly={true}
+      variant="secondary"
+      size="sm"
+      tooltip={down.label}
+      isDisabled={down.isBlocked}
       onClick={down.onNudge}
-    >
-      −
-    </button>
-    <span className="w-12 text-center text-sm tabular-nums text-muted">{shown}</span>
-    <button
-      type="button"
-      className={controlClassName}
-      aria-label={up.label}
-      aria-disabled={up.isBlocked}
+    />
+    <span {...stylex.props(styles.nudgeValue)}>{shown}</span>
+    <Button
+      label={up.label}
+      icon={<span aria-hidden={true}>+</span>}
+      isIconOnly={true}
+      variant="secondary"
+      size="sm"
+      tooltip={up.label}
+      isDisabled={up.isBlocked}
       onClick={up.onNudge}
-    >
-      +
-    </button>
+    />
   </div>
 )
 
@@ -147,7 +218,7 @@ const SwitchRow = ({
   onToggle,
 }: Readonly<{ label: string; isChecked: boolean; onToggle: (isChecked: boolean) => void }>) => {
   return (
-    <div className={settingRowClassName}>
+    <div {...stylex.props(styles.row)}>
       <Switch
         label={label}
         value={isChecked}
@@ -217,14 +288,12 @@ export const SettingsPanel = ({
     padding={0}
     aria-label={title}
   >
-    <div className="flex h-full flex-col bg-bg text-ink">
-      <div className="flex items-center gap-2 border-b border-edge px-4 py-2">
-        <span className="mr-auto text-sm text-muted">{title}</span>
-        <button type="button" className={controlClassName} onClick={onClose}>
-          Close
-        </button>
+    <div {...stylex.props(styles.panel)}>
+      <div {...stylex.props(styles.topBar)}>
+        <span {...stylex.props(styles.title)}>{title}</span>
+        <Button label="Close" variant="secondary" size="sm" onClick={onClose} />
       </div>
-      <div className="flex-1 overflow-y-auto px-4">
+      <div {...stylex.props(styles.rows)}>
         <SwitchRow
           label="Cover on its own"
           isChecked={settings.coverAlone}
@@ -275,22 +344,20 @@ export const SettingsPanel = ({
             }}
           />
         </SettingRow>
-        <SettingRow label="At the end of a book">
-          <ChoiceRow
-            options={AT_BOOK_END_ORDER}
-            chosen={settings.atBookEnd}
-            labels={AT_BOOK_END_LABEL}
-            onSelect={onSelectAtBookEnd}
-          />
-        </SettingRow>
-        <SettingRow label="Opening a book you were part way through">
-          <ChoiceRow
-            options={RESUME_ORDER}
-            chosen={settings.resume}
-            labels={RESUME_LABEL}
-            onSelect={onSelectResume}
-          />
-        </SettingRow>
+        <ChoiceRow
+          label="At the end of a book"
+          options={AT_BOOK_END_ORDER}
+          chosen={settings.atBookEnd}
+          labels={AT_BOOK_END_LABEL}
+          onSelect={onSelectAtBookEnd}
+        />
+        <ChoiceRow
+          label="Opening a book you were part way through"
+          options={RESUME_ORDER}
+          chosen={settings.resume}
+          labels={RESUME_LABEL}
+          onSelect={onSelectResume}
+        />
       </div>
     </div>
   </Dialog>

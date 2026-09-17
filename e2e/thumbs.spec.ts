@@ -23,7 +23,7 @@ const useEveryPage = async (page: Page): Promise<void> => {
 /** 지금 한 행에 서 있는 칸의 수와 좌우 여백. */
 const rowOf = (page: Page) =>
   page.evaluate(() => {
-    const row = document.querySelector('[role="dialog"] div.justify-start')
+    const row = document.querySelector('[role="dialog"] [data-thumb-row]')
     const cells = row ? Array.from(row.children) : []
     const boxes = cells.map((cell) => cell.getBoundingClientRect())
     const first = boxes[0]
@@ -65,9 +65,9 @@ test('R-276 · 칸이 넓어지면 행도 그만큼 높아진다', async ({ page
   await openGrid(page)
 
   const measured = await page.evaluate(() => {
-    const row = document.querySelector('[role="dialog"] div.justify-start')
+    const row = document.querySelector('[role="dialog"] [data-thumb-row]')
     const cell = row?.firstElementChild?.getBoundingClientRect()
-    const rows = Array.from(document.querySelectorAll('[role="dialog"] div.justify-start'))
+    const rows = Array.from(document.querySelectorAll('[role="dialog"] [data-thumb-row]'))
     const first = rows[0]?.getBoundingClientRect()
     const second = rows[1]?.getBoundingClientRect()
     return {

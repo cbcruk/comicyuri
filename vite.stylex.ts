@@ -40,9 +40,8 @@ export const CSS_TARGET = ['chrome123', 'firefox120', 'safari17.5']
 /**
  * CSS 레이어의 차례. 뒤에 오는 것이 이긴다.
  *
- * StyleX는 우선순위를 `priority1`~`priority9` 레이어로 나눠 싣는다. Astryx 토큰을 덮는 테마가
- * 그 위에 서고, 옮기는 동안 남아 있는 Tailwind 유틸리티가 맨 위에서 모두를 덮는다 — 지금까지
- * `className`으로 Astryx 컴포넌트를 덮어 온 것이 그대로 통하도록.
+ * 초기화가 맨 아래에 서고, StyleX는 우선순위를 `priority1`~`priority9` 레이어로 나눠 싣는다.
+ * Astryx 토큰을 덮는 테마가 그 위에 선다.
  *
  * 차례로 풀리지 않는 것이 하나 있다. StyleX는 `defineVars`가 만드는 토큰 기본값
  * (`:root, .x… { --토큰: 값 }`)을 어느 레이어에도 넣지 않고, 레이어 밖 규칙은 모든 레이어를
@@ -58,12 +57,8 @@ export const CSS_TARGET = ['chrome123', 'firefox120', 'safari17.5']
  */
 const LAYER_ORDER = [
   'reset',
-  'theme',
-  'base',
   ...Array.from({ length: 9 }, (_, at) => `priority${at + 1}`),
   'astryx-theme',
-  'components',
-  'utilities',
 ]
 
 /** 레이어 차례를 문서 머리 맨 앞에 선언한다. 어떤 스타일시트보다 먼저 와야 차례가 선다. */
