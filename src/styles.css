@@ -1,12 +1,15 @@
-/* 레이어 순서가 곧 우선순위다. Astryx의 컴포넌트 스타일(`astryx-base`) 위에 테마
-   토큰(`astryx-theme`)이 서고, 그 위를 Tailwind 유틸리티가 덮는다. 그래서 어느
-   컴포넌트든 `className`으로 덮어쓸 수 있다. */
-@layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
+/* 레이어 순서가 곧 우선순위다. StyleX가 우선순위대로 나눠 싣는 레이어(`priority1`~`9`,
+   Astryx 컴포넌트와 앱의 것이 함께 든다) 위에 테마 토큰(`astryx-theme`)이 서고, 그 위를
+   Tailwind 유틸리티가 덮는다. 그래서 옮기는 동안에도 어느 컴포넌트든 `className`으로
+   덮어쓸 수 있다.
+
+   앱에서는 `vite.stylex.ts`가 같은 차례를 문서 머리 맨 앞에 먼저 선언한다. 여기에도 두는
+   것은 HTML 문서를 거치지 않는 화면 테스트 때문이다. 둘은 같아야 한다. */
+@layer reset, theme, base, priority1, priority2, priority3, priority4, priority5, priority6, priority7, priority8, priority9, astryx-theme, components, utilities;
 
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/preflight.css' layer(base);
 @import '@astryxdesign/core/reset.css';
-@import '@astryxdesign/core/astryx.css';
 @import '@astryxdesign/theme-neutral/theme.css';
 @import '@astryxdesign/core/tailwind-theme.css';
 @import 'tailwindcss/utilities.css' layer(utilities);

@@ -11,7 +11,7 @@
 
 import { RegistryProvider } from '@effect/atom-react'
 import { Theme } from '@astryxdesign/core/theme'
-import { neutralTheme } from '@astryxdesign/theme-neutral/built'
+import { neutralTheme } from '@astryxdesign/theme-neutral'
 import type { ReactNode } from 'react'
 
 // 앱의 `Theme`는 색 테마 이름이고 Astryx의 `Theme`는 프로바이더 컴포넌트다. 이름이 겹쳐
