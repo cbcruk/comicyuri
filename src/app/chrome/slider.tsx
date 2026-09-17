@@ -9,9 +9,11 @@
  * 잡기 전 자리로 되돌리는 것.
  */
 
-import clsx from 'clsx'
+import * as stylex from '@stylexjs/stylex'
 import type { KeyboardEvent, PointerEvent } from 'react'
 import { useRef, useState } from 'react'
+
+import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex'
 
 import { mirrorForDirection } from '../../reader/spread.ts'
 import type { ReadingDirection } from '../../types.ts'
@@ -45,6 +47,67 @@ const valueForKey = (key: string, value: number, max: number): number | undefine
  * 손잡이를 잘못 집어 읽던 자리를 잃는 일을 이 한 키가 무른다.
  */
 type Drag = Readonly<{ pointerId: number; originValue: number }>
+
+/**
+ * 슬라이더의 모양.
+ *
+ * 채움이 트랙 위를 덮는다. 오른쪽에서 왼쪽으로 읽으면 두 색이 자리를 바꾼다 — 트랙이 읽은
+ * 색을 깔고 채움이 아직 읽지 않은 몫을 덮는다(`R-264`).
+ */
+const styles = stylex.create({
+  root: {
+    position: 'relative',
+    display: 'flex',
+    flex: '1',
+    alignItems: 'center',
+    height: spacingVars['--spacing-6'],
+    touchAction: 'none',
+    userSelect: 'none',
+  },
+  track: {
+    position: 'relative',
+    width: '100%',
+    height: spacingVars['--spacing-1-5'],
+    borderRadius: 9999,
+  },
+  fill: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: 9999,
+    pointerEvents: 'none',
+  },
+  read: {
+    backgroundColor: colorVars['--color-accent'],
+  },
+  // 불투명해야 한다. 오른쪽에서 왼쪽으로 읽으면 이 색이 읽은 색 위를 덮는데, 반투명한
+  // `--color-border`로 칠하면 아래가 비쳐 트랙 전체가 읽은 것처럼 보인다. Astryx `Slider`가
+  // 트랙에 쓰는 토큰이다.
+  unread: {
+    backgroundColor: colorVars['--color-track'],
+  },
+  thumb: {
+    position: 'absolute',
+    width: spacingVars['--spacing-4'],
+    height: spacingVars['--spacing-4'],
+    transform: 'translateX(-50%)',
+    borderWidth: 2,
+    borderStyle: 'solid',
+    borderColor: colorVars['--color-accent'],
+    borderRadius: 9999,
+    backgroundColor: colorVars['--color-background-surface'],
+    cursor: 'grab',
+    touchAction: 'none',
+    outlineStyle: { default: 'none', ':focus-visible': 'solid' },
+    outlineWidth: 2,
+    outlineOffset: 2,
+    outlineColor: colorVars['--color-accent'],
+  },
+  dragging: {
+    cursor: 'grabbing',
+  },
+})
 
 /** 소수를 CSS 백분율로. 자리를 지나치게 잘게 적지 않는다. */
 const percent = (fraction: number): string => `${Math.round(fraction * 10000) / 100}%`
@@ -142,7 +205,7 @@ export const PageSlider = ({ page, pageCount, direction, onSlide }: PageSliderPr
   return (
     <div
       ref={rootRef}
-      className="relative flex h-6 flex-1 touch-none items-center select-none"
+      {...stylex.props(styles.root)}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={endDrag}
@@ -152,18 +215,12 @@ export const PageSlider = ({ page, pageCount, direction, onSlide }: PageSliderPr
       <div
         ref={trackRef}
         data-slider-track=""
-        className={clsx(
-          'relative h-1.5 w-full rounded-full',
-          isRightToLeft ? 'bg-accent' : 'bg-edge',
-        )}
+        {...stylex.props(styles.track, isRightToLeft ? styles.read : styles.unread)}
       >
         <div
           data-slider-fill=""
-          className={clsx(
-            'absolute inset-y-0 left-0 h-full rounded-full',
-            isRightToLeft ? 'bg-edge' : 'bg-accent',
-          )}
-          style={{ width: percent(fraction), pointerEvents: 'none' }}
+          {...stylex.props(styles.fill, isRightToLeft ? styles.unread : styles.read)}
+          style={{ width: percent(fraction) }}
         />
       </div>
       <div
@@ -177,7 +234,7 @@ export const PageSlider = ({ page, pageCount, direction, onSlide }: PageSliderPr
         aria-valuenow={value}
         aria-valuetext={`Page ${turn(value) + 1}`}
         data-dragging={isDragging ? '' : undefined}
-        className="absolute h-4 w-4 -translate-x-1/2 cursor-grab touch-none rounded-full border-2 border-accent bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent data-dragging:cursor-grabbing"
+        {...stylex.props(styles.thumb, isDragging && styles.dragging)}
         style={{ left: percent(fraction) }}
         onKeyDown={handleKeyDown}
       />

@@ -5,13 +5,56 @@
  * 닿는 자리에 두면 읽는 일이 끊긴다.
  */
 
+import * as stylex from '@stylexjs/stylex'
 import { Button } from '@astryxdesign/core/Button'
-import clsx from 'clsx'
 import type { KeyboardEvent, Ref } from 'react'
+
+import {
+  colorVars,
+  radiusVars,
+  spacingVars,
+  textSizeVars,
+} from '@astryxdesign/core/theme/tokens.stylex'
 
 import { GOTO_ID } from '../../reader/constant.ts'
 import { PageSlider } from './slider.tsx'
 import type { ChromeActions, ChromeState } from './types.ts'
+
+/** 넘김 줄의 모양. */
+const styles = stylex.create({
+  footer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacingVars['--spacing-2'],
+    paddingInline: spacingVars['--spacing-4'],
+    paddingBlock: spacingVars['--spacing-2'],
+    borderTopWidth: 1,
+    borderTopStyle: 'solid',
+    borderTopColor: colorVars['--color-border'],
+  },
+  rightToLeft: {
+    flexDirection: 'row-reverse',
+  },
+  goToPage: {
+    // 세 자리 쪽수가 들어갈 만큼이다.
+    width: '4rem',
+    paddingInline: spacingVars['--spacing-2'],
+    paddingBlock: spacingVars['--spacing-1-5'],
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: colorVars['--color-border'],
+    borderRadius: radiusVars['--radius-element'],
+    backgroundColor: colorVars['--color-background-gray'],
+    color: colorVars['--color-text-primary'],
+    fontSize: textSizeVars['--font-size-base'],
+    textAlign: 'center',
+    outlineStyle: { default: 'none', ':focus-visible': 'solid' },
+    outlineWidth: 2,
+    outlineOffset: 2,
+    outlineColor: colorVars['--color-accent'],
+  },
+})
 
 /** 푸터가 받는 것. */
 export type FooterProps = Readonly<{
@@ -46,12 +89,7 @@ export const ReaderFooter = ({ state, actions, goToPageRef }: FooterProps) => {
   }
 
   return (
-    <footer
-      className={clsx(
-        'flex items-center justify-between gap-2 border-t border-edge px-4 py-2',
-        isRightToLeft && 'flex-row-reverse',
-      )}
-    >
+    <footer {...stylex.props(styles.footer, isRightToLeft && styles.rightToLeft)}>
       <Button label="First" variant="secondary" size="sm" onClick={actions.onFirst} />
       <Button label="Previous" variant="secondary" size="sm" onClick={actions.onPrevious} />
       <PageSlider
@@ -66,7 +104,7 @@ export const ReaderFooter = ({ state, actions, goToPageRef }: FooterProps) => {
         type="number"
         aria-label="Go to page"
         placeholder={String(state.page + 1)}
-        className="w-16 rounded-lg border border-edge bg-surface-2 px-2 py-1.5 text-center text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        {...stylex.props(styles.goToPage)}
         onKeyDown={handleGoToPageKeyDown}
         onBlur={(event) => submit(event.currentTarget)}
       />
