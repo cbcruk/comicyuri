@@ -16,7 +16,7 @@ import { useAtomValue } from '@effect/atom-react'
 import * as stylex from '@stylexjs/stylex'
 import { Button } from '@astryxdesign/core/Button'
 import { HStack } from '@astryxdesign/core/HStack'
-import { VStack } from '@astryxdesign/core/VStack'
+import { Layout, LayoutContent, LayoutHeader } from '@astryxdesign/core/Layout'
 import { useState } from 'react'
 
 import {
@@ -39,8 +39,9 @@ import { cellWidthFor, perRowFor, rowHeightFor, rowsFor, shownPages } from '../.
 /**
  * 격자 패널의 모양.
  *
- * 패널과 위 막대의 줄 세우기는 `VStack`·`HStack`이 맡는다. 행과 칸은 가상 리스트가 절대
- * 위치로 놓는 것이고 칸 버튼은 버튼 안쪽의 정렬이라, 그대로 여기서 flex를 적는다.
+ * 위 막대와 스크롤되는 본문은 `Layout`이, 위 막대의 줄 세우기는 `HStack`이 맡는다. 행과
+ * 칸은 가상 리스트가 절대 위치로 놓는 것이고 칸 버튼은 버튼 안쪽의 정렬이라, 그대로 여기서
+ * flex를 적는다.
  */
 const styles = stylex.create({
   panel: {
@@ -49,11 +50,6 @@ const styles = stylex.create({
     zIndex: 10,
     backgroundColor: `color-mix(in srgb, ${colorVars['--color-background-body']} 95%, transparent)`,
     backdropFilter: 'blur(4px)',
-  },
-  topBar: {
-    borderBottomWidth: 1,
-    borderBottomStyle: 'solid',
-    borderBottomColor: colorVars['--color-border'],
   },
   title: {
     marginInlineEnd: 'auto',
@@ -66,10 +62,6 @@ const styles = stylex.create({
     textAlign: 'center',
     fontSize: textSizeVars['--font-size-base'],
     color: colorVars['--color-text-secondary'],
-  },
-  scroller: {
-    flex: '1',
-    overflowY: 'auto',
   },
   track: {
     position: 'relative',
@@ -300,56 +292,69 @@ export const ThumbsPanel = ({
   const isEmpty = showsBookmarksOnly && rows.length === 0
 
   return (
-    <VStack role="dialog" aria-label={title} xstyle={styles.panel}>
-      <HStack align="center" gap={2} paddingInline={4} paddingBlock={2} xstyle={styles.topBar}>
-        <span {...stylex.props(styles.title)}>{title}</span>
-        {/*
-          툴바의 "Show every page"와 이름이 겹치지 않아야 한다. 격자가 열려 있는
-          동안에는 둘 다 화면에 있다.
-        */}
-        <Button
-          label={showsBookmarksOnly ? 'Show all pages' : 'Show bookmarks only'}
-          variant="secondary"
-          size="sm"
-          onClick={onToggleBookmarksOnly}
-        >
-          {showsBookmarksOnly ? 'Every page' : 'Bookmarks'}
-        </Button>
-        <Button label="Close" variant="secondary" size="sm" onClick={onClose} />
-      </HStack>
-      {isEmpty ? (
-        <p {...stylex.props(styles.empty)}>Nothing is bookmarked in this book yet</p>
-      ) : null}
-      <div ref={setScrollElement} id={THUMBS_ID} {...stylex.props(styles.scroller)}>
-        <div {...stylex.props(styles.track)} style={{ height: `${virtualizer.getTotalSize()}px` }}>
-          {virtualizer.getVirtualItems().map((row) => (
-            // 행의 높이는 리스트가 잡아 둔 값이 아니라 폭에서 나온 값으로 그리고, 리스트는
-            // 그것을 `measureElement`로 도로 잰다. 폭이 바뀌면 그려진 높이가 먼저 바뀌고
-            // 리스트가 그것을 알아차리므로, 잡아 둔 자리를 손으로 다시 셈하게 할 일이 없다.
-            <div
-              key={row.key}
-              ref={virtualizer.measureElement}
-              data-index={row.index}
-              data-thumb-row=""
-              {...stylex.props(styles.row)}
-              style={{ height: `${rowHeight}px`, transform: `translateY(${row.start}px)` }}
-            >
-              {(rows[row.index] ?? []).map((page) => (
-                <Thumb
-                  key={page}
-                  bookId={bookId}
-                  page={page}
-                  cellWidth={cellWidth}
-                  isBookmarked={bookmarks.includes(page)}
-                  canRemove={showsBookmarksOnly}
-                  onSelect={onSelect}
-                  onRemoveBookmark={onRemoveBookmark}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-    </VStack>
+    // `Layout`은 `role`과 이름을 제 뿌리에 넘기지 않아서, 덮는 자리와 `dialog`는 바깥 틀이 진다.
+    <div role="dialog" aria-label={title} {...stylex.props(styles.panel)}>
+      <Layout
+        padding={0}
+        header={
+          <LayoutHeader hasDivider={true} padding={0}>
+            <HStack align="center" gap={2} paddingInline={4} paddingBlock={2}>
+              <span {...stylex.props(styles.title)}>{title}</span>
+              {/*
+                툴바의 "Show every page"와 이름이 겹치지 않아야 한다. 격자가 열려 있는
+                동안에는 둘 다 화면에 있다.
+              */}
+              <Button
+                label={showsBookmarksOnly ? 'Show all pages' : 'Show bookmarks only'}
+                variant="secondary"
+                size="sm"
+                onClick={onToggleBookmarksOnly}
+              >
+                {showsBookmarksOnly ? 'Every page' : 'Bookmarks'}
+              </Button>
+              <Button label="Close" variant="secondary" size="sm" onClick={onClose} />
+            </HStack>
+          </LayoutHeader>
+        }
+      >
+        <LayoutContent ref={setScrollElement} id={THUMBS_ID} padding={0}>
+          {/* 북마크가 없으면 행도 없어서, 트랙 위에 두어도 가상 리스트의 자리 셈이 어긋나지 않는다. */}
+          {isEmpty ? (
+            <p {...stylex.props(styles.empty)}>Nothing is bookmarked in this book yet</p>
+          ) : null}
+          <div
+            {...stylex.props(styles.track)}
+            style={{ height: `${virtualizer.getTotalSize()}px` }}
+          >
+            {virtualizer.getVirtualItems().map((row) => (
+              // 행의 높이는 리스트가 잡아 둔 값이 아니라 폭에서 나온 값으로 그리고, 리스트는
+              // 그것을 `measureElement`로 도로 잰다. 폭이 바뀌면 그려진 높이가 먼저 바뀌고
+              // 리스트가 그것을 알아차리므로, 잡아 둔 자리를 손으로 다시 셈하게 할 일이 없다.
+              <div
+                key={row.key}
+                ref={virtualizer.measureElement}
+                data-index={row.index}
+                data-thumb-row=""
+                {...stylex.props(styles.row)}
+                style={{ height: `${rowHeight}px`, transform: `translateY(${row.start}px)` }}
+              >
+                {(rows[row.index] ?? []).map((page) => (
+                  <Thumb
+                    key={page}
+                    bookId={bookId}
+                    page={page}
+                    cellWidth={cellWidth}
+                    isBookmarked={bookmarks.includes(page)}
+                    canRemove={showsBookmarksOnly}
+                    onSelect={onSelect}
+                    onRemoveBookmark={onRemoveBookmark}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </LayoutContent>
+      </Layout>
+    </div>
   )
 }
