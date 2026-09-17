@@ -12,7 +12,7 @@
  *   다시 돌지 않고, 그대로 남은 책의 `src`가 바뀌지 않는다(`S-117`).
  */
 
-import { Effect, Option } from 'effect'
+import { Duration, Effect, Option } from 'effect'
 import { Atom } from 'effect/unstable/reactivity'
 
 import { ARCHIVE_ACCEPT } from '../constant.ts'
@@ -166,6 +166,38 @@ export const deleteBookAtom = Atom.fn<string>()((id: string, get) =>
     Effect.catch((error) => Effect.succeed(Option.some(describe(error)))),
   ),
 )
+
+/**
+ * 사람이 시작한 작업에 대해 상태 줄이 하는 말. 책장 자체의 읽기 상태와는 다르며,
+ * 그쪽은 {@linkcode shelfAtom}에 있다.
+ */
+export type Notice = Readonly<{ tone: 'busy' | 'failed'; text: string }>
+
+/** 실패가 상태 줄에 머무르다 스스로 사라지기까지의 시간. */
+const NOTICE_LINGER = Duration.seconds(4)
+
+/** 상태 줄이 지금 하는 말. 할 말이 없으면 `null`이다. */
+export const noticeAtom: Atom.Writable<Notice | null> = Atom.make<Notice | null>(null)
+
+/**
+ * 실패 문구를 제 시간이 지나면 거둔다(`F-501`). 마운트해 둔 동안만 돈다.
+ *
+ * 기다림은 이 atom의 스코프에 매여 있다. 상태 줄의 말이 바뀌면 atom이 다시 셈하면서
+ * 앞선 기다림이 끊기므로, 규칙 둘이 따로 손쓰지 않아도 선다.
+ *
+ * - 새 실패는 새 객체라 제 시간을 처음부터 받는다. 앞선 실패의 남은 시간을 물려받지
+ *   않는다(`F-502`).
+ * - 실패 뒤에 임포트가 상태 줄을 가져가면 그 실패의 기다림은 끊긴다. 늦게 내려앉아
+ *   "Importing…"을 지우는 일이 없다(`F-503`).
+ */
+export const noticeLingerAtom = Atom.make((get) => {
+  const notice = get(noticeAtom)
+  if (notice?.tone !== 'failed') return Effect.void
+
+  return Effect.sleep(NOTICE_LINGER).pipe(
+    Effect.andThen(Effect.sync(() => get.set(noticeAtom, null))),
+  )
+})
 
 /**
  * 지금 걸린 테마.

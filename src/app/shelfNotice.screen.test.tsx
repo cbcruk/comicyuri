@@ -28,7 +28,7 @@ import { RegistryProvider } from '@effect/atom-react'
 import type { StoredBook } from '../io/db.ts'
 import { ShelfScreen } from './shelf.tsx'
 
-/** 실패가 상태 줄에 머무는 시간(밀리초). `shelf.tsx`의 `NOTICE_LINGER_MS`와 같다. */
+/** 실패가 상태 줄에 머무는 시간(밀리초). `shelfAtoms.ts`의 `NOTICE_LINGER`와 같다. */
 const LINGER_MS = 4000
 
 /** 한 점짜리 투명 PNG. 임포트가 열어 보고 재고 표지까지 뜨는 진짜 바이트다. */

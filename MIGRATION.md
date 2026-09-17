@@ -23,7 +23,7 @@
 | `Route` / `foldkit/url`   | `@tanstack/react-router` (`src/app/router.tsx`)                  |
 | `Command`                 | `Atom.fn` 또는 이벤트 핸들러에서 `Effect.runPromise`             |
 | `ManagedResource`(책)     | `src/atoms/pages.ts`의 책·페이지 atom (이미 옮김)                |
-| `Subscription`            | 이름 붙인 훅 (`useReaderKeys`, `useSlideshow` 같은 것)           |
+| `Subscription`            | 리더 세션의 atom (`src/app/reader/session.ts`, #74)              |
 | `Submodel`                | 컴포넌트 지역 상태 또는 atom                                     |
 | scene 테스트              | `*.screen.test.tsx` (실제 Chromium, `vp run test:screen`)        |
 | story 테스트              | 그대로 둔다. `update`가 순수 함수로 남기 때문이다                |
@@ -61,7 +61,7 @@
 
 - ~~로딩 관련 story 테스트 8개~~ 되살렸다. `R-214`는 `src/atoms/pages.test.ts`가, 나머지는
   `src/app/reader/reader.screen.test.tsx`가 잰다.
-- ~~`R-207`의 스크롤 부분~~ `events.ts`의 `roomFor`가 맡고, 화면 테스트가 잰다.
+- ~~`R-207`의 스크롤 부분~~ `session.ts`의 `wheel` atom이 맡고, 화면 테스트가 잰다.
 - ~~Escape를 두 곳이 처리하게 됐다.~~ 한 번에 한 겹만 벗기는 것을 화면 테스트가 잰다. 원래는
   이랬다: Astryx `Dialog`가 스스로 닫고, 리더의 키 구독도
   `R-2A3`대로 한 겹씩 벗긴다. 붙이는 쪽에서 한 번만 처리되게 막아야 한다 — 설정 패널이

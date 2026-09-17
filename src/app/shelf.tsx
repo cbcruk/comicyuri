@@ -12,9 +12,9 @@
 
 import { Effect, Option } from 'effect'
 import { AsyncResult } from 'effect/unstable/reactivity'
-import { useAtom, useAtomSet, useAtomValue } from '@effect/atom-react'
+import { useAtom, useAtomMount, useAtomSet, useAtomValue } from '@effect/atom-react'
 import { Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { DragEvent } from 'react'
 
 import { Button } from '@astryxdesign/core/Button'
@@ -24,6 +24,8 @@ import {
   coverUrlAtom,
   deleteBookAtom,
   importFilesAtom,
+  noticeAtom,
+  noticeLingerAtom,
   pickFiles,
   pickFolder,
   shelfAtom,
@@ -35,15 +37,6 @@ import { nudgedSlideSeconds, nudgedThreshold } from '../settings.ts'
 import { SettingsPanel } from './settings/index.ts'
 import { useDocumentTitle } from './title.ts'
 import { settingsAtom } from './state/index.ts'
-
-/** 실패가 상태 줄에 머무르다 스스로 사라지기까지의 시간(밀리초). */
-const NOTICE_LINGER_MS = 4000
-
-/**
- * 사람이 시작한 작업에 대해 상태 줄이 하는 말. 책장 자체의 읽기 상태와는 다르며,
- * 그쪽은 {@linkcode shelfAtom}에 있다.
- */
-type Notice = Readonly<{ tone: 'busy' | 'failed'; text: string }>
 
 /** 토글은 지금 있는 곳이 아니라 데려갈 곳을 말한다(`S-141`). */
 const themeToggleLabel = (theme: Theme): string =>
@@ -196,18 +189,11 @@ export const ShelfScreen = () => {
   const runImport = useAtomSet(importFilesAtom, { mode: 'promise' })
   const runDelete = useAtomSet(deleteBookAtom, { mode: 'promise' })
 
-  const [notice, setNotice] = useState<Notice | null>(null)
+  const [notice, setNotice] = useAtom(noticeAtom)
+  useAtomMount(noticeLingerAtom)
   const [maybePendingDelete, setPendingDelete] = useState<string | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
-
-  // 실패는 스스로 사라진다. 새 실패는 새 객체라 앞선 대기가 정리되므로, 뒤의 실패가
-  // 앞선 대기에 잘려 나가지 않는다.
-  useEffect(() => {
-    if (notice?.tone !== 'failed') return
-    const timer = setTimeout(() => setNotice(null), NOTICE_LINGER_MS)
-    return () => clearTimeout(timer)
-  }, [notice])
 
   /** 고른 파일을 들여온다. 아무것도 고르지 않은 것은 아무 일도 아니다(`S-118`). */
   const importFiles = async (files: ReadonlyArray<File>) => {

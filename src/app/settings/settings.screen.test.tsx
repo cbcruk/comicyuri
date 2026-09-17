@@ -3,7 +3,7 @@
  *
  * Foldkit의 reader/scene 테스트가 하던 일을 이것이 이어받는다. 보는 것은 두
  * 가지다. 툴바에 버튼이 없던 설정들이 저마다 같은 이름으로 서 있는 것(`R-2B1`,
- * `R-2B6`)과, 누른 것이 부르는 쪽에 그대로 전해지고 고른 결과가 `aria-checked`·
+ * `R-2B6`)과, 누른 것이 부르는 쪽에 그대로 전해지고 고른 결과가 켜짐·
  * `aria-pressed`·`aria-disabled`로 드러나는 것이다 — e2e가 그 이름과 속성으로
  * 패널을 몬다.
  */
@@ -145,24 +145,24 @@ test('turning the cover rule off reports the new settings', async () => {
   const { handlers, screen } = await renderPanel()
   const coverAlone = screen.getByRole('switch', { name: 'Cover on its own' })
 
-  await expect.element(coverAlone).toHaveAttribute('aria-checked', 'true')
+  await expect.element(coverAlone).toBeChecked()
 
   await coverAlone.click()
 
   expect(handlers.onToggleCoverAlone).toHaveBeenCalledWith(false)
-  await expect.element(coverAlone).toHaveAttribute('aria-checked', 'false')
+  await expect.element(coverAlone).not.toBeChecked()
 })
 
 test('turning on reading wide pages in halves reports it too', async () => {
   const { handlers, screen } = await renderPanel()
   const splitWide = screen.getByRole('switch', { name: 'Read wide pages in halves' })
 
-  await expect.element(splitWide).toHaveAttribute('aria-checked', 'false')
+  await expect.element(splitWide).not.toBeChecked()
 
   await splitWide.click()
 
   expect(handlers.onToggleSplitWide).toHaveBeenCalledWith(true)
-  await expect.element(splitWide).toHaveAttribute('aria-checked', 'true')
+  await expect.element(splitWide).toBeChecked()
 })
 
 test('nudging the threshold moves it one step, not to a long decimal', async () => {

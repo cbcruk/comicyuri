@@ -74,7 +74,7 @@ index.html          the document; it sets the stored theme before the first pain
 src/app/main.tsx    mounts React and the atom registry
 src/app/router.tsx  the routes: / and /book/:id, and the not-found page
 src/app/shelf.tsx   the shelf screen, with shelfAtoms.ts behind it
-src/app/reader/     the reader screen: layout, events, persistence, stage, spread
+src/app/reader/     the reader screen, and its session: every listener and timer as an atom
 src/app/chrome/     the menubar, the counter row and the footer
 src/app/settings/   the reading-settings dialog
 src/app/thumbs/     the thumbnail grid, over TanStack Virtual

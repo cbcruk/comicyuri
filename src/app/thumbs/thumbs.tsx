@@ -11,12 +11,11 @@
  */
 
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { AsyncResult } from 'effect/unstable/reactivity'
+import { Atom, AsyncResult } from 'effect/unstable/reactivity'
 import { useAtomValue } from '@effect/atom-react'
 import { Button } from '@astryxdesign/core/Button'
 import clsx from 'clsx'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import type { RefObject } from 'react'
+import { useMemo, useState } from 'react'
 
 import { pageAtoms } from '../../atoms/browser.ts'
 import {
@@ -34,22 +33,33 @@ import { cellWidthFor, perRowFor, rowHeightFor, rowsFor, shownPages } from '../.
  * Foldkit은 `window.innerWidth`를 물었지만 여기서는 격자 자신을 잰다. 행이 실제로
  * 쓸 수 있는 너비가 그것이라, 세로 막대가 서 있어도 칸이 밖으로 밀려나지 않는다.
  * 막대가 없을 때의 값은 둘이 같다.
+ *
+ * 요소 하나가 atom 하나다. 관찰자는 그 atom의 수명에 매여 있어, 격자가 닫혀 아무도 이
+ * 너비를 원하지 않게 되면 레지스트리가 atom을 치우면서 관찰도 끝난다.
+ *
+ * `Atom.family`로 묶지 않는 것은 그것이 인자를 구조적으로 해싱하기 때문이다. DOM 요소를
+ * 해싱하면 게터를 엉뚱한 수신자로 읽다가 `Illegal invocation`을 던진다. 요소는 identity가
+ * 곧 정체이므로 `WeakMap`으로 묶고, 요소가 문서에서 사라지면 atom도 함께 놓인다.
  */
-const useMeasuredWidth = (ref: RefObject<HTMLElement | null>): number => {
-  const [width, setWidth] = useState(THUMBS_DEFAULT_WIDTH)
+const widthAtoms = new WeakMap<HTMLElement, Atom.Atom<number>>()
 
-  useLayoutEffect(() => {
-    const element = ref.current
-    if (element === null) return
+const widthOf = (element: HTMLElement): Atom.Atom<number> => {
+  const cached = widthAtoms.get(element)
+  if (cached !== undefined) return cached
 
-    setWidth(element.clientWidth)
-    const observer = new ResizeObserver(() => setWidth(element.clientWidth))
+  const atom = Atom.make((get) => {
+    const observer = new ResizeObserver(() => get.setSelf(element.clientWidth))
     observer.observe(element)
-    return () => observer.disconnect()
-  }, [ref])
+    get.addFinalizer(() => observer.disconnect())
 
-  return width
+    return element.clientWidth
+  })
+  widthAtoms.set(element, atom)
+  return atom
 }
+
+/** 격자가 아직 문서에 붙지 않아 잴 것이 없을 때의 너비. */
+const unmeasuredWidth = Atom.make(THUMBS_DEFAULT_WIDTH)
 
 /** 격자의 한 칸이 받는 것. */
 type ThumbProps = Readonly<{
@@ -151,8 +161,10 @@ export const ThumbsPanel = ({
   onRemoveBookmark,
   onClose,
 }: ThumbsProps) => {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const width = useMeasuredWidth(scrollRef)
+  // 잴 요소를 상태로 쥔다. 붙는 순간 한 번 더 그려지며, 그 렌더는 칠하기 전에 끝나므로
+  // 기본 너비로 그린 격자가 화면에 비치지 않는다.
+  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null)
+  const width = useAtomValue(scrollElement === null ? unmeasuredWidth : widthOf(scrollElement))
 
   const cellWidth = cellWidthFor(width)
   const rowHeight = rowHeightFor(width)
@@ -164,16 +176,10 @@ export const ThumbsPanel = ({
 
   const virtualizer = useVirtualizer({
     count: rows.length,
-    getScrollElement: () => scrollRef.current,
+    getScrollElement: () => scrollElement,
     estimateSize: () => rowHeight,
     overscan: THUMB_OVERSCAN,
   })
-
-  // 행의 높이는 폭에서 나오므로, 폭이 바뀌면 리스트가 잡아 둔 자리도 다시 셈해야
-  // 한다. 그러지 않으면 행이 겹치거나 벌어진다.
-  useEffect(() => {
-    virtualizer.measure()
-  }, [rowHeight, virtualizer])
 
   const title = showsBookmarksOnly ? 'Bookmarks' : 'Every page'
   const isEmpty = showsBookmarksOnly && rows.length === 0
@@ -203,15 +209,21 @@ export const ThumbsPanel = ({
       {isEmpty ? (
         <p className="p-6 text-center text-sm text-muted">Nothing is bookmarked in this book yet</p>
       ) : null}
-      <div ref={scrollRef} id={THUMBS_ID} className="flex-1 overflow-y-auto">
+      <div ref={setScrollElement} id={THUMBS_ID} className="flex-1 overflow-y-auto">
         <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
           {virtualizer.getVirtualItems().map((row) => (
             // 칸이 남는 자리를 고르게 나눠 가져서 행이 폭을 남김없이 쓴다. 그래서
             // 마지막 줄의 남은 칸도 위 줄의 열을 그대로 따라 왼쪽부터 찬다.
+            //
+            // 행의 높이는 리스트가 잡아 둔 값이 아니라 폭에서 나온 값으로 그리고, 리스트는
+            // 그것을 `measureElement`로 도로 잰다. 폭이 바뀌면 그려진 높이가 먼저 바뀌고
+            // 리스트가 그것을 알아차리므로, 잡아 둔 자리를 손으로 다시 셈하게 할 일이 없다.
             <div
               key={row.key}
+              ref={virtualizer.measureElement}
+              data-index={row.index}
               className="absolute top-0 left-0 flex w-full justify-start gap-3 px-1"
-              style={{ height: `${row.size}px`, transform: `translateY(${row.start}px)` }}
+              style={{ height: `${rowHeight}px`, transform: `translateY(${row.start}px)` }}
             >
               {(rows[row.index] ?? []).map((page) => (
                 <Thumb

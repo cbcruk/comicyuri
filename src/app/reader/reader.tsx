@@ -1,13 +1,10 @@
 /**
  * 리더 화면. 지금까지 따로 서 있던 조각들을 한 화면으로 붙이는 자리다.
  *
- * Model 하나를 atom에 담고 순수한 `update`로만 바꾼다(`src/reader/atom.ts`). 스프레드를
- * 부르는 일은 페이지 atom이, 크롬과 설정과 격자는 각자의 컴포넌트가 맡으므로, 여기 남은
- * 것은 셋을 잇는 일이다 — Model에서 그릴 값을 뽑아 내려보내고, 콜백이 부르면 Message를
- * 접어 넣고, update가 남긴 Command와 OutMessage를 실제로 푼다.
- *
- * Foldkit 리더의 `view`·`subscriptions`·애플리케이션의 `foldReaderOutMessage`가 하던 일이
- * 모두 이 파일과 이웃한 훅들에 들어 있다.
+ * 리더가 사는 곳은 세션이다(`session.ts`). Model, Message를 접어 넣는 길, 리더가 듣는
+ * 것, 쥐고 있을 페이지가 모두 거기 atom으로 서 있다. 이 파일은 세션을 세워 마운트하고,
+ * 거기서 읽은 값을 크롬·스테이지·격자·설정 패널에 내려보내고, 콜백을 Message로 바꿀
+ * 뿐이다 — Foldkit 리더의 `view`에 해당한다.
  */
 
 /*
@@ -24,31 +21,24 @@
  * Foldkit과 이 플러그인이 저장소에서 사라지면 이 줄도 함께 사라진다(`MIGRATION.md`).
  */
 
-import { Array, Cause, Effect, Option } from 'effect'
-import { AsyncResult } from 'effect/unstable/reactivity'
-import { RegistryContext, useAtomMount, useAtomValue } from '@effect/atom-react'
-import { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
+import { Array, Option } from 'effect'
+import { useAtomMount, useAtomSet, useAtomValue } from '@effect/atom-react'
+import { useState } from 'react'
 
 import { pageAtoms } from '../../atoms/browser.ts'
 import type { PageAtoms } from '../../atoms/pages.ts'
-import { Reading } from '../../domain/index.ts'
-import { describe } from '../../errors.ts'
-import type { AppError } from '../../errors.ts'
-import { dispatch, makeReaderAtom } from '../../reader/atom.ts'
-import type { ReaderAtom } from '../../reader/atom.ts'
-import { Message, OutMessage } from '../../reader/message.ts'
-import { OpenState, spreadPages } from '../../reader/model.ts'
+import { Message } from '../../reader/message.ts'
+import { OpenState } from '../../reader/model.ts'
 import type { Model } from '../../reader/model.ts'
 import { ReaderChrome } from '../chrome/index.ts'
 import type { ChromeActions, ChromeState } from '../chrome/index.ts'
 import { SettingsPanel } from '../settings/index.ts'
 import { ThumbsPanel } from '../thumbs/index.ts'
-import { runCommand, useReaderEvents, useSlideshow } from './events.ts'
-import { counterLabel, fileNamesFor, readerLayout } from './layout.ts'
+import { counterLabel, fileNamesFor } from './layout.ts'
 import { browserPersistence } from './persistence.ts'
 import type { ReaderPersistence } from './persistence.ts'
+import { makeReaderSession } from './session.ts'
 import { ReaderStage } from './stage.tsx'
-import { PageHold, SpreadHold, useShownSpread } from './spread.tsx'
 
 /**
  * 리더가 직접 세우는 버튼의 겉모습. 앱의 다른 버튼과 같은 색이어야 하므로 Astryx의
@@ -56,32 +46,6 @@ import { PageHold, SpreadHold, useShownSpread } from './spread.tsx'
  */
 const controlClassName =
   'cursor-pointer rounded-lg border border-edge bg-surface-2 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-accent/60 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
-
-/**
- * 아직 놓지 않을 페이지. 미리 읽은 적이 있고, 지금 자리에서 `keep` 안에 드는 것들이다
- * (`R-215`).
- *
- * "미리 읽은 적이 있는지"를 따로 세는 이유는 쥐는 것과 뽑는 것이 같은 일이 되어서는 안
- * 되기 때문이다. atom은 원하는 곳이 생기는 순간 값을 만들기 시작하므로, `keep` 전부를
- * 구독하면 그것이 곧 미리 읽기 명령이 되어 책을 여는 순간 일곱 스프레드를 한꺼번에
- * 뽑는다. 미리 읽는 것은 양옆 하나씩이고(`neighbours`), 이 함수는 그렇게 뽑아 둔 것을
- * 언제까지 붙잡을지만 정한다.
- *
- * 책이 바뀌면 처음부터 다시 센다 — 같은 번호가 책마다 다른 장을 가리킨다.
- */
-const useHeldPages = (
-  bookId: string,
-  warm: ReadonlyArray<number>,
-  keep: ReadonlyArray<number>,
-): ReadonlyArray<number> => {
-  const warmed = useRef<{ bookId: string; pages: Set<number> }>({ bookId, pages: new Set() })
-
-  if (warmed.current.bookId !== bookId) warmed.current = { bookId, pages: new Set() }
-  for (const page of warm) warmed.current.pages.add(page)
-
-  const seen = warmed.current.pages
-  return Array.filter(keep, (page) => seen.has(page))
-}
 
 /** 책을 여는 동안과, 끝내 열지 못했을 때 서는 화면. */
 const OpeningScreen = ({ text, onExit }: Readonly<{ text: string; onExit: () => void }>) => (
@@ -123,13 +87,6 @@ const ResumeRow = ({
   </div>
 )
 
-/** 책을 열다 실패한 까닭을 한 줄로. */
-const openFailureText = (cause: Cause.Cause<AppError>): string =>
-  Option.match(Cause.findErrorOption(cause), {
-    onNone: () => 'Could not open the book',
-    onSome: describe,
-  })
-
 /** 리더 화면이 받는 것. */
 export type ReaderViewProps = Readonly<{
   /**
@@ -139,9 +96,13 @@ export type ReaderViewProps = Readonly<{
    * 한 번만 읽는다. 다른 책으로 갈아탈 때는 `key`로 이 컴포넌트를 새로 세운다.
    */
   initial: Model
-  /** 책장으로 돌아간다. Escape가 마지막으로 벗기는 겹이다(`R-2A3`). */
+  /**
+   * 책장으로 돌아간다. Escape가 마지막으로 벗기는 겹이다(`R-2A3`).
+   *
+   * `initial`과 같이 처음 받은 것을 세션이 쥔다.
+   */
   onExit: () => void
-  /** 이웃한 책을 그 자리에서 연다(`R-216`). */
+  /** 이웃한 책을 그 자리에서 연다(`R-216`). 처음 받은 것을 세션이 쥔다. */
   onOpenBook: (bookId: string) => void
   /** 페이지를 뽑는 atom 한 벌. 시험에서만 갈아 끼운다. */
   pages?: PageAtoms
@@ -162,103 +123,17 @@ export const ReaderView = ({
   pages = pageAtoms,
   persistence = browserPersistence,
 }: ReaderViewProps) => {
-  const registry = useContext(RegistryContext)
+  // 세션은 이 화면이 서 있는 동안 하나다. `initial`이 다시 와도 새로 세우지 않는다 — 읽던
+  // 자리가 첫 Model로 되감기면 안 된다. 다른 책으로 갈아탈 때는 `key`가 화면째 새로 세운다.
+  const [session] = useState(() =>
+    makeReaderSession({ initial, pages, persistence, onExit, onOpenBook }),
+  )
+  useAtomMount(session.runtime)
 
-  // Model을 담는 atom은 이 화면이 서 있는 동안 하나다. `initial`이 다시 와도 새로 세우지
-  // 않는다 — 읽던 자리가 첫 Model로 되감기면 안 된다.
-  const atomRef = useRef<ReaderAtom | null>(null)
-  atomRef.current ??= makeReaderAtom(initial)
-  const readerAtom = atomRef.current
-
-  const model = useAtomValue(readerAtom)
-
-  // Message를 보내는 길은 렌더마다 같은 함수여야 한다. 구독 훅이 그것을 의존성으로 삼고,
-  // 바뀔 때마다 리스너를 다시 걸기 때문이다. 그래서 겉은 고정하고 속만 갈아 끼운다.
-  const sendRef = useRef<(message: Message) => void>(() => undefined)
-  const send = useCallback((message: Message): void => sendRef.current(message), [])
-
-  const handleOut = (out: OutMessage): void =>
-    OutMessage.$match(out, {
-      RequestedExit: () => onExit(),
-
-      /**
-       * 책장 순서를 아는 것은 저장소다. 이웃한 책이 없으면 — 책장의 끝이라면 — 아무 일도
-       * 일어나지 않고 리더는 제자리에 머문다.
-       */
-      RequestedNeighbourBook: ({ bookId, step }) => {
-        void Effect.runPromise(persistence.neighbourBookId(bookId, step)).then((maybeId) => {
-          if (Option.isSome(maybeId)) onOpenBook(maybeId.value)
-        })
-      },
-
-      /**
-       * 리더가 쥔 설정은 전역 기본값과 이 책의 것을 합친 결과다. 저장할 때 다시 갈라야,
-       * 책마다 기억하기가 켜진 동안 어떤 책에서 뒤집은 방향이 전역 기본값이 되어 다음
-       * 책까지 따라가지 않는다.
-       */
-      ChangedSettings: ({ bookId, settings }) => {
-        const { global, maybeBook } = Reading.split(
-          registry.get(persistence.settingsAtom),
-          settings,
-        )
-
-        registry.set(persistence.settingsAtom, global)
-        void Effect.runPromise(persistence.saveBookSettings(bookId, maybeBook))
-      },
-
-      UpdatedProgress: ({ bookId, page, bookmarks, marks, rotation }) => {
-        void Effect.runPromise(
-          persistence.saveProgress(bookId, { page, bookmarks, marks, rotation }),
-        )
-      },
-    })
-
-  sendRef.current = (message: Message): void => {
-    const { commands, maybeOutMessage } = dispatch(registry, readerAtom, message)
-
-    for (const command of commands) runCommand(command)
-    if (Option.isSome(maybeOutMessage)) handleOut(maybeOutMessage.value)
-  }
-
-  // 책은 리더가 서 있는 동안 걸려 있다. 스프레드 사이의 틈에 다시 열지 않는다.
-  const bookAtom = pages.book(model.bookId)
-  useAtomMount(bookAtom)
-  const book = useAtomValue(bookAtom)
-
-  // 책이 열렸다는 것도, 열지 못했다는 것도 Message로 들어간다. atom의 답이 바뀌는 것이
-  // 곧 그 한 번이므로, 같은 답에 두 번 보내지 않는다.
-  useEffect(() => {
-    if (AsyncResult.isSuccess(book)) {
-      send(
-        Message.CompletedOpenBook({
-          title: book.value.title,
-          pageCount: book.value.pages.length,
-          ratios: book.value.pageSizes.map(Option.map(({ width, height }) => width / height)),
-          names: book.value.pages.map((source) => source.name),
-        }),
-      )
-    } else if (AsyncResult.isFailure(book)) {
-      send(Message.FailedOpenBook({ text: openFailureText(book.cause) }))
-    }
-  }, [book, send])
-
-  const maybeLayout = useMemo(() => readerLayout(model), [model])
-  const here = spreadPages(model)
-  const { maybeShown, isReady, maybeFailure } = useShownSpread(pages, model, here)
-
-  // 훅은 책이 열리기 전에도 같은 차례로 불려야 하므로 `maybeLayout`을 가르기 전에 센다.
-  const warm = Option.match(maybeLayout, {
-    onNone: () => Array.empty<number>(),
-    onSome: (drawn) => drawn.warm,
-  })
-  const keep = Option.match(maybeLayout, {
-    onNone: () => Array.empty<number>(),
-    onSome: (drawn) => drawn.keep,
-  })
-  const heldPages = useHeldPages(model.bookId, warm, keep)
-
-  useReaderEvents({ send, model, isSpreadReady: isReady })
-  useSlideshow(send, model)
+  const model = useAtomValue(session.model)
+  const maybeLayout = useAtomValue(session.layout)
+  const { maybeShown, isReady, maybeFailure } = useAtomValue(session.shown)
+  const send = useAtomSet(session.send)
 
   return Option.match(maybeLayout, {
     onNone: () => (
@@ -334,26 +209,6 @@ export const ReaderView = ({
               maybeFailure={maybeFailure}
             />
           </ReaderChrome>
-
-          {/*
-            다음 것이 설 때까지 남아 있는 스프레드를 쥔다. 그리지는 않고 구독만 하므로,
-            그 페이지들의 URL이 놓이지 않는다(`R-207`).
-          */}
-          {Option.match(maybeShown, {
-            onNone: () => null,
-            onSome: (shown) =>
-              isReady ? null : (
-                <SpreadHold pages={pages} bookId={model.bookId} spread={shown.pages} />
-              ),
-          })}
-
-          {/*
-            양옆을 미리 읽고, 멀어지기 전까지 놓지 않는다(`R-215`). 미리 읽는 것도 붙잡는
-            것도 구독 하나로 같은 일이라, 미리 읽을 것이 `heldPages`에 이미 들어 있다.
-          */}
-          {heldPages.map((page) => (
-            <PageHold key={page} pages={pages} bookId={model.bookId} page={page} />
-          ))}
 
           {model.isThumbsOpen ? (
             <ThumbsPanel
