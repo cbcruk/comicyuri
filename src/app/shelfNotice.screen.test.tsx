@@ -225,7 +225,10 @@ test('a failed delete is reported and the book stays', async () => {
 
   const screen = await renderShelf()
   await screen.getByRole('button', { name: 'Remove volume-1 from shelf…' }).click()
-  await screen.getByRole('button', { name: 'Remove volume-1 from shelf', exact: true }).click()
+  await screen
+    .getByRole('alertdialog', { name: 'Remove volume-1?' })
+    .getByRole('button', { name: 'Remove', exact: true })
+    .click()
 
   await expect
     .element(screen.getByText("Couldn't do that — Shelf storage is unavailable (delete)"))
@@ -299,7 +302,10 @@ test('a reload that fails keeps the books it already had', async () => {
   // 지우기는 성공하고, 그것이 부른 다시 읽기만 실패한다.
   store.fail('getAll')
   await screen.getByRole('button', { name: 'Remove volume-2 from shelf…' }).click()
-  await screen.getByRole('button', { name: 'Remove volume-2 from shelf', exact: true }).click()
+  await screen
+    .getByRole('alertdialog', { name: 'Remove volume-2?' })
+    .getByRole('button', { name: 'Remove', exact: true })
+    .click()
 
   // 다시 읽지 못했다고 해서 화면이 비지 않는다. 읽어 둔 책장이 그대로 선다.
   await wait(300)

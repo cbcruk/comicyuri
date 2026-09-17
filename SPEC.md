@@ -165,26 +165,29 @@ e2e "S-121 · 잰 크기는 새로고침을 넘겨 남는다"
 
 **S-131 · 카드의 🗑 버튼이 지울지 묻는다**
 버튼 이름은 "Remove <제목> from shelf…". 평소에는 투명하고 hover·focus 시 보인다.
-누르면 지우는 것이 아니라 물음이 카드를 덮는다 — "Remove this book and where you left
-off?"와 함께 "Remove"(이름 "Remove <제목> from shelf")와 "Keep"(이름 "Keep <제목>")이
-선다.
+누르면 지우는 것이 아니라 확인 대화상자가 뜬다 — Astryx `AlertDialog`
+(`role="alertdialog"`, 이름 "Remove <제목>?")가 "The book and where you left off in it are
+removed from this browser. This can't be undone."과 함께 "Remove"와 "Keep"을 세운다.
 
 묻는 것은 지우는 것이 되돌릴 수 없고 그 책의 읽던 자리까지 함께 가기 때문이다. 🗑은
 카드 위에 떠 있어서 책을 누르려다 스칠 수 있다.
 
-물음은 카드를 통째로 덮고 그동안 링크는 `inert`가 되므로, 답하기 전에는 포인터로도
-키보드로도 그 책이 열리지 않는다. 물음과 답을 같은
-자리에 두지 않는 이유도 같다 — 🗑이 있던 곳에 "Remove"가 서면 두 번째 누름이 첫
-번째와 같은 동작처럼 보이고, 그 자리는 손이 이미 가 있는 자리다.
+물음은 모달이다. 열려 있는 동안 책장의 나머지는 닿지 않으므로, 답하기 전에는 포인터로도
+키보드로도 그 책이 열리지 않고 다른 책의 🗑도 누를 수 없다 — 한 번에 한 책만 묻는다.
+처음 포커스는 "Keep"에 가고, Escape는 지키는 것이며, 바깥을 눌러도 닫히지 않는다.
+물음과 답이 🗑과 다른 자리에 서는 것도 그래서다 — 🗑이 있던 곳에 "Remove"가 서면 두 번째
+누름이 첫 번째와 같은 동작처럼 보이고, 그 자리는 손이 이미 가 있는 자리다.
 
-한 번에 한 책만 묻는다. 다른 카드의 🗑을 누르면 물음이 그쪽으로 옮겨 간다. 책장을
-떠나면 물음도 접힌다.
+"Remove"를 누르면 지우기가 끝날 때까지 대화상자가 열린 채 버튼에 진행 표시가 돈다. 끝나면
+— 실패했더라도 — 닫힌다(`S-133`). 브라우저의 뒤로 가기로 책장을 떠나면 물음도 접힌다.
 ✅ shelf/screen "the bin asks rather than deletes, and keeping the book leaves the shelf as
-it was", "removing a book from the shelf takes it out of the grid", "the question stands on
-one card only", "a question and a panel left open are gone when the shelf is visited again",
+it was", "removing a book from the shelf takes it out of the grid", "the question is modal,
+so nothing else on the shelf can be reached until it is answered", "a question and a panel
+left open are gone when the shelf is visited again",
 e2e "S-131 · 🗑은 묻기만 하고, 지키기를 고르면 책이 남는다", "S-131 · 지우기를 고르면
 책장에서 사라지고 새로고침을 넘겨 돌아오지 않는다", "S-131 · 묻는 동안에는 그 카드로
-들어갈 수 없다", "S-131 · 다른 책을 열었다 돌아오면 묻던 것이 남아 있지 않다"
+들어갈 수 없다", "S-131 · 묻던 중에 뒤로 가기로 떠났다 돌아오면 물음이 남아 있지 않다"
+📖 지우는 동안의 진행 표시 — 재는 테스트가 없다
 ❓ hover 시 나타나는 동작
 
 **S-132 · 삭제 후 책장이 다시 읽힌다**
