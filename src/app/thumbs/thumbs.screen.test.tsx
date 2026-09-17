@@ -90,10 +90,10 @@ const cells = (container: HTMLElement): ReadonlyArray<HTMLElement> => [
 
 /** 격자가 스스로 잰 너비. 세로 막대가 서면 창 너비보다 좁다. */
 const measuredWidth = (container: HTMLElement): number =>
-  container.querySelector('.overflow-y-auto')?.clientWidth ?? 0
+  container.querySelector('#reader-thumbs')?.clientWidth ?? 0
 
 const rows = (container: HTMLElement): ReadonlyArray<HTMLElement> => [
-  ...container.querySelectorAll<HTMLElement>('div.justify-start'),
+  ...container.querySelectorAll<HTMLElement>('[data-thumb-row]'),
 ]
 
 beforeEach(() => Effect.runPromise(clearShelf))
