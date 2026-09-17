@@ -294,6 +294,35 @@ test('a number in the box goes there when Enter is pressed', async () => {
   expect(actions.onGoToPage).toHaveBeenCalledWith('4')
 })
 
+test('after Enter the box lets go, so the number is not sent again later', async () => {
+  const { actions, screen } = await renderChrome()
+
+  const box = screen.getByRole('spinbutton', { name: 'Go to page' })
+  await box.fill('4')
+  await userEvent.keyboard('{Enter}')
+
+  // 입력란을 떠나고 비워진다. 곧바로 키로 페이지를 넘길 수 있는 자리다.
+  await expect.element(box).not.toHaveFocus()
+  await expect.element(box).toHaveValue('')
+  const sent = vi.mocked(actions.onGoToPage).mock.calls.length
+
+  // 다른 길로 넘긴 뒤에 입력란에 들렀다 떠나도, 적어 두었던 4가 다시 넘어가지 않는다.
+  await screen.getByRole('button', { name: 'Next', exact: true }).click()
+  await box.click()
+  await screen.getByRole('button', { name: 'Last' }).click()
+  expect(vi.mocked(actions.onGoToPage).mock.calls.length).toBe(sent)
+})
+
+test('the arrow keys do not step the number in the box', async () => {
+  const { actions, screen } = await renderChrome()
+
+  await screen.getByRole('spinbutton', { name: 'Go to page' }).click()
+  await userEvent.keyboard('{ArrowUp}{ArrowDown}')
+
+  // 한 칸씩 옮길 때마다 넘어가면 다 적은 뒤의 한 번이라는 약속이 깨진다(`R-266`).
+  expect(actions.onGoToPage).not.toHaveBeenCalled()
+})
+
 test('the row of controls turns around with the reading direction', async () => {
   const { screen } = await renderChrome({ direction: 'rtl' })
 

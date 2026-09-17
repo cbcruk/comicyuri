@@ -625,8 +625,13 @@ e2e "R-232 · 두 손가락을 벌리면 그만큼 확대된다"
 **R-233 · 확대해도 손가락 사이 지점이 제자리에 머문다**
 손가락이 하나씩 따로 도착하므로 그 사이 순간에는 두 손가락의 한가운데가 잠깐
 쏠리고, 그만큼 몇 픽셀이 남는다. 잘게 움직이면 눈에 띄지 않는다.
+
+손가락 위치는 창이 아니라 스테이지의 한가운데를 기준으로 잰다. 확대가 그 자리를 중심으로
+일어나기 때문이다. 창 가운데로 재면 스테이지 위아래의 크롬 높이가 다를 때 — 푸터가 헤더보다
+크거나 이어 읽기 줄이 떠 있을 때 — 그 차이의 절반만큼 미끄러진다.
 ✅ gesture "what sits under the anchor stays under it",
-e2e "R-233 · 확대해도 손가락 사이 지점이 제자리에 머문다"
+e2e "R-233 · 확대해도 손가락 사이 지점이 제자리에 머문다", "R-233 · 스테이지 위아래가 비대칭이어도
+손가락 사이 지점이 제자리에 머문다"
 
 **R-234 · Ctrl+휠 / 트랙패드 핀치로 확대·축소**
 ✅ e2e "R-234 · Ctrl+휠로 확대하고 축소한다"
@@ -889,10 +894,18 @@ e2e "R-266 · 번호를 적는 동안 화살표는 페이지를 넘기지 않는
 되고, 필요한 것은 다 적은 뒤의 한 번뿐이다. 지금 어디인지는 자리표시자가 말해 준다.
 
 적는 동안에는 리더가 키를 양보한다(`R-265`와 같은 이유). 화살표와 Space는 글자를
-옮기는 키이지 페이지를 넘기는 키가 아니다.
+옮기는 키이지 페이지를 넘기는 키가 아니다. 입력란은 Astryx `NumberInput`이지만 위·아래
+화살표와 휠로 번호를 한 칸씩 옮기는 것은 꺼 두었다 — 옮길 때마다 넘어가서 다 적은 뒤의 한
+번이 아니게 된다.
+
+Enter를 누르면 넘기고 입력란을 떠난다. 적은 번호가 입력란에 남아 있으면 그 뒤 다른 길로
+넘긴 다음 입력란을 떠날 때 옛 번호로 되돌아가기 때문이고, 떠나 있으면 곧바로 키로 페이지를
+넘길 수 있다.
 ✅ reader/story "a number in the book goes there", "a number outside the book, or no
 number at all, changes nothing",
-chrome/screen "a number in the box goes there when Enter is pressed",
+chrome/screen "a number in the box goes there when Enter is pressed", "after Enter the box lets
+go, so the number is not sent again later", "the arrow keys do not step the number in the
+box",
 e2e "R-266 · 번호를 적고 Enter를 누르면 그 페이지로 간다", "R-266 · 번호를 적는 동안
 화살표는 페이지를 넘기지 않는다"
 

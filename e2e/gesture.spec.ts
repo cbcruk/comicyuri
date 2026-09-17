@@ -3,7 +3,17 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, counter, pageBox, readBook, stage, zoomOf } from './fixture/app.ts'
+import {
+  control,
+  counter,
+  openMenu,
+  openReader,
+  pageBox,
+  readBook,
+  stage,
+  use,
+  zoomOf,
+} from './fixture/app.ts'
 
 /** 스테이지 세로 한가운데의 y. 탭과 드래그는 모두 이 높이에서 한다. */
 const middleY = async (page: Page): Promise<number> => {
@@ -128,8 +138,13 @@ test('R-232 · 두 손가락을 벌리면 그만큼 확대된다', async ({ page
   await expect.poll(() => zoomOf(page)).toBeCloseTo(2, 1)
 })
 
-test('R-233 · 확대해도 손가락 사이 지점이 제자리에 머문다', async ({ page }) => {
-  await readBook(page)
+/**
+ * 가운데에서 비껴 잡은 두 손가락으로 벌리고, 그 사이 지점이 페이지의 같은 자리에 머무는지 본다.
+ *
+ * 손가락이 한 번에 하나씩 움직이는 동안 중심이 미세하게 흔들리므로 몇 픽셀은 남는다. 계산이
+ * 틀어지면 화면은 손가락에서 수십 픽셀씩 미끄러진다.
+ */
+const expectPinchToHoldItsAnchor = async (page: Page): Promise<void> => {
   const viewport = page.viewportSize()
   // 가운데에서 비껴 잡는다. 한가운데를 잡으면 어떤 계산이든 제자리로 보인다.
   const anchor = { x: (viewport?.width ?? 0) * 0.35, y: await middleY(page) }
@@ -143,11 +158,36 @@ test('R-233 · 확대해도 손가락 사이 지점이 제자리에 머문다', 
   await pinch(page, anchor, 100, 220)
   await expect.poll(() => zoomOf(page)).toBeGreaterThan(1.5)
 
-  // 손가락이 한 번에 하나씩 움직이는 동안 중심이 미세하게 흔들리므로, 몇 픽셀은
-  // 남는다. 이 계산이 틀어지면 화면은 손가락에서 수십 픽셀씩 미끄러진다.
   const after = await pageBox(page)
   expect(Math.abs(after.x + fraction.x * after.width - anchor.x)).toBeLessThan(3)
   expect(Math.abs(after.y + fraction.y * after.height - anchor.y)).toBeLessThan(3)
+}
+
+test('R-233 · 확대해도 손가락 사이 지점이 제자리에 머문다', async ({ page }) => {
+  await readBook(page)
+  await expectPinchToHoldItsAnchor(page)
+})
+
+test('R-233 · 스테이지 위아래가 비대칭이어도 손가락 사이 지점이 제자리에 머문다', async ({
+  page,
+}) => {
+  // 이어 읽기 줄은 스테이지 위에만 선다. 그 줄의 높이만큼 스테이지의 가운데가 창의 가운데에서
+  // 내려가므로, 창 가운데로 손가락을 재면 그 절반만큼 미끄러진다.
+  const title = await readBook(page)
+  await control.next(page).click()
+  await control.next(page).click()
+  await expect(counter(page)).toHaveText('3 / 6')
+
+  await openMenu(page, 'settings')
+  await page.getByRole('menuitemcheckbox', { name: 'Reading settings' }).click()
+  await page.getByRole('radio', { name: 'Ask', exact: true }).click()
+  await page.getByRole('button', { name: 'Close' }).click()
+  await use(page, 'shelf')
+
+  await openReader(page, title)
+  await expect(page.getByRole('button', { name: 'Go there' })).toBeVisible()
+
+  await expectPinchToHoldItsAnchor(page)
 })
 
 test('R-239 · 페이지를 넘기면 줌이 처음으로 돌아온다', async ({ page }) => {
