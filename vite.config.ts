@@ -53,6 +53,29 @@ export default defineConfig(({ mode }) => ({
       'typescript/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
       'jsdoc/check-tag-names': 'error',
       'jsdoc/empty-tags': 'error',
+      // 효과 훅은 쓰지 않는다. 리스너·타이머·관찰자는 읽기에서 걸고 `get.addFinalizer`로
+      // 떼는 atom이거나, 다시 셈할 때 파이버가 끊기는 Effect atom이다(`CLAUDE.md`).
+      // 규칙으로 막는 것은 이것이 이관 중에 소리 없이 열네 곳까지 번졌기 때문이다(#74).
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'react',
+              importNames: ['useEffect', 'useLayoutEffect', 'useInsertionEffect'],
+              message:
+                'Put listeners, timers and observers in an atom that cleans up with get.addFinalizer, or an Effect atom. See CLAUDE.md.',
+            },
+            {
+              // `React.useEffect`로 돌아 들어오는 길을 막는다. JSX 런타임이 있어 기본
+              // 임포트가 필요한 자리는 없다. 네임스페이스 임포트는 위의 항목이 이미 막는다.
+              name: 'react',
+              importNames: ['default'],
+              message: 'Import React APIs by name, so the effect-hook rule can see them.',
+            },
+          ],
+        },
+      ],
     },
     options: { typeAware: true, typeCheck: true },
     ignorePatterns: VENDORED,

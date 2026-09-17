@@ -51,6 +51,8 @@ release. Add a tool name to select part of the graph. For example, run
   - No `useEffect` or `useLayoutEffect`. A listener, timer, or observer is an
     atom that registers in its read and cleans up with `get.addFinalizer`, or an
     Effect atom whose fiber is interrupted when it rebuilds. The reader's all
-    live in `src/app/reader/session.ts`.
+    live in `src/app/reader/session.ts`. `vp check` enforces this through
+    `no-restricted-imports` in `vite.config.ts`, which also rejects the default
+    `react` import so `React.useEffect` cannot slip past it.
   - `Atom.family` hashes its argument structurally, so it cannot key on a DOM
     element (`Illegal invocation`). Key those by identity with a `WeakMap`.
