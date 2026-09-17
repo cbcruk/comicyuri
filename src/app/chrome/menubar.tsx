@@ -23,6 +23,7 @@ import {
 } from '@astryxdesign/core/DropdownMenu'
 import * as stylex from '@stylexjs/stylex'
 import { useListFocus } from '@astryxdesign/core/hooks'
+import { HStack } from '@astryxdesign/core/HStack'
 import {
   colorVars,
   radiusVars,
@@ -71,16 +72,7 @@ export const FIT_LABEL: Readonly<Record<FitMode, string>> = {
 
 /** 메뉴바와 곁글의 모양. */
 const styles = stylex.create({
-  menubar: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacingVars['--spacing-1'],
-  },
   hint: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacingVars['--spacing-2'],
-    paddingInlineStart: spacingVars['--spacing-6'],
     fontSize: textSizeVars['--font-size-sm'],
     color: colorVars['--color-text-secondary'],
   },
@@ -102,14 +94,21 @@ const styles = stylex.create({
  * 버튼을 찾는 시험들이 모두 어긋난다.
  */
 const MenuHint = ({ value, shortcut }: Readonly<{ value?: string; shortcut?: string }>) => (
-  <span aria-hidden="true" {...stylex.props(styles.hint)}>
+  <HStack
+    as="span"
+    aria-hidden="true"
+    align="center"
+    gap={2}
+    paddingInlineStart={6}
+    xstyle={styles.hint}
+  >
     {value === undefined ? null : <span>{value}</span>}
     {shortcut === undefined ? null : (
       <kbd data-shortcut={shortcut} {...stylex.props(styles.key)}>
         {shortcut}
       </kbd>
     )}
-  </span>
+  </HStack>
 )
 
 /** 메뉴 하나. 열림 여부를 메뉴바가 쥐므로 그것만 밖에서 받는다. */
@@ -203,12 +202,13 @@ export const ReaderMenubar = ({ state, actions, onFocusGoToPage }: MenubarProps)
   }
 
   return (
-    <div
+    <HStack
       ref={listRef}
       role="menubar"
       aria-label="Reader menus"
       aria-orientation="horizontal"
-      {...stylex.props(styles.menubar)}
+      align="center"
+      gap={1}
       onKeyDown={handleMenubarKeyDown}
       onFocus={handleFocus}
     >
@@ -360,6 +360,6 @@ export const ReaderMenubar = ({ state, actions, onFocusGoToPage }: MenubarProps)
           endContent={<MenuHint shortcut={SHORTCUTS.settings} />}
         />
       </Menu>
-    </div>
+    </HStack>
   )
 }

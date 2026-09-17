@@ -27,8 +27,10 @@ import { useAtomMount, useAtomSet, useAtomValue } from '@effect/atom-react'
 import { useState } from 'react'
 
 import { Button } from '@astryxdesign/core/Button'
+import { HStack } from '@astryxdesign/core/HStack'
 import { Text } from '@astryxdesign/core/Text'
-import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex'
+import { colorVars } from '@astryxdesign/core/theme/tokens.stylex'
+import { VStack } from '@astryxdesign/core/VStack'
 
 import { pageAtoms } from '../../atoms/browser.ts'
 import type { PageAtoms } from '../../atoms/pages.ts'
@@ -45,30 +47,16 @@ import type { ReaderPersistence } from './persistence.ts'
 import { makeReaderSession } from './session.ts'
 import { ReaderStage } from './stage.tsx'
 
-/** 리더 화면의 틀과, 크롬 바깥에 서는 두 자리의 모양. */
+/**
+ * 리더 화면의 틀과 이어 읽기 줄의 모양. 줄 세우기와 간격은 `HStack`·`VStack`이 맡는다.
+ *
+ * 격자 패널이 이 틀을 기준으로 덮으므로 틀이 `relative`다.
+ */
 const styles = stylex.create({
   reader: {
     position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-  },
-  opening: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacingVars['--spacing-3'],
-    height: '100%',
-    padding: spacingVars['--spacing-6'],
   },
   resume: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: spacingVars['--spacing-2'],
-    paddingInline: spacingVars['--spacing-4'],
-    paddingBlock: spacingVars['--spacing-2'],
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colorVars['--color-border'],
@@ -81,10 +69,10 @@ const styles = stylex.create({
 
 /** 책을 여는 동안과, 끝내 열지 못했을 때 서는 화면. */
 const OpeningScreen = ({ text, onExit }: Readonly<{ text: string; onExit: () => void }>) => (
-  <main {...stylex.props(styles.opening)}>
+  <VStack as="main" align="center" justify="center" gap={3} padding={6} height="100%">
     <Text color="secondary">{text}</Text>
     <Button label="← Shelf" variant="secondary" onClick={onExit} />
-  </main>
+  </VStack>
 )
 
 /**
@@ -98,7 +86,15 @@ const ResumeRow = ({
   onResume,
   onDismiss,
 }: Readonly<{ page: number; onResume: () => void; onDismiss: () => void }>) => (
-  <div role="status" {...stylex.props(styles.resume)}>
+  <HStack
+    role="status"
+    wrap="wrap"
+    align="center"
+    gap={2}
+    paddingInline={4}
+    paddingBlock={2}
+    xstyle={styles.resume}
+  >
     <span {...stylex.props(styles.resumeText)}>
       <Text color="secondary">{`You left this book on page ${page + 1}`}</Text>
     </span>
@@ -107,7 +103,7 @@ const ResumeRow = ({
     <Button label="Stay on the first page" variant="secondary" size="sm" onClick={onDismiss}>
       Stay
     </Button>
-  </div>
+  </HStack>
 )
 
 /** 리더 화면이 받는 것. */
@@ -212,7 +208,7 @@ export const ReaderView = ({
       }
 
       return (
-        <main aria-label={drawn.title} {...stylex.props(styles.reader)}>
+        <VStack as="main" aria-label={drawn.title} height="100%" xstyle={styles.reader}>
           <ReaderChrome state={state} actions={actions}>
             {Option.match(model.maybeResumePage, {
               onNone: () => null,
@@ -261,7 +257,7 @@ export const ReaderView = ({
             onSelectAtBookEnd={(atBookEnd) => send(Message.SelectedAtBookEnd({ atBookEnd }))}
             onSelectResume={(resume) => send(Message.SelectedResume({ resume }))}
           />
-        </main>
+        </VStack>
       )
     },
   })

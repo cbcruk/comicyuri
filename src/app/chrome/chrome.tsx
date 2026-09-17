@@ -10,21 +10,22 @@ import * as stylex from '@stylexjs/stylex'
 import type { ReactNode } from 'react'
 import { useRef } from 'react'
 
-import { colorVars, spacingVars, textSizeVars } from '@astryxdesign/core/theme/tokens.stylex'
+import { HStack } from '@astryxdesign/core/HStack'
+import { colorVars, textSizeVars } from '@astryxdesign/core/theme/tokens.stylex'
+import { VStack } from '@astryxdesign/core/VStack'
 
 import { ReaderFooter } from './footer.tsx'
 import { FIT_LABEL, ReaderMenubar } from './menubar.tsx'
 import type { ChromeProps, ChromeState } from './types.ts'
 
-/** 리더 머리의 모양. 크기와 색은 모두 Astryx 토큰에서 온다. */
+/**
+ * 리더 머리의 모양. 크기와 색은 모두 Astryx 토큰에서 온다.
+ *
+ * 줄 세우기와 간격은 `HStack`·`VStack`의 props가 맡고, 여기에는 그것들이 말하지 못하는
+ * 것만 남는다.
+ */
 const styles = stylex.create({
   header: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: spacingVars['--spacing-2'],
-    paddingInline: spacingVars['--spacing-4'],
-    paddingBlock: spacingVars['--spacing-2'],
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colorVars['--color-border'],
@@ -32,9 +33,6 @@ const styles = stylex.create({
   // 카운터가 DOM에서는 먼저, 눈에는 메뉴바 오른쪽에 선다. 그 이유는 `Counter`에 있다.
   center: {
     order: 2,
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacingVars['--spacing-3'],
     minWidth: 0,
     marginInline: 'auto',
   },
@@ -42,9 +40,6 @@ const styles = stylex.create({
     order: 1,
   },
   counterBox: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
     minWidth: 0,
   },
   counter: {
@@ -100,14 +95,14 @@ const Counter = ({
   const names = fileNames.map((name) => clipStart(name, tail)).join(' · ')
 
   return (
-    <div {...stylex.props(styles.counterBox)}>
+    <VStack align="center" xstyle={styles.counterBox}>
       <span {...stylex.props(styles.counter)}>{counter}</span>
       {names === '' ? null : (
         <span title={fileNames.join(' · ')} {...stylex.props(styles.faint, styles.fileNames)}>
           {names}
         </span>
       )}
-    </div>
+    </VStack>
   )
 }
 
@@ -150,15 +145,23 @@ export const ReaderHeader = ({
   actions,
   onFocusGoToPage,
 }: ChromeProps & Readonly<{ onFocusGoToPage?: () => void }>) => (
-  <header {...stylex.props(styles.header)}>
-    <div {...stylex.props(styles.center)}>
+  <HStack
+    as="header"
+    wrap="wrap"
+    align="center"
+    gap={2}
+    paddingInline={4}
+    paddingBlock={2}
+    xstyle={styles.header}
+  >
+    <HStack align="center" gap={3} xstyle={styles.center}>
       <Counter counter={state.counter} fileNames={state.fileNames} />
       <ReaderStatus state={state} />
-    </div>
+    </HStack>
     <div {...stylex.props(styles.menus)}>
       <ReaderMenubar state={state} actions={actions} onFocusGoToPage={onFocusGoToPage} />
     </div>
-  </header>
+  </HStack>
 )
 
 /**

@@ -5,10 +5,9 @@
  * (`/comicyuri/`), 라우터의 `basepath`가 그것을 맡는다(`N-407`).
  */
 
-import * as stylex from '@stylexjs/stylex'
 import { Heading } from '@astryxdesign/core/Heading'
 import { Text } from '@astryxdesign/core/Text'
-import { spacingVars } from '@astryxdesign/core/theme/tokens.stylex'
+import { VStack } from '@astryxdesign/core/VStack'
 import {
   Outlet,
   createRootRoute,
@@ -22,18 +21,6 @@ import { RouterLink } from './routerLink.tsx'
 import { useDocumentTitle } from './title.ts'
 import { ShelfScreen } from './shelf.tsx'
 
-const styles = stylex.create({
-  page: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacingVars['--spacing-3'],
-    height: '100%',
-    padding: spacingVars['--spacing-6'],
-  },
-})
-
 /**
  * 아무 라우트도 맞지 않는 주소. 무엇을 찾으려 했는지 보여 주고 책장으로 돌아갈 길을 준다.
  *
@@ -44,13 +31,13 @@ const NotFound = () => {
   useDocumentTitle('comicyuri — not found')
 
   return (
-    <main {...stylex.props(styles.page)}>
+    <VStack as="main" align="center" justify="center" gap={3} padding={6} height="100%">
       <Heading level={1}>Nothing here</Heading>
       <Text color="secondary">{window.location.pathname}</Text>
       <RouterLink to="/" hasUnderline={true}>
         Back to the shelf
       </RouterLink>
-    </main>
+    </VStack>
   )
 }
 
