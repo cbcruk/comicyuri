@@ -66,7 +66,7 @@ type Rendered = Awaited<ReturnType<typeof render>>
 const renderChrome = async (state: Partial<ChromeState> = {}) => {
   const actions = spies()
   const screen = await render(
-    <Providers theme="dark">
+    <Providers>
       <ReaderChrome state={{ ...BASE, ...state }} actions={actions} />
     </Providers>,
   )
@@ -115,7 +115,7 @@ const DraggableChrome = ({ actions }: Readonly<{ actions: ChromeActions }>) => {
 const renderDraggable = async () => {
   const actions = spies()
   const screen = await render(
-    <Providers theme="dark">
+    <Providers>
       <DraggableChrome actions={actions} />
     </Providers>,
   )

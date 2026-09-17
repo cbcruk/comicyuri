@@ -21,7 +21,7 @@ const TRANSPARENT = 'rgba(0, 0, 0, 0)'
 
 test('Astryx primitives keep their padding, fill and borders under the app stylesheet', async () => {
   const screen = await render(
-    <Providers theme="dark">
+    <Providers>
       <Button label="Primary action" variant="primary" />
       <TextInput label="Email" value="" onChange={() => undefined} />
       <Card>One card with default padding</Card>

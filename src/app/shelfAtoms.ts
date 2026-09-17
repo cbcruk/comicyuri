@@ -228,8 +228,8 @@ export const themeAtom: Atom.Writable<Theme> = Atom.make(Effect.runSync(loadSett
 
 /** 브라우저 UI에 알려 줄 바탕색. `styles.css`의 `--color-bg`와 같은 값이다. */
 const THEME_COLOUR: Record<Theme, string> = {
-  dark: '#14141a',
-  light: '#f4f2f7',
+  dark: '#1b1b1b',
+  light: '#f1f1f1',
 }
 
 /**

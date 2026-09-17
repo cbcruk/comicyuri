@@ -98,7 +98,7 @@ const StatefulPanel = ({
 const renderPanel = async (settings: Partial<Settings> = {}) => {
   const handlers = spies()
   const screen = await render(
-    <Providers theme="dark">
+    <Providers>
       <StatefulPanel initial={{ ...defaultSettings, ...settings }} handlers={handlers} />
     </Providers>,
   )

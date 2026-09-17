@@ -35,6 +35,31 @@ test('S-142 · 라이트로 바꾸면 토큰이 실제로 덮인다', async ({ p
   expect(luminance(lightInk)).toBeLessThan(luminance(darkInk))
 })
 
+test('S-142 · 테마를 바꾸면 Astryx 컴포넌트도 새로고침 없이 따라온다', async ({ page }) => {
+  await openShelf(page)
+  const openFiles = page.getByRole('button', { name: 'Open files' })
+  const colours = () =>
+    openFiles.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return `${style.color} on ${style.backgroundColor}`
+    })
+
+  const dark = await colours()
+  await page.getByRole('button', { name: 'Switch to light theme' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  // 속성은 곧바로 바뀌지만 컴포넌트는 React가 다시 그린 뒤에 따라온다.
+  await expect.poll(colours).not.toBe(dark)
+  const toggled = await colours()
+
+  // 새로고침한 뒤의 색이 정답이다. 토글만으로 거기에 닿아 있어야 한다 — 앱을 켤 때 읽은 모드를
+  // `Theme`에 한 번 넘기면, 토글한 뒤에도 켤 때의 모드에 머물러 글자가 바탕에 묻힌다.
+  await page.reload()
+  await expect(openFiles).toBeVisible()
+  const reloaded = await colours()
+
+  expect(toggled).toBe(reloaded)
+})
+
 test('S-142 · 고른 테마는 새로고침을 넘긴다', async ({ page }) => {
   await openShelf(page)
   await page.getByRole('button', { name: 'Switch to light theme' }).click()
@@ -78,8 +103,8 @@ test('S-144 · 라이트를 고른 사람은 어두운 첫 프레임을 보지 �
 
   expect(early.booted).toBe(0)
   expect(early.theme).toBe('light')
-  expect(early.background).toBe('rgb(244, 242, 247)')
-  expect(early.themeColour).toBe('#f4f2f7')
+  expect(early.background).toBe('rgb(241, 241, 241)')
+  expect(early.themeColour).toBe('#f1f1f1')
 })
 
 test('S-144 · 다크를 고른 사람의 첫 프레임은 그대로 어둡다', async ({ page }) => {
@@ -89,14 +114,14 @@ test('S-144 · 다크를 고른 사람의 첫 프레임은 그대로 어둡다',
 
   expect(early.booted).toBe(0)
   expect(early.theme).toBe('dark')
-  expect(early.background).toBe('rgb(20, 20, 26)')
+  expect(early.background).toBe('rgb(27, 27, 27)')
 })
 
 test('S-144 · 테마를 바꾸면 브라우저에 알리는 색도 함께 간다', async ({ page }) => {
   await openShelf(page)
   const meta = page.locator('meta[name="theme-color"]')
 
-  await expect(meta).toHaveAttribute('content', '#14141a')
+  await expect(meta).toHaveAttribute('content', '#1b1b1b')
   await page.getByRole('button', { name: 'Switch to light theme' }).click()
-  await expect(meta).toHaveAttribute('content', '#f4f2f7')
+  await expect(meta).toHaveAttribute('content', '#f1f1f1')
 })

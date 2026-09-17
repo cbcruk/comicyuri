@@ -178,7 +178,7 @@ const renderReader = async (
   const settings = options.settings ?? defaultSettings
 
   const screen = await render(
-    <Providers theme="dark">
+    <Providers>
       <div style={VIEWPORT}>
         <ReaderView
           initial={init({

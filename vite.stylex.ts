@@ -43,6 +43,18 @@ export const CSS_TARGET = ['chrome123', 'firefox120', 'safari17.5']
  * StyleX는 우선순위를 `priority1`~`priority9` 레이어로 나눠 싣는다. Astryx 토큰을 덮는 테마가
  * 그 위에 서고, 옮기는 동안 남아 있는 Tailwind 유틸리티가 맨 위에서 모두를 덮는다 — 지금까지
  * `className`으로 Astryx 컴포넌트를 덮어 온 것이 그대로 통하도록.
+ *
+ * 차례로 풀리지 않는 것이 하나 있다. StyleX는 `defineVars`가 만드는 토큰 기본값
+ * (`:root, .x… { --토큰: 값 }`)을 어느 레이어에도 넣지 않고, 레이어 밖 규칙은 모든 레이어를
+ * 이긴다. 그래서 `<html>`에서는 Astryx 코어의 기본 토큰이 테마를 누른다. 미리 컴파일된
+ * `astryx.css`는 출력 전체를 `@layer astryx-base`로 감싸 이것을 피했지만, 소스에서 컴파일하면
+ * 그렇게 할 자리가 없다 — lightningcss visitor로 그 규칙만 레이어에 넣으려 하면 `var()`가 든
+ * 토큰 값을 되읽지 못해 빌드가 멎는다.
+ *
+ * 대신 테마 토큰을 요소에 직접 건다. 요소에 걸린 토큰은 조상에게서 물려받는 값보다 레이어와
+ * 상관없이 먼저이므로, `index.html`이 `<body>`에도 `data-astryx-theme`을 박아 두면 문서
+ * 바탕부터 그 아래 전체가 테마를 받는다. `Theme`의 래퍼 안쪽이 처음부터 멀쩡했던 것도 같은
+ * 까닭이다.
  */
 const LAYER_ORDER = [
   'reset',
