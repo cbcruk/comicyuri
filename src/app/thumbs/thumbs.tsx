@@ -15,7 +15,7 @@ import { Atom, AsyncResult } from 'effect/unstable/reactivity'
 import { useAtomValue } from '@effect/atom-react'
 import { Button } from '@astryxdesign/core/Button'
 import clsx from 'clsx'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import { pageAtoms } from '../../atoms/browser.ts'
 import {
@@ -169,10 +169,9 @@ export const ThumbsPanel = ({
   const cellWidth = cellWidthFor(width)
   const rowHeight = rowHeightFor(width)
 
-  const rows = useMemo(
-    () => rowsFor(shownPages(pageCount, bookmarks, showsBookmarksOnly), perRowFor(width)),
-    [pageCount, bookmarks, showsBookmarksOnly, width],
-  )
+  // 붙잡아 둘 까닭이 없는 계산이다. 페이지 수만큼 한 번 훑을 뿐이고, 리스트는 행의 개수와
+  // 번호로만 읽으므로 배열이 새로 만들어져도 달라지는 것이 없다.
+  const rows = rowsFor(shownPages(pageCount, bookmarks, showsBookmarksOnly), perRowFor(width))
 
   const virtualizer = useVirtualizer({
     count: rows.length,

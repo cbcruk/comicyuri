@@ -37,3 +37,20 @@ release. Add a tool name to select part of the graph. For example, run
   same change as the `export`.
 - **`SPEC.md` is the feature spec.** When behaviour changes, update its item and
   the test names it cites as evidence.
+- **State the app knows lives in atoms; React keeps only DOM handles and
+  widget-internal moments.** Before adding state, ask whether anything outside
+  this one component needs to read it.
+  - _Atom_ (effect-atom): anything the app knows — the reader Model, a shelf
+    question or panel, what a screen opens with. Screen state stays scoped to
+    the screen by leaving the atom unmounted elsewhere, so the registry drops it
+    when the screen goes (`pendingDeleteAtom` in `src/app/shelfAtoms.ts`).
+  - _React_ (`useState`, `useRef`): a ref to an element, or a moment inside one
+    widget that nothing else reads — which menu is open, a drag in progress, a
+    drop highlight. One atom per widget instance would only add a layer over
+    `useState`.
+  - No `useEffect` or `useLayoutEffect`. A listener, timer, or observer is an
+    atom that registers in its read and cleans up with `get.addFinalizer`, or an
+    Effect atom whose fiber is interrupted when it rebuilds. The reader's all
+    live in `src/app/reader/session.ts`.
+  - `Atom.family` hashes its argument structurally, so it cannot key on a DOM
+    element (`Illegal invocation`). Key those by identity with a `WeakMap`.

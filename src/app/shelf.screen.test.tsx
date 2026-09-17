@@ -145,6 +145,39 @@ test('the question stands on one card only', async () => {
   expect(screen.getByRole('group', { name: 'Remove volume-1?' }).elements()).toHaveLength(0)
 })
 
+test('a question and a panel left open are gone when the shelf is visited again', async () => {
+  await seed(record('volume-1', 1000))
+
+  // 앱처럼 레지스트리 하나를 두고 화면만 오간다. 책장 상태가 atom에 있어도 수명은 화면과
+  // 같아야 한다 — 레지스트리가 살아 있다고 해서 물음이 남아서는 안 된다.
+  const router = shelfRouter()
+  const screen = await render(
+    <RegistryProvider>
+      <RouterProvider router={router} />
+    </RegistryProvider>,
+  )
+
+  await screen.getByRole('button', { name: 'Remove volume-1 from shelf…' }).click()
+  await expect.element(screen.getByRole('group', { name: 'Remove volume-1?' })).toBeVisible()
+  await screen.getByRole('button', { name: 'Reading settings' }).click()
+  await expect
+    .element(screen.getByRole('button', { name: 'Reading settings', includeHidden: true }))
+    .toHaveAttribute('aria-expanded', 'true')
+
+  await router.navigate({ to: '/book/$id', params: { id: 'volume-1::1' } })
+  await expect.element(screen.getByRole('link', { name: 'volume-1' })).not.toBeInTheDocument()
+  // 구독이 끊긴 atom을 레지스트리가 치우는 것은 다음 틱이다.
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  await router.navigate({ to: '/' })
+  await expect.element(screen.getByRole('link', { name: 'volume-1' })).toBeVisible()
+
+  expect(screen.getByRole('group', { name: 'Remove volume-1?' }).elements()).toHaveLength(0)
+  await expect
+    .element(screen.getByRole('button', { name: 'Reading settings' }))
+    .toHaveAttribute('aria-expanded', 'false')
+})
+
 test('the theme toggle says where it will take you and applies it', async () => {
   const screen = await renderShelf()
 

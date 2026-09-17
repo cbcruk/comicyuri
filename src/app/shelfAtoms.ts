@@ -180,6 +180,25 @@ const NOTICE_LINGER = Duration.seconds(4)
 export const noticeAtom: Atom.Writable<Notice | null> = Atom.make<Notice | null>(null)
 
 /**
+ * 삭제를 묻고 있는 책의 id. 묻고 있지 않으면 `null`이다(`S-131`).
+ *
+ * 한 번에 한 권만 묻는다. 다른 카드의 🗑을 누르면 앞선 물음은 거둬진다.
+ *
+ * 수명은 책장 화면과 같다. 모듈에 둔 atom이지만 화면이 내려가 아무도 구독하지 않으면
+ * 레지스트리가 치우므로, 책장에 돌아왔을 때 물음이 열린 채 남지 않는다. 그러니 이것을
+ * 책장 밖에서 마운트해서는 안 된다.
+ */
+export const pendingDeleteAtom: Atom.Writable<string | null> = Atom.make<string | null>(null)
+
+/**
+ * 책장의 설정 패널이 열려 있는지(`R-2B6`).
+ *
+ * 리더에도 같은 패널이 있지만 그쪽은 리더 Model의 것이다. 수명은
+ * {@linkcode pendingDeleteAtom}과 같다.
+ */
+export const shelfSettingsOpenAtom: Atom.Writable<boolean> = Atom.make(false)
+
+/**
  * 실패 문구를 제 시간이 지나면 거둔다(`F-501`). 마운트해 둔 동안만 돈다.
  *
  * 기다림은 이 atom의 스코프에 매여 있다. 상태 줄의 말이 바뀌면 atom이 다시 셈하면서
