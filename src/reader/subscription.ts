@@ -22,13 +22,22 @@ import { Message } from './message.ts'
 import type { Model } from './model.ts'
 
 /**
- * 포인터 위치는 뷰포트 한가운데를 기준으로 전한다. pan 오프셋이 이미 쓰는
+ * 포인터 위치는 스테이지 한가운데를 기준으로 전한다. pan 오프셋이 이미 쓰는
  * 원점이라서, update는 페이지 크기를 알 필요가 없다.
+ *
+ * 창 가운데가 아니라 스테이지 가운데인 것은 확대가 그 자리를 중심으로 일어나기 때문이다. 둘은
+ * 스테이지 위아래의 크롬 높이가 같을 때만 겹친다 — 푸터가 헤더보다 크거나 이어 읽기 줄이 떠
+ * 있으면, 창 가운데로 재는 순간 손가락 사이 지점이 그 차이의 절반만큼 미끄러진다(`R-233`).
+ * 스테이지가 아직 없으면(리더가 서기 전) 창 가운데로 잰다.
  */
-const centreRelative = (event: PointerEvent | WheelEvent): Point => ({
-  x: event.clientX - window.innerWidth / 2,
-  y: event.clientY - window.innerHeight / 2,
-})
+const centreRelative = (event: PointerEvent | WheelEvent): Point => {
+  const stage = document.getElementById(STAGE_ID)
+  const box = stage?.getBoundingClientRect()
+  const centreX = box === undefined ? window.innerWidth / 2 : box.left + box.width / 2
+  const centreY = box === undefined ? window.innerHeight / 2 : box.top + box.height / 2
+
+  return { x: event.clientX - centreX, y: event.clientY - centreY }
+}
 
 /**
  * 마우스 휠인지 트랙패드인지를 가르는 옛 값. 표준이 아니라 `WheelEvent`의 타입에

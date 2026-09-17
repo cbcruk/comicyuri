@@ -16,9 +16,6 @@ export const PAGE_ID = 'reader-page'
  */
 export const SKIP_PAGES = 10
 
-/** 번호를 적어 그 페이지로 가는 입력란. */
-export const GOTO_ID = 'reader-go-to-page'
-
 /** 페이지 격자. 부모가 리스트 구독을 lift 할 때 이 id로 부른다. */
 export const THUMBS_ID = 'reader-thumbs'
 
