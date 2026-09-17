@@ -181,7 +181,7 @@ off?"와 함께 "Remove"(이름 "Remove <제목> from shelf")와 "Keep"(이름 "
 떠나면 물음도 접힌다.
 ✅ shelf/screen "the bin asks rather than deletes, and keeping the book leaves the shelf as
 it was", "removing a book from the shelf takes it out of the grid", "the question stands on
-one card only",
+one card only", "a question and a panel left open are gone when the shelf is visited again",
 e2e "S-131 · 🗑은 묻기만 하고, 지키기를 고르면 책이 남는다", "S-131 · 지우기를 고르면
 책장에서 사라지고 새로고침을 넘겨 돌아오지 않는다", "S-131 · 묻는 동안에는 그 카드로
 들어갈 수 없다", "S-131 · 다른 책을 열었다 돌아오면 묻던 것이 남아 있지 않다"

@@ -5,9 +5,10 @@
  * 화면이고(`S-101`), 카드 전체가 그 책으로 가는 링크이며(`S-104`), 🗑은 지우는 것이
  * 아니라 묻는 버튼이다(`S-131`).
  *
- * 상태를 두는 자리가 달라졌다. 책과 표지는 atom이 맡고(`shelfAtoms.ts`), 물음이 어느
- * 카드에 서 있는지·상태 줄이 무엇을 말하는지·설정 패널이 열렸는지 같은 화면 순간의
- * 것은 이 컴포넌트가 쥔다.
+ * 상태는 모두 atom에 있다(`shelfAtoms.ts`). 책과 표지뿐 아니라 물음이 어느 카드에 서
+ * 있는지·상태 줄이 무엇을 말하는지·설정 패널이 열렸는지도 그렇다. 이 컴포넌트가 쥐는 것은
+ * 드래그가 책장 위에 올라와 있는지 하나뿐이다 — 강조 표시를 위한 것이고, 떨어뜨리는 순간
+ * 사라진다.
  */
 
 import { Effect, Option } from 'effect'
@@ -26,9 +27,11 @@ import {
   importFilesAtom,
   noticeAtom,
   noticeLingerAtom,
+  pendingDeleteAtom,
   pickFiles,
   pickFolder,
   shelfAtom,
+  shelfSettingsOpenAtom,
   themeAtom,
 } from './shelfAtoms.ts'
 import type { ShelfBook } from './shelfAtoms.ts'
@@ -191,8 +194,8 @@ export const ShelfScreen = () => {
 
   const [notice, setNotice] = useAtom(noticeAtom)
   useAtomMount(noticeLingerAtom)
-  const [maybePendingDelete, setPendingDelete] = useState<string | null>(null)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [maybePendingDelete, setPendingDelete] = useAtom(pendingDeleteAtom)
+  const [isSettingsOpen, setIsSettingsOpen] = useAtom(shelfSettingsOpenAtom)
   const [isDragOver, setIsDragOver] = useState(false)
 
   /** 고른 파일을 들여온다. 아무것도 고르지 않은 것은 아무 일도 아니다(`S-118`). */
