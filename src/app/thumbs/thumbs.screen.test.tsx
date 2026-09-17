@@ -66,7 +66,7 @@ const renderThumbs = async (
   }
 
   const screen = await render(
-    <Providers theme="dark">
+    <Providers>
       <div style={STAGE}>
         <ThumbsPanel
           bookId={bookId}

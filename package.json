@@ -29,6 +29,7 @@
   "devDependencies": {
     "@effect/platform-browser": "4.0.0-rc.115",
     "@playwright/test": "^1.63.0",
+    "@stylexjs/unplugin": "0.19.1",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.5.0",
     "@types/react": "19.3.0",
@@ -42,5 +43,10 @@
     "vite-plus": "catalog:",
     "vitest-browser-react": "^2.3.0"
   },
+  "browserslist": [
+    "chrome >= 123",
+    "firefox >= 120",
+    "safari >= 17.5"
+  ],
   "packageManager": "pnpm@11.10.0"
 }

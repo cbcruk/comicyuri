@@ -165,26 +165,29 @@ e2e "S-121 · 잰 크기는 새로고침을 넘겨 남는다"
 
 **S-131 · 카드의 🗑 버튼이 지울지 묻는다**
 버튼 이름은 "Remove <제목> from shelf…". 평소에는 투명하고 hover·focus 시 보인다.
-누르면 지우는 것이 아니라 물음이 카드를 덮는다 — "Remove this book and where you left
-off?"와 함께 "Remove"(이름 "Remove <제목> from shelf")와 "Keep"(이름 "Keep <제목>")이
-선다.
+누르면 지우는 것이 아니라 확인 대화상자가 뜬다 — Astryx `AlertDialog`
+(`role="alertdialog"`, 이름 "Remove <제목>?")가 "The book and where you left off in it are
+removed from this browser. This can't be undone."과 함께 "Remove"와 "Keep"을 세운다.
 
 묻는 것은 지우는 것이 되돌릴 수 없고 그 책의 읽던 자리까지 함께 가기 때문이다. 🗑은
 카드 위에 떠 있어서 책을 누르려다 스칠 수 있다.
 
-물음은 카드를 통째로 덮고 그동안 링크는 `inert`가 되므로, 답하기 전에는 포인터로도
-키보드로도 그 책이 열리지 않는다. 물음과 답을 같은
-자리에 두지 않는 이유도 같다 — 🗑이 있던 곳에 "Remove"가 서면 두 번째 누름이 첫
-번째와 같은 동작처럼 보이고, 그 자리는 손이 이미 가 있는 자리다.
+물음은 모달이다. 열려 있는 동안 책장의 나머지는 닿지 않으므로, 답하기 전에는 포인터로도
+키보드로도 그 책이 열리지 않고 다른 책의 🗑도 누를 수 없다 — 한 번에 한 책만 묻는다.
+처음 포커스는 "Keep"에 가고, Escape는 지키는 것이며, 바깥을 눌러도 닫히지 않는다.
+물음과 답이 🗑과 다른 자리에 서는 것도 그래서다 — 🗑이 있던 곳에 "Remove"가 서면 두 번째
+누름이 첫 번째와 같은 동작처럼 보이고, 그 자리는 손이 이미 가 있는 자리다.
 
-한 번에 한 책만 묻는다. 다른 카드의 🗑을 누르면 물음이 그쪽으로 옮겨 간다. 책장을
-떠나면 물음도 접힌다.
+"Remove"를 누르면 지우기가 끝날 때까지 대화상자가 열린 채 버튼에 진행 표시가 돈다. 끝나면
+— 실패했더라도 — 닫힌다(`S-133`). 브라우저의 뒤로 가기로 책장을 떠나면 물음도 접힌다.
 ✅ shelf/screen "the bin asks rather than deletes, and keeping the book leaves the shelf as
-it was", "removing a book from the shelf takes it out of the grid", "the question stands on
-one card only", "a question and a panel left open are gone when the shelf is visited again",
+it was", "removing a book from the shelf takes it out of the grid", "the question is modal,
+so nothing else on the shelf can be reached until it is answered", "a question and a panel
+left open are gone when the shelf is visited again",
 e2e "S-131 · 🗑은 묻기만 하고, 지키기를 고르면 책이 남는다", "S-131 · 지우기를 고르면
 책장에서 사라지고 새로고침을 넘겨 돌아오지 않는다", "S-131 · 묻는 동안에는 그 카드로
-들어갈 수 없다", "S-131 · 다른 책을 열었다 돌아오면 묻던 것이 남아 있지 않다"
+들어갈 수 없다", "S-131 · 묻던 중에 뒤로 가기로 떠났다 돌아오면 물음이 남아 있지 않다"
+📖 지우는 동안의 진행 표시 — 재는 테스트가 없다
 ❓ hover 시 나타나는 동작
 
 **S-132 · 삭제 후 책장이 다시 읽힌다**
@@ -232,17 +235,28 @@ e2e "R-2B6 · 책장에서 정한 기본값이 그 뒤에 여는 책에 걸린�
 ⚠️ 지금 앱에는 없는 기능이다.
 
 **S-142 · 테마는 즉시 적용되고 저장된다**
-`<html data-theme>`를 바꾼다. 모든 색은 이 속성에서 갈라지는 CSS 변수를 통해 나온다.
+색은 모두 Astryx 중립 테마의 토큰이고, 토큰은 `light-dark()`로 라이트·다크를 스스로
+가른다. 테마를 바꾸면 고른 값이 앱 상태에 들어가고, 루트의 Astryx `Theme`가 그 모드를 받아
+`<html data-theme>`와 컴포넌트를 함께 옮긴다. 새로고침하지 않아도 버튼과 패널까지 곧바로
+따라온다.
+
 브라우저가 자기 UI를 칠하는 `theme-color`도 함께 옮긴다 — 그 값에는 CSS 변수가 닿지
-않으므로 따로 적어 준다.
+않으므로 중립 테마의 바탕색을 따로 적어 준다.
 ✅ shelf/screen "the theme toggle says where it will take you and applies it",
-e2e "S-142 · 라이트로 바꾸면 토큰이 실제로 덮인다", "S-142 · 고른 테마는
-새로고침을 넘긴다", "S-144 · 테마를 바꾸면 브라우저에 알리는 색도 함께 간다"
+e2e "S-142 · 라이트로 바꾸면 토큰이 실제로 덮인다", "S-142 · 테마를 바꾸면 Astryx 컴포넌트도
+새로고침 없이 따라온다", "S-142 · 고른 테마는 새로고침을 넘긴다", "S-144 · 테마를 바꾸면
+브라우저에 알리는 색도 함께 간다"
+🔍 2026-09-17 · 이전에는 켤 때 읽은 모드를 `Theme`에 한 번만 넘겨, 책장에서 라이트로 바꾸면
+새로고침 전까지 제목·책 이름·`Open folder`가 바탕에 묻혔다
 
 **S-144 · 첫 프레임이 이미 고른 테마다**
 `index.html`의 인라인 스크립트가 저장된 설정에서 테마를 읽어 첫 페인트 전에
 세운다. 앱도 `ApplyTheme`으로 같은 일을 하지만 그것은 모듈이 받아져 돌기 시작한
 뒤라, 그때까지 라이트를 고른 사람은 어두운 화면을 한 번 보고 만다.
+
+중립 테마의 토큰은 `@scope`로 `data-astryx-theme` 아래에서만 서므로, 그 속성은 `<html>`과
+`<body>` 태그에 박혀 있다. `<body>`에도 두는 것은 `<html>`에서는 레이어 밖에 떨어진 Astryx
+코어 기본 토큰이 테마를 누르기 때문이다 — 요소에 직접 걸린 토큰은 물려받는 값보다 먼저다.
 
 그 자리에서는 스키마를 쓸 수 없으므로 읽은 것을 믿지 않는다. 저장소가 없거나
 JSON이 깨졌거나 `theme`이 아는 값이 아니면 아무것도 하지 않고, 문서가 이미 지고
@@ -253,8 +267,8 @@ JSON이 깨졌거나 `theme`이 아는 값이 아니면 아무것도 하지 않�
 
 |                                                                                       | 앱이 뜨기 전 바탕    |
 | ------------------------------------------------------------------------------------- | -------------------- |
-| 인라인 스크립트가 없을 때                                                             | `rgb(20, 20, 26)`    |
-| 있을 때                                                                               | `rgb(244, 242, 247)` |
+| 인라인 스크립트가 없을 때                                                             | `rgb(27, 27, 27)`    |
+| 있을 때                                                                               | `rgb(241, 241, 241)` |
 | ✅ e2e "S-144 · 라이트를 고른 사람은 어두운 첫 프레임을 보지 않는다", "S-144 · 다크를 |
 | 고른 사람의 첫 프레임은 그대로 어둡다"                                                |
 

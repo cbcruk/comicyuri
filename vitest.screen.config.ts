@@ -11,11 +11,14 @@ import { defineConfig } from 'vite-plus'
 import tailwindcss from '@tailwindcss/vite'
 import { playwright } from 'vite-plus/test/browser-playwright'
 
+import { astryxFromSource, stylexPlugins } from './vite.stylex.ts'
+
 export default defineConfig({
-  plugins: [tailwindcss()],
+  plugins: [...stylexPlugins(), tailwindcss()],
   // React 사본이 둘이면 훅이 서로 다른 dispatcher를 보고 죽는다. Astryx가 제 훅을 부르는
   // 순간 `useRef`가 null이 되는 것이 그 증상이다.
-  resolve: { dedupe: ['react', 'react-dom'] },
+  resolve: { ...astryxFromSource.resolve, dedupe: ['react', 'react-dom'] },
+  optimizeDeps: astryxFromSource.optimizeDeps,
   test: {
     include: ['src/**/*.screen.test.tsx'],
     browser: {

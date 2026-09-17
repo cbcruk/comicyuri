@@ -6,6 +6,8 @@ import type { Plugin } from 'vite-plus'
 
 import tailwindcss from '@tailwindcss/vite'
 
+import { CSS_TARGET, astryxFromSource, stylexPlugins } from './vite.stylex.ts'
+
 // `repos/`에는 다른 프로젝트를 참고용으로 받아 둘 때 그 체크아웃이 들어간다.
 // 그래서 이 프로젝트가 자기 코드에 돌리는 모든 검사에서 빼 둔다.
 const VENDORED = ['repos/**', 'dist/**', 'dist-pages/**']
@@ -27,8 +29,11 @@ const pagesFallback = (): Plugin => ({
 
 export default defineConfig(({ mode }) => ({
   base: mode === GITHUB_PAGES ? '/comicyuri/' : '/',
-  plugins: [tailwindcss(), pagesFallback()],
+  plugins: [...stylexPlugins(), tailwindcss(), pagesFallback()],
+  resolve: astryxFromSource.resolve,
+  build: { cssTarget: CSS_TARGET },
   optimizeDeps: {
+    ...astryxFromSource.optimizeDeps,
     entries: ['src/app/main.tsx'],
   },
   staged: {

@@ -105,20 +105,24 @@ test('a single-page book is not announced as "1 pages"', async () => {
   await expect.element(screen.getByText('1 page')).toBeVisible()
 })
 
+/** 지울지 묻는 대화상자. 제목이 곧 물음이다. */
+const question = (screen: RenderResult, title: string) =>
+  screen.getByRole('alertdialog', { name: `Remove ${title}?` })
+
 test('the bin asks rather than deletes, and keeping the book leaves the shelf as it was', async () => {
   await seed(record('volume-1', 1000))
 
   const screen = await renderShelf()
   await screen.getByRole('button', { name: 'Remove volume-1 from shelf…' }).click()
 
-  await expect.element(screen.getByRole('group', { name: 'Remove volume-1?' })).toBeVisible()
-  // 아직 아무것도 지워지지 않았다. 묻는 동안 링크는 `inert`라 역할로는 찾을 수 없다.
+  await expect.element(question(screen, 'volume-1')).toBeVisible()
+  // 아직 아무것도 지워지지 않았다. 대화상자 뒤는 닿지 않으므로 역할이 아니라 제목으로 찾는다.
   await expect.element(screen.getByTitle('volume-1')).toBeVisible()
 
-  await screen.getByRole('button', { name: 'Keep volume-1' }).click()
+  await question(screen, 'volume-1').getByRole('button', { name: 'Keep' }).click()
 
   await expect.element(screen.getByRole('link', { name: 'volume-1' })).toBeVisible()
-  expect(screen.getByRole('group', { name: 'Remove volume-1?' }).elements()).toHaveLength(0)
+  expect(question(screen, 'volume-1').elements()).toHaveLength(0)
 })
 
 test('removing a book from the shelf takes it out of the grid', async () => {
@@ -126,23 +130,30 @@ test('removing a book from the shelf takes it out of the grid', async () => {
 
   const screen = await renderShelf()
   await screen.getByRole('button', { name: 'Remove volume-2 from shelf…' }).click()
-  await screen.getByRole('button', { name: 'Remove volume-2 from shelf', exact: true }).click()
+  await question(screen, 'volume-2').getByRole('button', { name: 'Remove', exact: true }).click()
 
   await expect.element(screen.getByRole('link', { name: 'volume-1' })).toBeVisible()
   await expect.element(screen.getByRole('link', { name: 'volume-2' })).not.toBeInTheDocument()
+  // 지우기가 끝나면 물음도 닫힌다.
+  expect(question(screen, 'volume-2').elements()).toHaveLength(0)
 })
 
-test('the question stands on one card only', async () => {
+test('the question is modal, so nothing else on the shelf can be reached until it is answered', async () => {
   await seed(record('volume-1', 1000), record('volume-2', 2000))
 
   const screen = await renderShelf()
   await screen.getByRole('button', { name: 'Remove volume-1 from shelf…' }).click()
-  await expect.element(screen.getByRole('group', { name: 'Remove volume-1?' })).toBeVisible()
+  await expect.element(question(screen, 'volume-1')).toBeVisible()
 
-  await screen.getByRole('button', { name: 'Remove volume-2 from shelf…' }).click()
+  // 모달 대화상자 밖은 inert다. 다른 책을 열거나 다른 책의 🗑을 누를 길이 없으므로, 한 번에
+  // 한 권만 묻고 답하기 전에는 그 책으로 들어갈 수도 없다.
+  const dialog = question(screen, 'volume-1').element().closest('dialog')
+  expect(dialog?.matches(':modal')).toBe(true)
 
-  await expect.element(screen.getByRole('group', { name: 'Remove volume-2?' })).toBeVisible()
-  expect(screen.getByRole('group', { name: 'Remove volume-1?' }).elements()).toHaveLength(0)
+  // 처음 손이 가는 곳은 지키는 쪽이다.
+  await expect
+    .element(question(screen, 'volume-1').getByRole('button', { name: 'Keep' }))
+    .toHaveFocus()
 })
 
 test('a question and a panel left open are gone when the shelf is visited again', async () => {
@@ -157,22 +168,28 @@ test('a question and a panel left open are gone when the shelf is visited again'
     </RegistryProvider>,
   )
 
+  /** 다른 화면에 갔다가 책장으로 돌아온다. */
+  const leaveAndComeBack = async () => {
+    await router.navigate({ to: '/book/$id', params: { id: 'volume-1::1' } })
+    await expect.element(screen.getByTitle('volume-1')).not.toBeInTheDocument()
+    // 구독이 끊긴 atom을 레지스트리가 치우는 것은 다음 틱이다.
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    await router.navigate({ to: '/' })
+    await expect.element(screen.getByRole('link', { name: 'volume-1' })).toBeVisible()
+  }
+
+  // 둘 다 모달이라 함께 열어 둘 수 없다. 하나씩 열어 두고 떠난다.
   await screen.getByRole('button', { name: 'Remove volume-1 from shelf…' }).click()
-  await expect.element(screen.getByRole('group', { name: 'Remove volume-1?' })).toBeVisible()
+  await expect.element(question(screen, 'volume-1')).toBeVisible()
+  await leaveAndComeBack()
+  expect(question(screen, 'volume-1').elements()).toHaveLength(0)
+
   await screen.getByRole('button', { name: 'Reading settings' }).click()
   await expect
     .element(screen.getByRole('button', { name: 'Reading settings', includeHidden: true }))
     .toHaveAttribute('aria-expanded', 'true')
-
-  await router.navigate({ to: '/book/$id', params: { id: 'volume-1::1' } })
-  await expect.element(screen.getByRole('link', { name: 'volume-1' })).not.toBeInTheDocument()
-  // 구독이 끊긴 atom을 레지스트리가 치우는 것은 다음 틱이다.
-  await new Promise((resolve) => setTimeout(resolve, 50))
-
-  await router.navigate({ to: '/' })
-  await expect.element(screen.getByRole('link', { name: 'volume-1' })).toBeVisible()
-
-  expect(screen.getByRole('group', { name: 'Remove volume-1?' }).elements()).toHaveLength(0)
+  await leaveAndComeBack()
   await expect
     .element(screen.getByRole('button', { name: 'Reading settings' }))
     .toHaveAttribute('aria-expanded', 'false')
@@ -229,7 +246,7 @@ test('a cover that both shelves hold is not dropped, and only the one that left 
   expect(gone).toMatch(/^blob:/)
 
   await screen.getByRole('button', { name: 'Remove volume-2 from shelf…' }).click()
-  await screen.getByRole('button', { name: 'Remove volume-2 from shelf', exact: true }).click()
+  await question(screen, 'volume-2').getByRole('button', { name: 'Remove', exact: true }).click()
   await expect.element(screen.getByRole('link', { name: 'volume-2' })).not.toBeInTheDocument()
 
   // 남은 책은 같은 URL을 이어 쓴다. 다시 만들면 `img`가 표지를 다시 받아 그린다.

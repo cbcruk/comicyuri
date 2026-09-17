@@ -31,7 +31,10 @@ test('S-117 · 남은 표지는 한 권을 지운 뒤에도 그대로다', async
   const before = await coverOf(page, kept)
 
   await page.getByRole('button', { name: `Remove ${gone} from shelf…` }).click()
-  await page.getByRole('button', { name: `Remove ${gone} from shelf`, exact: true }).click()
+  await page
+    .getByRole('alertdialog', { name: `Remove ${gone}?` })
+    .getByRole('button', { name: 'Remove', exact: true })
+    .click()
   await expect(page.getByRole('link', { name: gone })).toHaveCount(0)
 
   expect(await coverOf(page, kept)).toBe(before)

@@ -180,15 +180,16 @@ const NOTICE_LINGER = Duration.seconds(4)
 export const noticeAtom: Atom.Writable<Notice | null> = Atom.make<Notice | null>(null)
 
 /**
- * 삭제를 묻고 있는 책의 id. 묻고 있지 않으면 `null`이다(`S-131`).
+ * 삭제를 묻고 있는 책. 묻고 있지 않으면 `null`이다(`S-131`).
  *
- * 한 번에 한 권만 묻는다. 다른 카드의 🗑을 누르면 앞선 물음은 거둬진다.
+ * id가 아니라 책을 쥐는 것은 물음이 제목을 말하기 때문이다. 지우고 나면 책장에서 그 책이
+ * 빠지는데, 물음은 지우기가 끝날 때까지 열려 있으므로 그 사이에도 제목을 알아야 한다.
  *
  * 수명은 책장 화면과 같다. 모듈에 둔 atom이지만 화면이 내려가 아무도 구독하지 않으면
  * 레지스트리가 치우므로, 책장에 돌아왔을 때 물음이 열린 채 남지 않는다. 그러니 이것을
  * 책장 밖에서 마운트해서는 안 된다.
  */
-export const pendingDeleteAtom: Atom.Writable<string | null> = Atom.make<string | null>(null)
+export const pendingDeleteAtom: Atom.Writable<ShelfBook | null> = Atom.make<ShelfBook | null>(null)
 
 /**
  * 책장의 설정 패널이 열려 있는지(`R-2B6`).
@@ -228,8 +229,8 @@ export const themeAtom: Atom.Writable<Theme> = Atom.make(Effect.runSync(loadSett
 
 /** 브라우저 UI에 알려 줄 바탕색. `styles.css`의 `--color-bg`와 같은 값이다. */
 const THEME_COLOUR: Record<Theme, string> = {
-  dark: '#14141a',
-  light: '#f4f2f7',
+  dark: '#1b1b1b',
+  light: '#f1f1f1',
 }
 
 /**
