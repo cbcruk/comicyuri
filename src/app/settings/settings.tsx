@@ -16,6 +16,7 @@ import type { ReactNode } from 'react'
 import { Button } from '@astryxdesign/core/Button'
 import { Dialog } from '@astryxdesign/core/Dialog'
 import { HStack } from '@astryxdesign/core/HStack'
+import { Layout, LayoutContent, LayoutHeader } from '@astryxdesign/core/Layout'
 import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl'
 import { Switch } from '@astryxdesign/core/Switch'
 import {
@@ -25,7 +26,6 @@ import {
   textSizeVars,
   typeScaleVars,
 } from '@astryxdesign/core/theme/tokens.stylex'
-import { VStack } from '@astryxdesign/core/VStack'
 
 import {
   SLIDE_MAX,
@@ -56,28 +56,23 @@ const RESUME_ORDER: ReadonlyArray<Resume> = ['continue', 'ask', 'restart']
 /**
  * 설정 패널의 모양. 크기와 색은 모두 Astryx 토큰에서 온다.
  *
- * 줄 세우기와 간격은 `HStack`·`VStack`의 props가 맡고, 여기에는 테두리와 색처럼 그것들이
- * 말하지 못하는 것만 남는다.
+ * 위 막대와 스크롤되는 본문은 `Layout`이, 줄 세우기와 간격은 `HStack`의 props가 맡는다.
+ * 여기에는 색과 줄 사이 구분선처럼 그것들이 말하지 못하는 것만 남는다.
  */
 const styles = stylex.create({
   panel: {
     backgroundColor: colorVars['--color-background-body'],
     color: colorVars['--color-text-primary'],
   },
-  topBar: {
-    borderBottomWidth: 1,
-    borderBottomStyle: 'solid',
-    borderBottomColor: colorVars['--color-border'],
-  },
   title: {
     marginInlineEnd: 'auto',
     fontSize: textSizeVars['--font-size-base'],
     color: colorVars['--color-text-secondary'],
   },
+  // `LayoutContent`의 여백은 가장자리마다 따로 적힌다. 축약형으로 적으면 StyleX에서 그것에 진다.
   rows: {
-    flex: '1',
-    overflowY: 'auto',
-    paddingInline: spacingVars['--spacing-4'],
+    paddingInlineStart: spacingVars['--spacing-4'],
+    paddingInlineEnd: spacingVars['--spacing-4'],
   },
   row: {
     borderBottomWidth: 1,
@@ -283,12 +278,19 @@ export const SettingsPanel = ({
     padding={0}
     aria-label={title}
   >
-    <VStack height="100%" xstyle={styles.panel}>
-      <HStack align="center" gap={2} paddingInline={4} paddingBlock={2} xstyle={styles.topBar}>
-        <span {...stylex.props(styles.title)}>{title}</span>
-        <Button label="Close" variant="secondary" size="sm" onClick={onClose} />
-      </HStack>
-      <div {...stylex.props(styles.rows)}>
+    <Layout
+      padding={0}
+      xstyle={styles.panel}
+      header={
+        <LayoutHeader hasDivider={true} padding={0}>
+          <HStack align="center" gap={2} paddingInline={4} paddingBlock={2}>
+            <span {...stylex.props(styles.title)}>{title}</span>
+            <Button label="Close" variant="secondary" size="sm" onClick={onClose} />
+          </HStack>
+        </LayoutHeader>
+      }
+    >
+      <LayoutContent padding={0} xstyle={styles.rows}>
         <SwitchRow
           label="Cover on its own"
           isChecked={settings.coverAlone}
@@ -353,7 +355,7 @@ export const SettingsPanel = ({
           labels={RESUME_LABEL}
           onSelect={onSelectResume}
         />
-      </div>
-    </VStack>
+      </LayoutContent>
+    </Layout>
   </Dialog>
 )
