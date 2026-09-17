@@ -7,24 +7,23 @@
 
 import * as stylex from '@stylexjs/stylex'
 import { Button } from '@astryxdesign/core/Button'
+import { HStack } from '@astryxdesign/core/HStack'
 import { NumberInput } from '@astryxdesign/core/NumberInput'
 import { useCallback, useRef } from 'react'
 import type { Ref } from 'react'
 
-import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex'
+import { colorVars } from '@astryxdesign/core/theme/tokens.stylex'
 
 import { PageSlider } from './slider.tsx'
 import type { ChromeActions, ChromeState } from './types.ts'
 
-/** 넘김 줄의 모양. */
+/**
+ * 넘김 줄의 모양. 줄 세우기와 간격은 `HStack`이 맡는다.
+ *
+ * 돌아서는 것은 여기 남는다. `HStack`에는 방향을 뒤집는 prop이 없다.
+ */
 const styles = stylex.create({
   footer: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacingVars['--spacing-2'],
-    paddingInline: spacingVars['--spacing-4'],
-    paddingBlock: spacingVars['--spacing-2'],
     borderTopWidth: 1,
     borderTopStyle: 'solid',
     borderTopColor: colorVars['--color-border'],
@@ -63,7 +62,15 @@ export const ReaderFooter = ({ state, actions, goToPageRef }: FooterProps) => {
   )
 
   return (
-    <footer {...stylex.props(styles.footer, isRightToLeft && styles.rightToLeft)}>
+    <HStack
+      as="footer"
+      align="center"
+      justify="between"
+      gap={2}
+      paddingInline={4}
+      paddingBlock={2}
+      xstyle={[styles.footer, isRightToLeft && styles.rightToLeft]}
+    >
       <Button label="First" variant="secondary" size="sm" onClick={actions.onFirst} />
       <Button label="Previous" variant="secondary" size="sm" onClick={actions.onPrevious} />
       <PageSlider
@@ -101,6 +108,6 @@ export const ReaderFooter = ({ state, actions, goToPageRef }: FooterProps) => {
       />
       <Button label="Next" variant="secondary" size="sm" onClick={actions.onNext} />
       <Button label="Last" variant="secondary" size="sm" onClick={actions.onLast} />
-    </footer>
+    </HStack>
   )
 }

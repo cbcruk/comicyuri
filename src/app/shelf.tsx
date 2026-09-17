@@ -37,6 +37,7 @@ import {
 } from '@astryxdesign/core/theme/tokens.stylex'
 import { TopNav, TopNavHeading } from '@astryxdesign/core/TopNav'
 import { VisuallyHidden } from '@astryxdesign/core/VisuallyHidden'
+import { VStack } from '@astryxdesign/core/VStack'
 
 import {
   applyAndSaveTheme,
@@ -72,9 +73,6 @@ const themeToggleLabel = (theme: Theme): string =>
 const styles = stylex.create({
   screen: {
     position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
   },
   notice: {
     paddingInline: spacingVars['--spacing-6'],
@@ -337,7 +335,7 @@ export const ShelfScreen = () => {
   const maybeError = AsyncResult.error(shelf)
 
   return (
-    <div {...stylex.props(styles.screen)}>
+    <VStack height="100%" xstyle={styles.screen}>
       {/*
         화면의 제목은 보이지 않게 둔다. `TopNavHeading`은 제목을 `div` 안의 글자로만 그려
         `h1`로 감쌀 수 없는데, 책장에 제목 수준의 헤딩이 없으면 보조기기로 화면을 훑는 길이
@@ -457,6 +455,6 @@ export const ShelfScreen = () => {
             ),
         })}
       </main>
-    </div>
+    </VStack>
   )
 }

@@ -15,6 +15,8 @@ import { Atom, AsyncResult } from 'effect/unstable/reactivity'
 import { useAtomValue } from '@effect/atom-react'
 import * as stylex from '@stylexjs/stylex'
 import { Button } from '@astryxdesign/core/Button'
+import { HStack } from '@astryxdesign/core/HStack'
+import { VStack } from '@astryxdesign/core/VStack'
 import { useState } from 'react'
 
 import {
@@ -34,23 +36,21 @@ import {
 } from '../../reader/constant.ts'
 import { cellWidthFor, perRowFor, rowHeightFor, rowsFor, shownPages } from '../../reader/thumbs.ts'
 
-/** 격자 패널의 모양. */
+/**
+ * 격자 패널의 모양.
+ *
+ * 패널과 위 막대의 줄 세우기는 `VStack`·`HStack`이 맡는다. 행과 칸은 가상 리스트가 절대
+ * 위치로 놓는 것이고 칸 버튼은 버튼 안쪽의 정렬이라, 그대로 여기서 flex를 적는다.
+ */
 const styles = stylex.create({
   panel: {
     position: 'absolute',
     inset: 0,
     zIndex: 10,
-    display: 'flex',
-    flexDirection: 'column',
     backgroundColor: `color-mix(in srgb, ${colorVars['--color-background-body']} 95%, transparent)`,
     backdropFilter: 'blur(4px)',
   },
   topBar: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacingVars['--spacing-2'],
-    paddingInline: spacingVars['--spacing-4'],
-    paddingBlock: spacingVars['--spacing-2'],
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colorVars['--color-border'],
@@ -300,8 +300,8 @@ export const ThumbsPanel = ({
   const isEmpty = showsBookmarksOnly && rows.length === 0
 
   return (
-    <div role="dialog" aria-label={title} {...stylex.props(styles.panel)}>
-      <div {...stylex.props(styles.topBar)}>
+    <VStack role="dialog" aria-label={title} xstyle={styles.panel}>
+      <HStack align="center" gap={2} paddingInline={4} paddingBlock={2} xstyle={styles.topBar}>
         <span {...stylex.props(styles.title)}>{title}</span>
         {/*
           툴바의 "Show every page"와 이름이 겹치지 않아야 한다. 격자가 열려 있는
@@ -316,7 +316,7 @@ export const ThumbsPanel = ({
           {showsBookmarksOnly ? 'Every page' : 'Bookmarks'}
         </Button>
         <Button label="Close" variant="secondary" size="sm" onClick={onClose} />
-      </div>
+      </HStack>
       {isEmpty ? (
         <p {...stylex.props(styles.empty)}>Nothing is bookmarked in this book yet</p>
       ) : null}
@@ -350,6 +350,6 @@ export const ThumbsPanel = ({
           ))}
         </div>
       </div>
-    </div>
+    </VStack>
   )
 }

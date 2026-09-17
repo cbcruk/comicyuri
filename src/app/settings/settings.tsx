@@ -15,6 +15,7 @@ import type { ReactNode } from 'react'
 
 import { Button } from '@astryxdesign/core/Button'
 import { Dialog } from '@astryxdesign/core/Dialog'
+import { HStack } from '@astryxdesign/core/HStack'
 import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl'
 import { Switch } from '@astryxdesign/core/Switch'
 import {
@@ -24,6 +25,7 @@ import {
   textSizeVars,
   typeScaleVars,
 } from '@astryxdesign/core/theme/tokens.stylex'
+import { VStack } from '@astryxdesign/core/VStack'
 
 import {
   SLIDE_MAX,
@@ -51,21 +53,18 @@ const RESUME_LABEL: Readonly<Record<Resume, string>> = {
 
 const RESUME_ORDER: ReadonlyArray<Resume> = ['continue', 'ask', 'restart']
 
-/** 설정 패널의 모양. 크기와 색은 모두 Astryx 토큰에서 온다. */
+/**
+ * 설정 패널의 모양. 크기와 색은 모두 Astryx 토큰에서 온다.
+ *
+ * 줄 세우기와 간격은 `HStack`·`VStack`의 props가 맡고, 여기에는 테두리와 색처럼 그것들이
+ * 말하지 못하는 것만 남는다.
+ */
 const styles = stylex.create({
   panel: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
     backgroundColor: colorVars['--color-background-body'],
     color: colorVars['--color-text-primary'],
   },
   topBar: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacingVars['--spacing-2'],
-    paddingInline: spacingVars['--spacing-4'],
-    paddingBlock: spacingVars['--spacing-2'],
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colorVars['--color-border'],
@@ -81,12 +80,6 @@ const styles = stylex.create({
     paddingInline: spacingVars['--spacing-4'],
   },
   row: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacingVars['--spacing-3'],
-    paddingBlock: spacingVars['--spacing-3'],
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colorVars['--color-border'],
@@ -98,11 +91,6 @@ const styles = stylex.create({
     fontWeight: fontWeightVars['--font-weight-medium'],
     color: colorVars['--color-text-secondary'],
   },
-  nudge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacingVars['--spacing-2'],
-  },
   nudgeValue: {
     minWidth: spacingVars['--spacing-12'],
     textAlign: 'center',
@@ -112,12 +100,19 @@ const styles = stylex.create({
   },
 })
 
+/** 설정 한 줄의 틀. 좁으면 오른쪽 것이 아래로 내려가고, 줄 사이에 구분선이 선다. */
+const RowBox = ({ children }: Readonly<{ children: ReactNode }>) => (
+  <HStack wrap="wrap" align="center" justify="between" gap={3} paddingBlock={3} xstyle={styles.row}>
+    {children}
+  </HStack>
+)
+
 /** 설정 한 줄. 왼쪽에 무엇을 정하는지, 오른쪽에 그것을 정하는 것. */
 const SettingRow = ({ label, children }: Readonly<{ label: string; children: ReactNode }>) => (
-  <div {...stylex.props(styles.row)}>
+  <RowBox>
     <span {...stylex.props(styles.rowLabel)}>{label}</span>
     {children}
-  </div>
+  </RowBox>
 )
 
 /**
@@ -180,7 +175,7 @@ const NudgeRow = ({
   down,
   up,
 }: Readonly<{ shown: string; down: NudgeEnd; up: NudgeEnd }>) => (
-  <div {...stylex.props(styles.nudge)}>
+  <HStack align="center" gap={2}>
     <Button
       label={down.label}
       icon={<span aria-hidden={true}>−</span>}
@@ -202,7 +197,7 @@ const NudgeRow = ({
       isDisabled={up.isBlocked}
       onClick={up.onNudge}
     />
-  </div>
+  </HStack>
 )
 
 /**
@@ -218,7 +213,7 @@ const SwitchRow = ({
   onToggle,
 }: Readonly<{ label: string; isChecked: boolean; onToggle: (isChecked: boolean) => void }>) => {
   return (
-    <div {...stylex.props(styles.row)}>
+    <RowBox>
       <Switch
         label={label}
         value={isChecked}
@@ -227,7 +222,7 @@ const SwitchRow = ({
         labelSpacing="spread"
         width="100%"
       />
-    </div>
+    </RowBox>
   )
 }
 
@@ -288,11 +283,11 @@ export const SettingsPanel = ({
     padding={0}
     aria-label={title}
   >
-    <div {...stylex.props(styles.panel)}>
-      <div {...stylex.props(styles.topBar)}>
+    <VStack height="100%" xstyle={styles.panel}>
+      <HStack align="center" gap={2} paddingInline={4} paddingBlock={2} xstyle={styles.topBar}>
         <span {...stylex.props(styles.title)}>{title}</span>
         <Button label="Close" variant="secondary" size="sm" onClick={onClose} />
-      </div>
+      </HStack>
       <div {...stylex.props(styles.rows)}>
         <SwitchRow
           label="Cover on its own"
@@ -359,6 +354,6 @@ export const SettingsPanel = ({
           onSelect={onSelectResume}
         />
       </div>
-    </div>
+    </VStack>
   </Dialog>
 )
