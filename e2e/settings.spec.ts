@@ -80,16 +80,16 @@ test('R-2B1 · 책 끝 동작을 고르면 그대로 남는다', async ({ page }
   await readBook(page)
 
   await useSettings(page)
-  await page.getByRole('button', { name: 'Stay put' }).click()
-  await expect(page.getByRole('button', { name: 'Stay put' })).toHaveAttribute(
-    'aria-pressed',
+  await page.getByRole('radio', { name: 'Stay put' }).click()
+  await expect(page.getByRole('radio', { name: 'Stay put' })).toHaveAttribute(
+    'aria-checked',
     'true',
   )
 
   await page.reload()
   await useSettings(page)
-  await expect(page.getByRole('button', { name: 'Stay put' })).toHaveAttribute(
-    'aria-pressed',
+  await expect(page.getByRole('radio', { name: 'Stay put' })).toHaveAttribute(
+    'aria-checked',
     'true',
   )
 })
@@ -150,7 +150,7 @@ test('R-2B6 · 책장에서 정한 기본값이 그 뒤에 여는 책에 걸린�
 
   // 책을 열지 않고 이어 읽기 방식을 정한다.
   await page.getByRole('button', { name: 'Reading settings' }).click()
-  await page.getByRole('button', { name: 'Start over', exact: true }).click()
+  await page.getByRole('radio', { name: 'Start over', exact: true }).click()
   await page.getByRole('button', { name: 'Close' }).click()
 
   await openReader(page, title)
