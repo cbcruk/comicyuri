@@ -1,43 +1,17 @@
-/* 레이어 순서가 곧 우선순위다. StyleX가 우선순위대로 나눠 싣는 레이어(`priority1`~`9`,
-   Astryx 컴포넌트와 앱의 것이 함께 든다) 위에 테마 토큰(`astryx-theme`)이 서고, 그 위를
-   Tailwind 유틸리티가 덮는다. 그래서 옮기는 동안에도 어느 컴포넌트든 `className`으로
-   덮어쓸 수 있다.
+/* 레이어 순서가 곧 우선순위다. 맨 아래에 초기화(`reset`)가, 그 위에 StyleX가 우선순위대로 나눠
+   싣는 레이어(`priority1`~`9`, Astryx 컴포넌트와 앱의 것이 함께 든다)가, 맨 위에 테마 토큰
+   (`astryx-theme`)이 선다.
 
-   앱에서는 `vite.stylex.ts`가 같은 차례를 문서 머리 맨 앞에 먼저 선언한다. 여기에도 두는
-   것은 HTML 문서를 거치지 않는 화면 테스트 때문이다. 둘은 같아야 한다. */
-@layer reset, theme, base, priority1, priority2, priority3, priority4, priority5, priority6, priority7, priority8, priority9, astryx-theme, components, utilities;
+   앱에서는 `vite.stylex.ts`가 같은 차례를 문서 머리 맨 앞에 먼저 선언한다. 여기에도 두는 것은
+   HTML 문서를 거치지 않는 화면 테스트 때문이다. 둘은 같아야 한다. */
+@layer reset, priority1, priority2, priority3, priority4, priority5, priority6, priority7, priority8, priority9, astryx-theme;
 
-@import 'tailwindcss/theme.css' layer(theme);
-@import 'tailwindcss/preflight.css' layer(base);
 @import '@astryxdesign/core/reset.css';
 @import '@astryxdesign/theme-neutral/theme.css';
-@import '@astryxdesign/core/tailwind-theme.css';
-@import 'tailwindcss/utilities.css' layer(utilities);
 
-/* 색은 모두 Astryx 중립 테마의 토큰이다. 라이트·다크는 토큰이 `light-dark()`로 스스로 갈라
-   지므로, 앱이 테마마다 값을 다시 적을 일이 없다.
-
-   아래는 옮기는 동안만 쓰는 다리다. 화면들이 아직 Tailwind 클래스(`text-muted`,
-   `border-edge` 같은 것)로 색을 부르므로, 그 이름이 가리키는 값만 Astryx 토큰으로 바꿔 둔다.
-   `inline`이라 새 변수를 만들지 않고 유틸리티가 토큰을 곧장 읽는다. 화면을 StyleX로 옮기면
-   그 화면의 클래스와 함께 여기서도 빠진다.
-
-   `surface`와 `muted`는 Astryx의 Tailwind 다리(`tailwind-theme.css`)에도 있지만 뜻이 다르다
-   — 거기서 `muted`는 배경이고 여기서는 흐린 글자다. 뒤에 오는 이쪽이 이긴다. 강조색은 아직
-   디자인이 정해지지 않아 따로 두지 않고, 다리가 잇는 Astryx 값을 그대로 쓴다. */
-@theme inline {
-  --color-bg: var(--color-background-body);
-  --color-surface: var(--color-background-surface);
-  --color-surface-2: var(--color-background-gray);
-  --color-ink: var(--color-text-primary);
-  --color-muted: var(--color-text-secondary);
-  --color-edge: var(--color-border);
-  --color-danger: var(--color-text-red);
-}
-
-@theme {
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', 'Noto Sans KR', sans-serif;
-}
+/* 색과 글꼴은 모두 Astryx 중립 테마의 토큰이다. 라이트·다크는 토큰이 `light-dark()`로 스스로
+   갈라지므로, 앱이 테마마다 값을 다시 적을 일이 없다. 화면의 모양은 저마다의 `stylex.create`에
+   있고, 여기에는 문서 전체에 걸리는 것만 남는다. */
 
 html,
 body {
@@ -47,7 +21,7 @@ body {
 body {
   background: var(--color-background-body);
   color: var(--color-text-primary);
-  font-family: var(--font-sans);
+  font-family: var(--font-family-body);
   overflow: hidden;
   overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
