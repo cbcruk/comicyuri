@@ -5,8 +5,11 @@
  * (`/comicyuri/`), 라우터의 `basepath`가 그것을 맡는다(`N-407`).
  */
 
+import * as stylex from '@stylexjs/stylex'
+import { Heading } from '@astryxdesign/core/Heading'
+import { Text } from '@astryxdesign/core/Text'
+import { spacingVars } from '@astryxdesign/core/theme/tokens.stylex'
 import {
-  Link,
   Outlet,
   createRootRoute,
   createRoute,
@@ -15,8 +18,21 @@ import {
 } from '@tanstack/react-router'
 
 import { ReaderScreen } from './reader.tsx'
+import { RouterLink } from './routerLink.tsx'
 import { useDocumentTitle } from './title.ts'
 import { ShelfScreen } from './shelf.tsx'
+
+const styles = stylex.create({
+  page: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacingVars['--spacing-3'],
+    height: '100%',
+    padding: spacingVars['--spacing-6'],
+  },
+})
 
 /**
  * 아무 라우트도 맞지 않는 주소. 무엇을 찾으려 했는지 보여 주고 책장으로 돌아갈 길을 준다.
@@ -28,15 +44,12 @@ const NotFound = () => {
   useDocumentTitle('comicyuri — not found')
 
   return (
-    <main className="flex h-full flex-col items-center justify-center gap-3 p-6">
-      <h1 className="text-lg font-medium">Nothing here</h1>
-      <p className="text-sm text-muted">{window.location.pathname}</p>
-      <Link
-        to="/"
-        className="text-sm text-accent underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >
+    <main {...stylex.props(styles.page)}>
+      <Heading level={1}>Nothing here</Heading>
+      <Text color="secondary">{window.location.pathname}</Text>
+      <RouterLink to="/" hasUnderline={true}>
         Back to the shelf
-      </Link>
+      </RouterLink>
     </main>
   )
 }
