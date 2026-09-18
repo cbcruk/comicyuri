@@ -112,7 +112,6 @@ const MENU_OF = {
   shelf: 'Book',
   bookmark: 'Book',
   everyPage: 'Book',
-  direction: 'View',
   view: 'View',
   fit: 'View',
   rotate: 'View',
@@ -132,7 +131,6 @@ const ITEM_NAME: Readonly<Record<keyof typeof MENU_OF, string | RegExp>> = {
   shelf: '← Shelf',
   bookmark: /bookmark/i,
   everyPage: 'Show every page',
-  direction: 'Toggle reading direction',
   view: 'Toggle one or two pages',
   fit: 'Change how pages are fitted',
   rotate: 'Turn the page a quarter clockwise',
@@ -196,6 +194,33 @@ export const readMenuItem = async (
 ): Promise<void> => {
   const item = await openMenu(page, control)
   await read(item)
+  await page.keyboard.press('Escape')
+}
+
+/** 읽는 방향의 이름. 보기 메뉴의 "Read from" 서브메뉴에 선 라디오 둘이다(`R-221`). */
+export type DirectionName = 'Right to left' | 'Left to right'
+
+/** 보기 메뉴를 열고 "Read from"의 flyout까지 펼친다. */
+const openReadFrom = async (page: Page): Promise<void> => {
+  await page.getByRole('menuitem', { name: 'View', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Read from' }).click()
+}
+
+/** "Read from"에서 방향 하나를 고른다. 뒤집기가 아니므로 같은 쪽을 골라도 그대로다. */
+export const chooseDirection = async (page: Page, name: DirectionName): Promise<void> => {
+  await openReadFrom(page)
+  await page.getByRole('menuitemradio', { name }).click()
+}
+
+/**
+ * "Read from"에서 고른 표시가 그 방향에 붙어 있는지 보고 메뉴를 닫는다.
+ *
+ * Escape가 둘인 이유는 첫 번째가 flyout만 닫고 보기 메뉴로 돌아가기 때문이다.
+ */
+export const expectDirection = async (page: Page, name: DirectionName): Promise<void> => {
+  await openReadFrom(page)
+  await expect(page.getByRole('menuitemradio', { name })).toHaveAttribute('aria-checked', 'true')
+  await page.keyboard.press('Escape')
   await page.keyboard.press('Escape')
 }
 

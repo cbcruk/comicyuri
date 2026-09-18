@@ -4,7 +4,7 @@
  * 보는 것은 셋이다. 예전 툴바가 가지고 있던 접근 가능한 이름이 하나도 빠지지
  * 않고 그대로 있고 저마다 자기 콜백을 부르는 것, 메뉴바가 네이티브 메뉴바처럼
  * 움직이는 것 — 좌우 화살표로 메뉴 사이를 오가고, Enter로 열리고, Escape로
- * 닫힌다 — 그리고 지금 걸린 값이 메뉴를 열지 않고도 헤더에서 읽히는 것이다.
+ * 닫힌다 — 그리고 읽는 방향이 서브메뉴 안에서 뒤집기가 아니라 고르기인 것이다.
  */
 
 import { useState } from 'react'
@@ -43,7 +43,7 @@ const spies = (): ChromeActions => ({
   onToggleSettings: vi.fn(),
   onToggleFullscreen: vi.fn(),
   onToggleChrome: vi.fn(),
-  onToggleDirection: vi.fn(),
+  onChooseDirection: vi.fn(),
   onToggleView: vi.fn(),
   onCycleFit: vi.fn(),
   onToggleBinding: vi.fn(),
@@ -154,6 +154,13 @@ const pointerAt = (type: string, clientX: number): PointerEvent =>
 const openMenuElement = (container: HTMLElement): Element | undefined =>
   [...container.querySelectorAll('[role="menu"]')].find((menu) => menu.checkVisibility())
 
+/** 보기 메뉴를 열고 "Read from" 서브메뉴의 flyout까지 펼친다. */
+const openReadFrom = async (screen: Rendered) => {
+  await screen.getByRole('menuitem', { name: 'View', exact: true }).click()
+  await screen.getByRole('menuitem', { name: 'Read from' }).click()
+  await expect.element(screen.getByRole('menuitemradio', { name: 'Right to left' })).toBeVisible()
+}
+
 /** 메뉴 하나를 열고 그 안의 항목을 부른다. */
 const chooseFromMenu = async (screen: Rendered, menu: string, item: string) => {
   await screen.getByRole('menuitem', { name: menu, exact: true }).click()
@@ -191,9 +198,6 @@ test('a bookmarked page offers to take the bookmark away instead', async () => {
 
 test('the view menu carries every control that changes how a page is shown', async () => {
   const { actions, screen } = await renderChrome()
-
-  await chooseFromMenu(screen, 'View', 'Toggle reading direction')
-  expect(actions.onToggleDirection).toHaveBeenCalled()
 
   await chooseFromMenu(screen, 'View', 'Toggle one or two pages')
   expect(actions.onToggleView).toHaveBeenCalled()
@@ -415,7 +419,7 @@ test('every item shows the key that does the same thing', async () => {
   const menu = openMenuElement(screen.container)
   const shown = [...(menu?.querySelectorAll('[data-shortcut]') ?? [])].map((key) => key.textContent)
 
-  expect(shown).toEqual(['d', 'v', 'r', 's', '+', '-', 'f', 'h'])
+  expect(shown).toEqual(['v', 'r', 's', '+', '-', 'f', 'h'])
 })
 
 test('a bookmarked page, an open grid and an open panel all say so on their row', async () => {
@@ -554,37 +558,36 @@ test('reading right to left, the slider keys follow what the eye sees', async ()
   expect(actions.onSlide).toHaveBeenLastCalledWith(1)
 })
 
-test('the header says which way it reads, how many pages and how they fit', async () => {
-  const { screen } = await renderChrome({ direction: 'rtl', view: 'spread', fit: 'width' })
+test('read from offers both directions and marks the one in use', async () => {
+  const { screen } = await renderChrome({ direction: 'rtl' })
 
-  const status = screen.getByRole('status', { name: 'Reading state' })
-  await expect.element(status).toBeVisible()
-  expect(status.element().textContent).toBe('RTL · Two · Width')
+  await openReadFrom(screen)
+
+  await expect
+    .element(screen.getByRole('menuitemradio', { name: 'Right to left' }))
+    .toHaveAttribute('aria-checked', 'true')
+  await expect
+    .element(screen.getByRole('menuitemradio', { name: 'Left to right' }))
+    .toHaveAttribute('aria-checked', 'false')
 })
 
-test('and it says so too while the slideshow runs', async () => {
-  const { screen } = await renderChrome({
-    direction: 'ltr',
-    view: 'single',
-    fit: 'original',
-    isPlaying: true,
-  })
+test('choosing a direction asks for that direction, not a flip', async () => {
+  const { actions, screen } = await renderChrome({ direction: 'rtl' })
 
-  expect(screen.getByRole('status', { name: 'Reading state' }).element().textContent).toBe(
-    'LTR · One · 1:1 · Playing',
-  )
+  await openReadFrom(screen)
+  await screen.getByRole('menuitemradio', { name: 'Left to right' }).click()
+
+  expect(actions.onChooseDirection).toHaveBeenLastCalledWith('ltr')
 })
 
-test('the values stand beside the counter, and the counter still comes first', async () => {
+test('the left arrow in the read from flyout goes back to its row, not the next menu', async () => {
   const { screen } = await renderChrome()
 
-  // 메뉴 안의 곁글과 달리 보조기기가 닿는다.
-  const status = screen.getByRole('status', { name: 'Reading state' }).element()
-  expect(status.closest('[aria-hidden="true"]')).toBeNull()
+  await openReadFrom(screen)
+  await userEvent.keyboard('{ArrowLeft}')
 
-  // e2e는 헤더의 첫 `span`으로 카운터를 읽는다. 지금 값 줄이 그 앞에 서면 안 된다.
-  expect(screen.container.querySelector('header span')?.textContent).toBe('3 / 6')
-  expect(screen.container.querySelector('header')?.contains(status)).toBe(true)
+  await expect.element(screen.getByRole('menuitem', { name: 'Read from' })).toHaveFocus()
+  await expect.element(screen.getByRole('menuitem', { name: 'Zoom in' })).toBeVisible()
 })
 
 test('the menubar names its menus in the language the rest of the app speaks', async () => {

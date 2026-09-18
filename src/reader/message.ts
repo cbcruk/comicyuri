@@ -41,6 +41,8 @@ export type Message = Data.TaggedEnum<{
   ClickedLast: {}
   ClickedExit: {}
   ClickedToggleDirection: {}
+  /** 메뉴에서 읽는 방향을 골랐다. 뒤집기와 달리 지금 값과 같아도 그대로 둔다. */
+  ChoseDirection: { readonly direction: Settings['direction'] }
   ClickedToggleView: {}
   ClickedToggleBinding: {}
   ClickedCycleFit: {}

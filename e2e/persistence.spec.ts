@@ -4,8 +4,10 @@ import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
 import {
+  chooseDirection,
   control,
   counter,
+  expectDirection,
   importBook,
   openReader,
   openShelf,
@@ -20,7 +22,7 @@ import {
  * 예전 툴바에서는 버튼이 값을 글자로 이고 있었다. 메뉴에서는 항목의 이름이 하는 일을
  * 말하고 값은 그 오른쪽 곁글에 서므로, 같은 글자를 거기서 읽는다.
  */
-const expectValue = (page: Page, item: 'direction' | 'view', value: string): Promise<void> =>
+const expectValue = (page: Page, item: 'view', value: string): Promise<void> =>
   readMenuItem(page, item, async (found) => {
     await expect(found.locator('[aria-hidden="true"] > span')).toHaveText(value)
   })
@@ -60,14 +62,14 @@ test('P-302 · 읽던 위치와 북마크가 남는다', async ({ page }) => {
 test('P-303 · 설정은 남고 다음 책에도 적용된다', async ({ page }) => {
   await readBook(page)
 
-  await expectValue(page, 'direction', 'RTL')
-  await use(page, 'direction')
+  await expectDirection(page, 'Right to left')
+  await chooseDirection(page, 'Left to right')
   await use(page, 'view')
-  await expectValue(page, 'direction', 'LTR')
+  await expectDirection(page, 'Left to right')
   await expectValue(page, 'view', 'Two')
 
   await page.reload()
-  await expectValue(page, 'direction', 'LTR')
+  await expectDirection(page, 'Left to right')
   await expectValue(page, 'view', 'Two')
 })
 
