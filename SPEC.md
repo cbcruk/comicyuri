@@ -373,19 +373,6 @@ e2e "R-217 · 카운터 아래에 아카이브 안의 파일 이름이 보인다
 이름도 둘이다"
 📖 긴 이름의 앞을 줄이는 것은 CSS가 한다 — 재는 테스트가 없다
 
-**R-218 · 카운터 옆에 지금 걸린 값이 적힌다**
-읽는 방향(`RTL`/`LTR`), 한 장인지 두 장인지(`One`/`Two`), 맞춤 모드
-(`Fit`/`Width`/`Height`/`1:1`), 그리고 돌고 있을 때만 `Playing`이다. 멈춘 슬라이드쇼는
-적지 않는다 — 언제나 서 있는 글자는 읽히지 않고 줄만 길게 만든다.
-
-컨트롤이 메뉴 안으로 들어가면서(`R-251` 위의 머리말) 지금 값도 함께 접혔다. 그것을 도로 꺼내 놓는
-자리다. 메뉴 안의 곁글과 달리 `aria-hidden`이 아니므로 보조기기도 읽는다. 값을 바꾸는
-항목은 눌리는 순간 메뉴와 함께 사라지므로, 무엇으로 바뀌었는지 말해 줄 자리가 이 줄
-말고는 없다 — 그래서 `role="status"`다.
-✅ chrome/screen "the header says which way it reads, how many pages and how they fit",
-"and it says so too while the slideshow runs", "the values stand beside the counter, and the
-counter still comes first"
-
 **R-214 · 이미 지나간 페이지의 이미지가 늦게 도착하면 버린다**
 ✅ pages "land on their own spread and leave the one on screen alone",
 reader/screen "a stale answer does not replace the page on screen"
@@ -488,18 +475,26 @@ e2e "R-216 · 마지막 장에서 넘기면 다음 권이 열린다", "R-216 · 
 ### 2.3 레이아웃
 
 **R-221 · 읽는 방향 (RTL / LTR)**
-보기 메뉴의 항목이 뒤집고, 지금 어느 쪽인지는 헤더의 상태 줄이 말한다(`R-218`). 두 장
-배치에서 페이지 좌우 순서와 탭·스와이프·화살표의 앞뒤가 함께 바뀐다.
-✅ chrome/screen "the view menu carries every control that changes how a page is shown",
-"the header says which way it reads, how many pages and how they fit",
-reader/story "in right-to-left reading the left key advances"
+보기 메뉴의 `Read from` 서브메뉴에서 `Right to left`와 `Left to right` 가운데 하나를
+고른다. 뒤집기가 아니라 고르기라서 이미 걸린 쪽을 골라도 그대로다. 둘은
+`menuitemradio`이고, 걸린 쪽이 `aria-checked`를 지므로 지금 어느 쪽인지는 서브메뉴를
+열면 보인다. `d` 키는 따로 남아 뒤집는다(`R-2A2`).
+
+두 장 배치에서 페이지 좌우 순서와 탭·스와이프·화살표의 앞뒤가 함께 바뀐다.
+
+flyout 안의 왼쪽 화살표는 flyout을 닫고 `Read from`으로 돌아간다. 메뉴바가 그것을 옆
+메뉴로 가라는 뜻으로 읽지 않는다.
+✅ chrome/screen "read from offers both directions and marks the one in use", "choosing a
+direction asks for that direction, not a flip", "the left arrow in the read from flyout goes
+back to its row, not the next menu",
+reader/story "choosing a direction sets it rather than flipping it",
+"in right-to-left reading the left key advances"
 ❓ **실제로 만화를 넘겨봤을 때 방향이 맞는지**
 
 **R-222 · 한 장 / 두 장 (One / Two)**
-두 장 모드에서도 지금 읽던 페이지를 중심으로 다시 묶는다. 지금 어느 쪽인지는 헤더의
-상태 줄이 말한다(`R-218`).
-✅ reader/story "two-page mode regroups around the page being read",
-chrome/screen "the header says which way it reads, how many pages and how they fit"
+두 장 모드에서도 지금 읽던 페이지를 중심으로 다시 묶는다. 지금 어느 쪽인지는 보기
+메뉴 항목의 곁글에 적힌다.
+✅ reader/story "two-page mode regroups around the page being read"
 
 **R-223 · 두 장 모드에서 표지는 혼자 나온다**
 그래서 이후 쌍이 인쇄된 책처럼 맞는다. 설정 패널에서 끌 수 있다(`R-2B1`).
@@ -515,11 +510,9 @@ Fit은 화면 안에 통째로, Width는 너비를, Height는 높이를 채우�
 Fit과 1:1은 줄이기만 하고 늘리지 않는다. 화면보다 작은 페이지는 원래 크기 그대로
 선다. 채우는 두 모드(Width·Height)만 늘리고, 그것을 멈추는 것이 `R-2B4`다.
 
-지금 어느 모드인지는 헤더의 상태 줄이 말한다(`R-218`). 메뉴 항목의 이름은 늘
-"Change how pages are fitted"이고, 지금 값은 그 곁글에 적힌다.
+메뉴 항목의 이름은 늘 "Change how pages are fitted"이고, 지금 값은 그 곁글에 적힌다.
 ✅ reader/story "cycling the fit mode walks the four modes and comes back",
 chrome/screen "the view menu carries every control that changes how a page is shown",
-"the header says which way it reads, how many pages and how they fit",
 e2e "R-224 · Fit은 페이지를 화면 안에 통째로 넣는다", "R-224 · Width는 너비를
 채운다", "R-224 · Height는 높이를 채운다", "R-224 · 1:1은 원래 픽셀 크기로 둔다",
 "R-224 · 통째로 맞춤은 켜 두어도 작은 페이지를 늘리지 않는다"
@@ -779,11 +772,12 @@ e2e "R-244 · 10px 이내로 움직인 누름은 탭으로 친다"
 리더의 위쪽 줄은 버튼이 늘어선 툴바가 아니라 메뉴바다(`role="menubar"`, 이름 "Reader
 menus"). `Book`·`View`·`Go`·`Play`·`Settings` 다섯 메뉴 안에 예전 툴바의 컨트롤이 그대로
 들어 있고, 이름도 그대로다. 트리거의 이름도 앱의 다른 모든 문구와 같이 영어다.
-메뉴 안으로 접히면서 보이지 않게 된 지금 값들은 헤더의 상태 줄이 대신 말한다(`R-218`). 메뉴 항목은 `menuitem`이며, 상태를 지는 넷 — 북마크(`Bookmark this
+메뉴 항목은 `menuitem`이며, 상태를 지는 넷 — 북마크(`Bookmark this
 page`/`Remove bookmark from this page`), 격자(`Show every page`), 설정(`Reading
 settings`), 슬라이드쇼 — 은 `menuitemcheckbox`라 `aria-checked`를 진다. 그중 패널을
 여는 둘(격자·설정)은 `aria-expanded`도 함께 진다. `Hide the toolbar`는 상태가 아니라
-명령이므로 평범한 `menuitem`이다.
+명령이므로 평범한 `menuitem`이다. 읽는 방향만은 서브메뉴 안의 `menuitemradio` 둘이다
+(`R-221`).
 
 넘김 줄(First·Previous·Next·Last)과 번호 입력란과 슬라이더는 메뉴에 접지 않고 푸터에
 그대로 남는다. 읽는 동안 손이 계속 가는 것들이다.
@@ -1144,6 +1138,9 @@ e2e "R-2B5 · 기본값은 조용히 읽던 자리로 간다" 외 5개
 키는 같은 일을 하는 메뉴 항목이 보내는 Message로 풀린다. 그래서 키와 항목이 서로
 어긋날 수 없다 — 항목의 동작을 고치면 키도 함께 간다. 메뉴는 그 키를 항목 옆에 적어
 보여 준다.
+
+`d`만은 짝이 되는 항목이 없다. 메뉴는 방향을 고르고(`R-221`) 키는 뒤집으므로, 둘이 보내는
+Message가 다르고 메뉴에 `d`를 적어 둘 항목도 없다.
 ✅ keys `"d" is the same thing the ClickedToggleDirection control does` 외 11개,
 "Home and End are the ends of the book, whichever way it reads", "the bracket keys are the
 bookmarks either side",

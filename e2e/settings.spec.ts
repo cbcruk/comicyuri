@@ -7,15 +7,16 @@ import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
 import {
+  chooseDirection,
   control,
   counter,
+  expectDirection,
   importBook,
   importBooks,
   openReader,
   openShelf,
   readBook,
   openMenu,
-  readMenuItem,
   stage,
   use,
 } from './fixture/app.ts'
@@ -35,16 +36,6 @@ const useSettings = async (page: Page): Promise<void> => {
 
 const panel = (page: Page) => page.getByRole('dialog', { name: 'Reading settings' })
 const coverAlone = (page: Page) => page.getByRole('switch', { name: 'Cover on its own' })
-
-/**
- * 방향 항목이 곁글에 적고 있는 지금 값. 예전에는 툴바 버튼의 글자였고, 지금은
- * 메뉴 항목 오른쪽의 곁글이다 — 항목의 이름은 `Toggle reading direction`으로
- * 고정이라 값은 그 옆에 선다.
- */
-const expectDirection = (page: Page, value: string) =>
-  readMenuItem(page, 'direction', async (item) => {
-    await expect(item.locator('span[aria-hidden="true"] > span')).toHaveText(value)
-  })
 
 test('R-2B1 · ⚙ 버튼이 패널을 열고 닫는다', async ({ page }) => {
   await readBook(page)
@@ -109,19 +100,19 @@ test('R-2B3 · 책마다 기억하기를 켜면 방향이 그 책에만 남는�
   await page.getByRole('button', { name: 'Close' }).click()
 
   // 1권만 서양 코믹스처럼 읽는다.
-  await expectDirection(page, 'RTL')
-  await use(page, 'direction')
-  await expectDirection(page, 'LTR')
+  await expectDirection(page, 'Right to left')
+  await chooseDirection(page, 'Left to right')
+  await expectDirection(page, 'Left to right')
 
   // 2권은 전역 기본값 그대로다.
   await use(page, 'shelf')
   await openReader(page, titles[1]!)
-  await expectDirection(page, 'RTL')
+  await expectDirection(page, 'Right to left')
 
   // 1권으로 돌아오면 그 책이 정한 대로다.
   await use(page, 'shelf')
   await openReader(page, titles[0]!)
-  await expectDirection(page, 'LTR')
+  await expectDirection(page, 'Left to right')
 })
 
 test('R-2B3 · 스위치를 끄면 전역 기본값으로 돌아간다', async ({ page }) => {
@@ -130,18 +121,18 @@ test('R-2B3 · 스위치를 끄면 전역 기본값으로 돌아간다', async (
   await useSettings(page)
   await remember(page).click()
   await page.getByRole('button', { name: 'Close' }).click()
-  await use(page, 'direction')
-  await expectDirection(page, 'LTR')
+  await chooseDirection(page, 'Left to right')
+  await expectDirection(page, 'Left to right')
 
   await useSettings(page)
   await remember(page).click()
   await page.getByRole('button', { name: 'Close' }).click()
 
   // 이 책이 정한 것을 놓는다. 그러지 않으면 그대로 전역 기본값이 되어 버린다.
-  await expectDirection(page, 'RTL')
+  await expectDirection(page, 'Right to left')
 
   await page.reload()
-  await expectDirection(page, 'RTL')
+  await expectDirection(page, 'Right to left')
 })
 
 test('R-2B6 · 책장에서 정한 기본값이 그 뒤에 여는 책에 걸린다', async ({ page }) => {

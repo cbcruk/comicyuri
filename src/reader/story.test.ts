@@ -231,6 +231,25 @@ describe('keyboard', () => {
     )
   })
 
+  test('choosing a direction sets it rather than flipping it', () => {
+    story(
+      update,
+      given(openingModel()),
+      ...opened(0),
+      message(Message.ChoseDirection({ direction: 'ltr' })),
+      message(Message.ChoseDirection({ direction: 'ltr' })),
+      model((model) => {
+        expect(model.settings.direction).toBe('ltr')
+      }),
+      expectOutMessage(
+        OutMessage.ChangedSettings({
+          bookId: 'volume-1::42',
+          settings: { ...defaultSettings, direction: 'ltr' },
+        }),
+      ),
+    )
+  })
+
   test('in left-to-right reading the same key goes back', () => {
     story(
       update,

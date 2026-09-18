@@ -20,6 +20,9 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuDivider,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSubMenu,
 } from '@astryxdesign/core/DropdownMenu'
 import * as stylex from '@stylexjs/stylex'
 import { useListFocus } from '@astryxdesign/core/hooks'
@@ -30,9 +33,11 @@ import {
   spacingVars,
   textSizeVars,
 } from '@astryxdesign/core/theme/tokens.stylex'
+import { Schema } from 'effect'
 import type { KeyboardEvent, ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 
+import { ReadingDirection } from '../../types.ts'
 import type { FitMode } from '../../types.ts'
 import { SHORTCUTS } from './shortcuts.ts'
 import type { ChromeActions, ChromeState } from './types.ts'
@@ -59,11 +64,8 @@ const MENU_LABELS: Readonly<Record<MenuId, string>> = {
 
 /**
  * 맞춤 모드가 적히는 이름. 예전 툴바 버튼의 글자와 같다(`R-224`).
- *
- * 메뉴의 곁글과 헤더의 지금 값 줄이 같은 것을 쓴다 — 한 모드가 자리에 따라 다른
- * 이름으로 불리면 그 둘이 같은 것을 말한다는 것을 알 수 없다.
  */
-export const FIT_LABEL: Readonly<Record<FitMode, string>> = {
+const FIT_LABEL: Readonly<Record<FitMode, string>> = {
   contain: 'Fit',
   width: 'Width',
   height: 'Height',
@@ -110,6 +112,15 @@ const MenuHint = ({ value, shortcut }: Readonly<{ value?: string; shortcut?: str
     )}
   </HStack>
 )
+
+/**
+ * 키가 서브메뉴의 flyout 안에서 눌렸는지. 메뉴 안의 메뉴가 곧 flyout이다.
+ *
+ * 그 안의 좌우 화살표는 서브메뉴의 것이다 — 왼쪽은 flyout을 닫고 트리거로 돌아가는데,
+ * 메뉴바가 그것까지 가로채면 옆 메뉴가 열려 버린다.
+ */
+const isInSubMenu = (target: EventTarget): boolean =>
+  target instanceof Element && target.closest('[role="menu"] [role="menu"]') !== null
 
 /** 메뉴 하나. 열림 여부를 메뉴바가 쥐므로 그것만 밖에서 받는다. */
 const Menu = ({
@@ -184,7 +195,7 @@ export const ReaderMenubar = ({ state, actions, onFocusGoToPage }: MenubarProps)
   const handleMenubarKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
 
-    if (openMenu !== null && step !== 0) {
+    if (openMenu !== null && step !== 0 && !isInSubMenu(event.target)) {
       event.preventDefault()
       const at = MENU_IDS.indexOf(openMenu)
       setOpenMenu(MENU_IDS[(at + step + MENU_IDS.length) % MENU_IDS.length] ?? null)
@@ -236,16 +247,22 @@ export const ReaderMenubar = ({ state, actions, onFocusGoToPage }: MenubarProps)
       </Menu>
 
       <Menu id="view" openMenu={openMenu} onOpenChange={changeOpen}>
-        <DropdownMenuItem
-          label="Toggle reading direction"
-          onClick={actions.onToggleDirection}
-          endContent={
-            <MenuHint
-              value={state.direction === 'rtl' ? 'RTL' : 'LTR'}
-              shortcut={SHORTCUTS.direction}
-            />
-          }
-        />
+        {/*
+          뒤집기가 아니라 고르기다. 두 값이 나란히 서고 걸린 쪽에 표시가 붙으므로,
+          지금 어느 쪽인지 따로 적어 둘 곁글이 없다(`R-221`).
+        */}
+        <DropdownMenuSubMenu label="Read from">
+          <DropdownMenuRadioGroup
+            label="Read from"
+            value={state.direction}
+            onChange={(value) => {
+              if (Schema.is(ReadingDirection)(value)) actions.onChooseDirection(value)
+            }}
+          >
+            <DropdownMenuRadioItem value="rtl" label="Right to left" />
+            <DropdownMenuRadioItem value="ltr" label="Left to right" />
+          </DropdownMenuRadioGroup>
+        </DropdownMenuSubMenu>
         <DropdownMenuItem
           label="Toggle one or two pages"
           onClick={actions.onToggleView}

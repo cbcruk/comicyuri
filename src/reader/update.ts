@@ -138,6 +138,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         }),
       ),
 
+    ChoseDirection: ({ direction }): UpdateReturn =>
+      withSettings(model, evo(model.settings, { direction: () => direction })),
+
     ClickedToggleView: (): UpdateReturn =>
       withSettings(
         model,
