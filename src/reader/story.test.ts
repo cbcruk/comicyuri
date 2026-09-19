@@ -40,10 +40,6 @@ const UNMEASURED: ReadonlyArray<Option.Option<number>> = Array.from({ length: PA
   Option.none(),
 )
 
-/** 아카이브 안의 파일 이름. 여섯 쪽이면 `page-01.png`부터 여섯 개다. */
-const namesOf = (pageCount: number): ReadonlyArray<string> =>
-  Array.from({ length: pageCount }, (_, page) => `page-${String(page + 1).padStart(2, '0')}.png`)
-
 /** 책의 끝에서 이웃한 책으로 넘어가지 않고 제자리에 머무는 설정. */
 const STOPS_AT_THE_END = { ...defaultSettings, atBookEnd: 'stop' } as const
 
@@ -70,7 +66,6 @@ const opened = (page: number, ratios: ReadonlyArray<Option.Option<number>> = UNM
       title: 'Volume 1',
       pageCount: PAGE_COUNT,
       ratios,
-      names: namesOf(PAGE_COUNT),
     }),
   ),
   model((model) => {
@@ -91,7 +86,6 @@ describe('opening', () => {
           title: 'Volume 1',
           pageCount: PAGE_COUNT,
           ratios: UNMEASURED,
-          names: namesOf(PAGE_COUNT),
         }),
       ),
       expectNoOutMessage(),
@@ -101,7 +95,6 @@ describe('opening', () => {
             title: 'Volume 1',
             pageCount: PAGE_COUNT,
             ratios: UNMEASURED,
-            names: namesOf(PAGE_COUNT),
           }),
         )
         // 스프레드가 도착했는지는 atom이 안다. Model이 말하는 것은 무엇을 걸지다.
@@ -210,7 +203,6 @@ describe('keyboard', () => {
         title: 'Volume 1',
         pageCount: LONG_PAGE_COUNT,
         ratios: Array.from({ length: LONG_PAGE_COUNT }, () => Option.none<number>()),
-        names: namesOf(LONG_PAGE_COUNT),
       }),
     ),
     model((model) => {
@@ -513,7 +505,6 @@ describe('layout', () => {
           title: 'Volume 1',
           pageCount: PAGE_COUNT,
           ratios: UNMEASURED,
-          names: namesOf(PAGE_COUNT),
         }),
       ),
       model((model) => {

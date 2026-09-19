@@ -5,7 +5,6 @@ import type { Page } from '@playwright/test'
 
 import {
   chooseDirection,
-  control,
   counter,
   expectDirection,
   importBook,
@@ -40,8 +39,8 @@ test('P-301 · 책은 새로고침을 넘겨 책장에 남는다', async ({ page
 test('P-302 · 읽던 위치와 북마크가 남는다', async ({ page }) => {
   const title = await readBook(page)
 
-  await control.next(page).click()
-  await control.next(page).click()
+  await use(page, 'next')
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('3 / 6')
   await use(page, 'bookmark')
 

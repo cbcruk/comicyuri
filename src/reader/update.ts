@@ -102,10 +102,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
      * 동안 저장된 자리가 첫 장이 되어 물음이 스스로를 지우고, 처음부터 보기로 한
      * 사람은 책을 열었다 나가는 것만으로 읽던 자리를 잃는다.
      */
-    CompletedOpenBook: ({ title, pageCount, ratios, names }): UpdateReturn => {
+    CompletedOpenBook: ({ title, pageCount, ratios }): UpdateReturn => {
       const opened = showPage(
         evo(model, {
-          openState: () => OpenState.Ready({ title, pageCount, ratios, names }),
+          openState: () => OpenState.Ready({ title, pageCount, ratios }),
         }),
         model.page,
       )

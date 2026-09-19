@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, readBook, stage, use, zoomOf } from './fixture/app.ts'
+import { readBook, stage, use, zoomOf } from './fixture/app.ts'
 
 /**
  * 디코딩이 한 프레임을 넘기는 페이지. 단색이라 만들기는 빠르지만 픽셀이 많아서
@@ -34,13 +34,13 @@ test('R-207 · 멀리 건너뛰어도, 빠르게 넘겨도 화면이 비는 프�
   await recordBlankFrames(page)
 
   // 미리 읽지 않은 곳으로 건너뛴다.
-  await control.last(page).click()
+  await use(page, 'last')
   await expect(stage(page).getByRole('img', { name: 'Page 8' })).toBeVisible()
-  await control.first(page).click()
+  await use(page, 'first')
   await expect(stage(page).getByRole('img', { name: 'Page 1' })).toBeVisible()
 
   // 답이 오기 전에 다시 넘긴다.
-  for (let turn = 0; turn < 4; turn++) await control.next(page).click()
+  for (let turn = 0; turn < 4; turn++) await use(page, 'next')
   await expect(stage(page).getByRole('img', { name: 'Page 5' })).toBeVisible()
 
   expect(await blankFrames(page)).toBe(0)
@@ -74,7 +74,7 @@ test('R-207 · 확대해 둔 페이지는 다음 페이지가 설 때까지 확�
   await recordNarrowestFirstPage(page)
 
   // 미리 읽지 않은 곳으로 건너뛰어 기다리는 틈을 만든다.
-  await control.last(page).click()
+  await use(page, 'last')
   await expect(stage(page).getByRole('img', { name: 'Page 8' })).toBeVisible()
 
   expect(await narrowestFirstPage(page)).toBeGreaterThanOrEqual((zoomed?.width ?? Infinity) - 1)

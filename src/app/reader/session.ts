@@ -307,7 +307,6 @@ export const makeReaderSession = ({
               title: book.value.title,
               pageCount: book.value.pages.length,
               ratios: book.value.pageSizes.map(Option.map(({ width, height }) => width / height)),
-              names: book.value.pages.map((source) => source.name),
             }),
           )
         } else if (AsyncResult.isFailure(book)) {

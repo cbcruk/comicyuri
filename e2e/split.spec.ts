@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, counter, openMenu, readBook, stage } from './fixture/app.ts'
+import { counter, openMenu, readBook, stage, use } from './fixture/app.ts'
 
 /**
  * 설정 패널을 여닫는다.
@@ -53,7 +53,7 @@ const readInHalves = async (page: Page): Promise<void> => {
 
 /** 넓은 4페이지까지 간다. */
 const goToWidePage = async (page: Page): Promise<void> => {
-  for (let turn = 0; turn < 3; turn++) await control.next(page).click()
+  for (let turn = 0; turn < 3; turn++) await use(page, 'next')
   await expect(counter(page)).toHaveText('4 / 6')
 }
 
@@ -68,7 +68,7 @@ test('R-229 · 넓은 페이지가 두 걸음으로 나뉜다', async ({ page })
   expect(first.width).toBeCloseTo(clip.width * 2, 0)
   expect(first.x).toBeCloseTo(clip.x - clip.width, 0)
 
-  await control.next(page).click()
+  await use(page, 'next')
 
   // 같은 페이지의 다른 반쪽이다. 카운터는 그대로다.
   await expect(counter(page)).toHaveText('4 / 6')
@@ -77,7 +77,7 @@ test('R-229 · 넓은 페이지가 두 걸음으로 나뉜다', async ({ page })
     expect(second.x).toBeCloseTo(clip.x, 0)
   }).toPass()
 
-  await control.next(page).click()
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('5 / 6')
 })
 
@@ -85,11 +85,11 @@ test('R-229 · 뒤로 넘겨 오면 나중에 읽는 반쪽이 나온다', async
   await readBook(page, BOOK)
   await readInHalves(page)
   await goToWidePage(page)
-  await control.next(page).click()
-  await control.next(page).click()
+  await use(page, 'next')
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('5 / 6')
 
-  await control.previous(page).click()
+  await use(page, 'previous')
   await expect(counter(page)).toHaveText('4 / 6')
 
   // 왼쪽 반, 즉 오른쪽에서 왼쪽으로 읽을 때 나중에 읽는 쪽이다.
@@ -118,6 +118,6 @@ test('R-229 · 끄면 넓은 페이지가 한 걸음이다', async ({ page }) =>
   await readBook(page, BOOK)
   await goToWidePage(page)
 
-  await control.next(page).click()
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('5 / 6')
 })

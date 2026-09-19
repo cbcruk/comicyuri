@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, readBook, stage, use } from './fixture/app.ts'
+import { readBook, stage, use } from './fixture/app.ts'
 
 /**
  * 페이지 URL을 세기 시작한다. 표지 썸네일은 형식이 붙은 `Blob`이고 아카이브에서 푼
@@ -35,9 +35,9 @@ test('R-204 · 멀리 건너뛰었다가 책을 떠나도 페이지 URL이 남�
   await countPageUrls(page)
   const title = await readBook(page, { fileName: 'volume-1.cbz', pageCount: 12 })
 
-  await control.last(page).click()
+  await use(page, 'last')
   await expect(stage(page).getByRole('img', { name: 'Page 12' })).toBeVisible()
-  await control.first(page).click()
+  await use(page, 'first')
   await expect(stage(page).getByRole('img', { name: 'Page 1' })).toBeVisible()
 
   await use(page, 'shelf')
@@ -55,7 +55,7 @@ test('R-204 · 페이지를 풀고 있는 순간에 책을 떠나도 URL이 남�
     size: { width: 3200, height: 4800 },
   })
 
-  await control.last(page).click()
+  await use(page, 'last')
   await use(page, 'shelf')
   await expect(page.getByRole('link', { name: title })).toBeVisible()
 

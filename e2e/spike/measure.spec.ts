@@ -10,7 +10,7 @@ import { writeFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, openReader, openShelf, importBook, stage, use } from '../fixture/app.ts'
+import { importBook, openReader, openShelf, stage, use } from '../fixture/app.ts'
 
 const OUT = process.env['SPIKE_MEASURE'] ?? ''
 const BOOK = { fileName: 'volume-40.cbz', pageCount: 40, size: { width: 1600, height: 2400 } }
@@ -130,21 +130,21 @@ test('baseline · page loading path', async ({ page }, info) => {
 
   const warmTurns: Array<number> = []
   for (let n = 2; n <= 21; n++) {
-    warmTurns.push(await turnTo(page, () => control.next(page).click(), n))
+    warmTurns.push(await turnTo(page, () => use(page, 'next'), n))
   }
   await page.waitForTimeout(SETTLE)
   const afterReading = await snapshot(page)
 
-  const coldLast = await turnTo(page, () => control.last(page).click(), 40)
+  const coldLast = await turnTo(page, () => use(page, 'last'), 40)
   await page.waitForTimeout(SETTLE)
   const afterLast = await snapshot(page)
 
-  const coldFirst = await turnTo(page, () => control.first(page).click(), 1)
+  const coldFirst = await turnTo(page, () => use(page, 'first'), 1)
   await page.waitForTimeout(SETTLE)
   const afterFirst = await snapshot(page)
 
   // 답을 기다리지 않고 열 번 넘긴다.
-  for (let turn = 0; turn < 10; turn++) await control.next(page).click()
+  for (let turn = 0; turn < 10; turn++) await use(page, 'next')
   await expect(stage(page).getByRole('img', { name: 'Page 11' })).toBeVisible()
   await page.waitForTimeout(SETTLE)
   const afterRapid = await snapshot(page)

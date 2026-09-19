@@ -21,7 +21,6 @@ import type { ChromeActions, ChromeState } from './types.ts'
 
 const BASE: ChromeState = {
   counter: '3 / 6',
-  fileNames: ['page-003.jpg'],
   page: 2,
   pageCount: 6,
   direction: 'rtl',
@@ -154,6 +153,14 @@ const pointerAt = (type: string, clientX: number): PointerEvent =>
 const openMenuElement = (container: HTMLElement): Element | undefined =>
   [...container.querySelectorAll('[role="menu"]')].find((menu) => menu.checkVisibility())
 
+/** 카운터를 눌러 번호 창을 열고, 그 안의 입력란을 돌려준다. */
+const openGoToPage = async (screen: Rendered) => {
+  await screen.getByRole('button', { name: '3 / 6' }).click()
+  const box = screen.getByRole('spinbutton', { name: /^Page/ })
+  await expect.element(box).toHaveFocus()
+  return box
+}
+
 /** 보기 메뉴를 열고 "Read from" 서브메뉴의 flyout까지 펼친다. */
 const openReadFrom = async (screen: Rendered) => {
   await screen.getByRole('menuitem', { name: 'View', exact: true }).click()
@@ -265,62 +272,102 @@ test('the go menu steps through bookmarks and sends focus to the page box', asyn
   expect(actions.onStepBookmark).toHaveBeenCalledWith(-1)
 
   await chooseFromMenu(screen, 'Go', 'Go to page')
-  expect(document.activeElement).toBe(
-    screen.getByRole('spinbutton', { name: 'Go to page' }).element(),
-  )
+  await expect.element(screen.getByRole('spinbutton', { name: /^Page/ })).toHaveFocus()
 })
 
-test('the footer turns the page and names its slider "Page"', async () => {
+test('the go menu turns the page, and the footer only slides', async () => {
   const { actions, screen } = await renderChrome()
 
-  await screen.getByRole('button', { name: 'First' }).click()
+  await chooseFromMenu(screen, 'Go', 'First')
   expect(actions.onFirst).toHaveBeenCalled()
 
-  await screen.getByRole('button', { name: 'Previous' }).click()
+  await chooseFromMenu(screen, 'Go', 'Previous')
   expect(actions.onPrevious).toHaveBeenCalled()
 
-  await screen.getByRole('button', { name: 'Next', exact: true }).click()
+  await chooseFromMenu(screen, 'Go', 'Next')
   expect(actions.onNext).toHaveBeenCalled()
 
-  await screen.getByRole('button', { name: 'Last' }).click()
+  await chooseFromMenu(screen, 'Go', 'Last')
   expect(actions.onLast).toHaveBeenCalled()
 
   await expect.element(screen.getByRole('slider', { name: 'Page' })).toBeVisible()
+  const footer = screen.container.querySelector('footer')
+  const names = [...(footer?.querySelectorAll('button') ?? [])].map((button) => button.textContent)
+  expect(names).not.toContain('Next')
+  expect(names).not.toContain('Previous')
+  expect(names).not.toContain('First')
+  expect(names).not.toContain('Last')
+})
+
+test('choosing a command lets go of the menubar, so the reader keys work again', async () => {
+  const { screen } = await renderChrome()
+
+  await chooseFromMenu(screen, 'Go', 'Next')
+
+  await expect.poll(() => document.activeElement?.closest('[role="menubar"]') ?? null).toBeNull()
+})
+
+test('opening a submenu is not a command, so the menubar keeps its focus', async () => {
+  const { screen } = await renderChrome()
+
+  await screen.getByRole('menuitem', { name: 'View', exact: true }).click()
+  await screen.getByRole('menuitem', { name: 'Read from' }).click()
+
+  await expect.element(screen.getByRole('menuitemradio', { name: 'Right to left' })).toBeVisible()
+})
+
+test('the page box waits behind the counter until it is pressed', async () => {
+  const { screen } = await renderChrome()
+
+  expect(screen.getByRole('spinbutton', { name: /^Page/ }).query()).toBeNull()
+  await expect
+    .element(screen.getByRole('button', { name: '3 / 6' }))
+    .toHaveAttribute('aria-haspopup', 'dialog')
+
+  await openGoToPage(screen)
 })
 
 test('a number in the box goes there when Enter is pressed', async () => {
   const { actions, screen } = await renderChrome()
 
-  const box = screen.getByRole('spinbutton', { name: 'Go to page' })
+  const box = await openGoToPage(screen)
   await box.fill('4')
   await userEvent.keyboard('{Enter}')
 
+  expect(actions.onGoToPage).toHaveBeenCalledTimes(1)
   expect(actions.onGoToPage).toHaveBeenCalledWith('4')
 })
 
-test('after Enter the box lets go, so the number is not sent again later', async () => {
+test('after Enter the box closes and hands focus back to the counter', async () => {
   const { actions, screen } = await renderChrome()
 
-  const box = screen.getByRole('spinbutton', { name: 'Go to page' })
+  const box = await openGoToPage(screen)
   await box.fill('4')
   await userEvent.keyboard('{Enter}')
 
-  // 입력란을 떠나고 비워진다. 곧바로 키로 페이지를 넘길 수 있는 자리다.
-  await expect.element(box).not.toHaveFocus()
-  await expect.element(box).toHaveValue('')
-  const sent = vi.mocked(actions.onGoToPage).mock.calls.length
+  await expect.element(screen.getByRole('button', { name: '3 / 6' })).toHaveFocus()
+  expect(screen.getByRole('spinbutton', { name: /^Page/ }).query()).toBeNull()
+  expect(actions.onGoToPage).toHaveBeenCalledTimes(1)
+})
 
-  // 다른 길로 넘긴 뒤에 입력란에 들렀다 떠나도, 적어 두었던 4가 다시 넘어가지 않는다.
-  await screen.getByRole('button', { name: 'Next', exact: true }).click()
-  await box.click()
-  await screen.getByRole('button', { name: 'Last' }).click()
-  expect(vi.mocked(actions.onGoToPage).mock.calls.length).toBe(sent)
+test('closing the box with Escape takes the number back', async () => {
+  const { actions, screen } = await renderChrome()
+
+  const box = await openGoToPage(screen)
+  await box.fill('4')
+  await userEvent.keyboard('{Escape}')
+
+  await expect.element(screen.getByRole('button', { name: '3 / 6' })).toHaveFocus()
+  expect(actions.onGoToPage).not.toHaveBeenCalled()
+
+  // 다시 열면 빈 입력란이다. 물린 번호가 남아 있다가 나중에 넘어가지 않는다.
+  await expect.element(await openGoToPage(screen)).toHaveValue('')
 })
 
 test('the arrow keys do not step the number in the box', async () => {
   const { actions, screen } = await renderChrome()
 
-  await screen.getByRole('spinbutton', { name: 'Go to page' }).click()
+  await openGoToPage(screen)
   await userEvent.keyboard('{ArrowUp}{ArrowDown}')
 
   // 한 칸씩 옮길 때마다 넘어가면 다 적은 뒤의 한 번이라는 약속이 깨진다(`R-266`).
@@ -341,11 +388,14 @@ test('and reading left to right it stays as written', async () => {
   expect(footer && getComputedStyle(footer).flexDirection).toBe('row')
 })
 
-test('the counter and the file name sit above the reader', async () => {
-  const { screen } = await renderChrome({ fileNames: ['page-003.jpg', 'page-004.jpg'] })
+test('the counter sits in the footer beside the slider', async () => {
+  const { screen } = await renderChrome()
 
   await expect.element(screen.getByText('3 / 6')).toBeVisible()
-  await expect.element(screen.getByTitle('page-003.jpg · page-004.jpg')).toBeVisible()
+
+  const footer = screen.container.querySelector('footer')
+  expect(footer?.querySelector('[data-counter]')?.textContent).toBe('3 / 6')
+  expect(screen.container.querySelector('header [data-counter]')).toBeNull()
 })
 
 test('a hidden chrome leaves neither bar behind', async () => {

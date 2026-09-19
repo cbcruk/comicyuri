@@ -23,8 +23,6 @@ import type { Model } from '../../reader/model.ts'
 export type ReaderLayout = Readonly<{
   title: string
   pageCount: number
-  /** 페이지별 파일 이름. 카운터 아래에 이것이 적힌다(`R-217`). */
-  names: ReadonlyArray<string>
   /** 묶기와 반쪽 계산이 보는 것. */
   layout: Layout
   spreads: ReadonlyArray<ReadonlyArray<number>>
@@ -53,7 +51,7 @@ export const readerLayout = (model: Model): Option.Option<ReaderLayout> =>
   OpenState.$match(model.openState, {
     Opening: (): Option.Option<ReaderLayout> => Option.none(),
     Failed: (): Option.Option<ReaderLayout> => Option.none(),
-    Ready: ({ title, pageCount, ratios, names }): Option.Option<ReaderLayout> => {
+    Ready: ({ title, pageCount, ratios }): Option.Option<ReaderLayout> => {
       const layout: Layout = { pageCount, ratios, marks: model.marks }
       const spreads = spreadsFor(layout, model.settings)
       const index = indexOfPage(spreads, model.page)
@@ -61,7 +59,6 @@ export const readerLayout = (model: Model): Option.Option<ReaderLayout> =>
       return Option.some({
         title,
         pageCount,
-        names,
         layout,
         spreads,
         index,
@@ -83,9 +80,3 @@ export const counterLabel = (pages: ReadonlyArray<number>, pageCount: number): s
   const shown = first === last ? `${first + 1}` : `${first + 1}–${last + 1}`
   return `${shown} / ${pageCount}`
 }
-
-/** 지금 화면에 걸린 파일들의 이름, 읽는 순서대로(`R-217`). */
-export const fileNamesFor = (
-  pages: ReadonlyArray<number>,
-  names: ReadonlyArray<string>,
-): ReadonlyArray<string> => Array.getSomes(Array.map(pages, (page) => Array.get(names, page)))

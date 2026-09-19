@@ -34,7 +34,7 @@ import {
   textSizeVars,
 } from '@astryxdesign/core/theme/tokens.stylex'
 import { Schema } from 'effect'
-import type { KeyboardEvent, ReactNode } from 'react'
+import type { KeyboardEvent, MouseEvent, ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 
 import { ReadingDirection } from '../../types.ts'
@@ -122,6 +122,16 @@ const MenuHint = ({ value, shortcut }: Readonly<{ value?: string; shortcut?: str
 const isInSubMenu = (target: EventTarget): boolean =>
   target instanceof Element && target.closest('[role="menu"] [role="menu"]') !== null
 
+/**
+ * 눌린 것이 메뉴 안에서 명령을 끝내는 항목인지. 서브메뉴를 여는 행은 명령이 아니라
+ * 한 겹 더 들어가는 길이므로 세지 않는다.
+ */
+const isChosenItem = (target: EventTarget): boolean =>
+  target instanceof Element &&
+  target.closest(
+    '[role="menu"] :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]):not([aria-haspopup])',
+  ) !== null
+
 /** 메뉴 하나. 열림 여부를 메뉴바가 쥐므로 그것만 밖에서 받는다. */
 const Menu = ({
   id,
@@ -156,10 +166,10 @@ export type MenubarProps = Readonly<{
   state: ChromeState
   actions: ChromeActions
   /**
-   * "Go to page" 항목이 부르는 것. 번호를 적는 자리는 푸터에 있으므로, 메뉴는
-   * 그리로 포커스를 보내는 일만 한다. 푸터 없이 메뉴바만 세울 때는 비워 둔다.
+   * "Go to page" 항목이 부르는 것. 번호를 적는 창은 푸터의 카운터가 열므로,
+   * 메뉴는 그것을 여는 일만 한다. 푸터 없이 메뉴바만 세울 때는 비워 둔다.
    */
-  onFocusGoToPage?: () => void
+  onOpenGoToPage?: () => void
 }>
 
 /**
@@ -170,7 +180,7 @@ export type MenubarProps = Readonly<{
  * 컴포넌트가 먼저 가로채 옆 메뉴를 대신 연다 — 네이티브 메뉴바가 그렇게
  * 움직인다. 위아래 화살표·Enter·Escape·글자로 찾기는 `DropdownMenu`의 것이다.
  */
-export const ReaderMenubar = ({ state, actions, onFocusGoToPage }: MenubarProps) => {
+export const ReaderMenubar = ({ state, actions, onOpenGoToPage }: MenubarProps) => {
   const [openMenu, setOpenMenu] = useState<MenuId | null>(null)
 
   const { listRef, handleKeyDown, handleFocus } = useListFocus<HTMLDivElement>({
@@ -212,9 +222,26 @@ export const ReaderMenubar = ({ state, actions, onFocusGoToPage }: MenubarProps)
     handleKeyDown(event)
   }
 
+  /**
+   * 항목으로 명령을 고른 뒤에는 포커스를 메뉴바에서 놓는다.
+   *
+   * 메뉴가 닫히면 포커스가 트리거로 돌아오는데, 리더는 메뉴바 위의 키를 양보하므로
+   * (`R-265`) 그대로 두면 `]`나 화살표가 먹히지 않는다. 넘김이 Go 메뉴에만 있어서, 넘긴
+   * 다음 키로 이어 가는 일이 흔하다. 돌아오는 것은 닫힘 뒤라 한 프레임 기다린다.
+   */
+  const handleMenubarClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (!isChosenItem(event.target)) return
+    const menubar = event.currentTarget
+    requestAnimationFrame(() => {
+      const focused = document.activeElement
+      if (focused instanceof HTMLElement && menubar.contains(focused)) focused.blur()
+    })
+  }
+
   return (
     <HStack
       ref={listRef}
+      onClick={handleMenubarClick}
       role="menubar"
       aria-label="Reader menus"
       aria-orientation="horizontal"
@@ -341,8 +368,8 @@ export const ReaderMenubar = ({ state, actions, onFocusGoToPage }: MenubarProps)
         <DropdownMenuDivider />
         <DropdownMenuItem
           label="Go to page"
-          onClick={onFocusGoToPage}
-          isDisabled={onFocusGoToPage === undefined}
+          onClick={onOpenGoToPage}
+          isDisabled={onOpenGoToPage === undefined}
         />
         <DropdownMenuDivider />
         <DropdownMenuItem

@@ -8,15 +8,14 @@ import type { Page } from '@playwright/test'
 
 import {
   chooseDirection,
-  control,
   counter,
   expectDirection,
   importBook,
   importBooks,
+  openMenu,
   openReader,
   openShelf,
   readBook,
-  openMenu,
   stage,
   use,
 } from './fixture/app.ts'
@@ -145,7 +144,7 @@ test('R-2B6 · 책장에서 정한 기본값이 그 뒤에 여는 책에 걸린�
   await page.getByRole('button', { name: 'Close' }).click()
 
   await openReader(page, title)
-  await control.next(page).click()
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('2 / 6')
   await use(page, 'shelf')
 

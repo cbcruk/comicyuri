@@ -8,7 +8,7 @@
 
 import { expect, test } from '@playwright/test'
 
-import { control, counter, importBook, openReader, stage, use } from './fixture/app.ts'
+import { counter, importBook, openReader, stage, use } from './fixture/app.ts'
 
 const SHELF = '/comicyuri/'
 
@@ -28,7 +28,7 @@ test('N-407 · 리더 주소로 곧장 들어오면 `404.html`이 앱을 띄운�
   await page.goto(SHELF)
   const title = await importBook(page)
   await openReader(page, title)
-  await control.next(page).click()
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('2 / 6')
 
   // 그 경로에는 파일이 없다. 서버는 404로 답하지만 문서는 앱이다.

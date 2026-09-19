@@ -291,8 +291,7 @@ JSON이 깨졌거나 `theme`이 아는 값이 아니면 아무것도 하지 않�
 바이트는 아카이브의 실패(`F-507`)로 나온다.
 
 아카이브 안에서 페이지가 되는 것은 이름이 이미지인 엔트리뿐이고, macOS가 남기는
-`__MACOSX` 아래는 그 이름을 하고 있어도 빠진다. 페이지의 이름은 폴더를 뗀 것이다 —
-카운터 아래에 서는 것이 그 이름이다(`R-217`).
+`__MACOSX` 아래는 그 이름을 하고 있어도 빠진다. 페이지의 이름은 폴더를 뗀 것이다.
 ✅ loader "an archive with no images says so rather than opening empty", "a record that
 lost its bytes says the same", "bytes that are not an archive fail as an archive would",
 "the images inside stand as pages, in name order, by their own names", "what macOS leaves
@@ -344,8 +343,9 @@ does not know is refused by name"
 ### 2.2 페이지 넘기기
 
 **R-211 · Next / Previous / First / Last**
+Go 메뉴의 항목과 키가 넘긴다. 푸터에는 넘김 버튼이 없고 슬라이더와 카운터만 선다.
 ✅ reader/screen "a key turns the page",
-chrome/screen 'the footer turns the page and names its slider "Page"'
+chrome/screen "the go menu turns the page, and the footer only slides"
 
 **R-212 · 책 끝에서 무엇을 할지는 설정이 정한다**
 `atBookEnd`가 셋 중 하나다. `next`(기본)는 이웃한 책으로 이어 읽고(`R-216`),
@@ -354,24 +354,11 @@ chrome/screen 'the footer turns the page and names its slider "Page"'
 "set to wrap, the end of the book leads back to its start"
 
 **R-213 · 카운터는 현재 스프레드를 보여준다**
-한 장이면 `3 / 120`, 두 장이면 `4–5 / 120`.
-✅ chrome/screen "the counter and the file name sit above the reader"
-
-**R-217 · 카운터 아래에 지금 걸린 파일 이름이 붙는다**
-아카이브 안에서의 이름이고, 폴더는 떼어 낸 것이다. 두 장이 걸리면 읽는 순서대로 둘
-다 보인다.
-
-긴 이름은 **앞을** 줄인다. 스캔본의 이름은 대개 `Vol.01 Ch.003 - 045.jpg`처럼 공통된
-머리에 번호가 붙는 꼴이라, 뒤를 자르면 페이지마다 똑같은 머리만 남는다. 통째로는
-`title` 속성에 남는다.
-
-번호만으로는 정렬이 어긋난 것을 알아볼 수 없다. 아카이브는 이름순으로 서는데 그
-이름이 사람의 기대와 다른 책이 있고, 그때 몇 번째 장인지가 아니라 어느 파일인지가
-단서가 된다. 메뉴바와 같은 줄에 있으므로 숨기면(`R-252`) 함께 빠진다.
-✅ chrome/screen "the counter and the file name sit above the reader",
-e2e "R-217 · 카운터 아래에 아카이브 안의 파일 이름이 보인다", "R-217 · 두 장이 걸리면
-이름도 둘이다"
-📖 긴 이름의 앞을 줄이는 것은 CSS가 한다 — 재는 테스트가 없다
+한 장이면 `3 / 120`, 두 장이면 `4–5 / 120`. 넘김 줄 안, 슬라이더 옆에 선다. 누르면 번호를
+적는 창이 열린다(`R-266`) — 지금 자리를 말하는 것이 곧 그 자리를 옮기는 손잡이다. 푸터에 있으므로 숨기면(`R-252`) 함께
+빠진다.
+✅ chrome/screen "the counter sits in the footer beside the slider",
+e2e "R-213 · 넘기면 카운터가 따라온다", "R-213 · 두 장이 걸리면 카운터도 둘을 센다"
 
 **R-214 · 이미 지나간 페이지의 이미지가 늦게 도착하면 버린다**
 ✅ pages "land on their own spread and leave the one on screen alone",
@@ -779,8 +766,9 @@ settings`), 슬라이드쇼 — 은 `menuitemcheckbox`라 `aria-checked`를 진�
 명령이므로 평범한 `menuitem`이다. 읽는 방향만은 서브메뉴 안의 `menuitemradio` 둘이다
 (`R-221`).
 
-넘김 줄(First·Previous·Next·Last)과 번호 입력란과 슬라이더는 메뉴에 접지 않고 푸터에
-그대로 남는다. 읽는 동안 손이 계속 가는 것들이다.
+슬라이더와 카운터는 메뉴에 접지 않고 푸터에 남는다. 읽는 동안 손이 계속
+가는 것들이다. 한 장씩·끝으로 넘기는 First·Previous·Next·Last는 Go 메뉴에만 있다 — 키와
+탭이 같은 일을 하므로 버튼으로 자리를 차지하지 않는다.
 ✅ chrome/screen "the book menu carries the shelf, the bookmark and the page grid", "the
 view menu carries every control that changes how a page is shown", "the go menu steps
 through bookmarks and sends focus to the page box", "the play menu starts the slideshow and
@@ -842,8 +830,8 @@ to the reader"
 **R-264 · 오른쪽에서 왼쪽으로 읽으면 슬라이더도 뒤집힌다**
 첫 페이지가 오른쪽 끝이고, 읽을수록 thumb이 왼쪽으로 간다. 채워진 구간은 읽은
 만큼이므로 오른쪽 끝에서 thumb까지다 — 컴포넌트는 늘 자기 최솟값(왼쪽)부터
-채우기 때문에, 이 방향에서는 트랙과 채움의 색이 자리를 바꾼다. 푸터의 버튼
-순서도 함께 뒤집힌다. 페이지 번호는 뒤집히지 않으므로 `aria-valuetext`는 그대로
+채우기 때문에, 이 방향에서는 트랙과 채움의 색이 자리를 바꾼다. 푸터의 순서도
+함께 뒤집혀, 카운터가 슬라이더가 다 차는 쪽에 선다. 페이지 번호는 뒤집히지 않으므로 `aria-valuetext`는 그대로
 1부터 센다.
 ✅ chrome/screen "reading right to left, the slider starts full and empties
 leftward", "reading right to left, the filled part of the track sits on the
@@ -861,6 +849,10 @@ as written", "reading right to left, the slider keys follow what the eye sees"
 화살표로 항목 사이를 걷고 아래 화살표와 Space로 열리고 글자 하나로 항목을 찾는다.
 메뉴가 열려 있는 동안 `h`나 `t` 같은 글자까지 메뉴의 키다.
 
+메뉴 항목으로 명령을 고르면 메뉴바는 포커스를 놓는다. 닫힌 메뉴는 포커스를 트리거로
+돌려주는데, 그대로 두면 넘긴 뒤의 `]`나 화살표가 메뉴바에 걸린다. 서브메뉴를 여는 행은
+명령이 아니므로 놓지 않는다.
+
 물러나는 관문이 둘인 것은 둘이 서로 다른 것을 덮기 때문이다. 하나는 포커스가 어느
 역할 위에 있는지를 보므로 위젯이 조용히 삼키는 키 — 메뉴의 타입어헤드 같은, `preventDefault`를
 부르지 않는 것 — 까지 덮지만 덮을 역할의 목록을 손으로 적어 두어야 한다. 다른 하나는
@@ -875,33 +867,38 @@ trigger is not the reader’s", "a key someone has already taken is not the read
 chrome/screen "the slider moves by step, by page and to either end", "reading right to
 left, the slider keys follow what the eye sees",
 reader/screen "walking the menubar with an arrow key does not turn the page",
+chrome/screen "choosing a command lets go of the menubar, so the reader keys work again",
+"opening a submenu is not a command, so the menubar keeps its focus",
 e2e "R-266 · 번호를 적는 동안 화살표는 페이지를 넘기지 않는다"
 🔍 2026-09-09 · 슬라이더에 포커스를 준 뒤 화살표가 한 번에 한 페이지만 넘기는 것을
 확인함
 
 **R-266 · 번호를 적어 그 페이지로 간다**
-슬라이더 옆의 입력란. Enter를 누르거나 입력란을 떠나면 그 번호로 간다. 책 밖의
-번호나 숫자가 아닌 것은 아무 일도 일으키지 않는다 — 잘못 적은 것을 되돌릴 자리가
-입력란 자신이다.
+푸터의 카운터(`R-213`)가 버튼이다. 누르면 `Go to page` 창(Dialog)이 열리고, Go 메뉴의
+`Go to page`도 같은 것을 연다. 창에는 책의 범위를 적은 라벨(`Page (1–120)`)이 붙은 입력란
+하나와 Cancel·Go 버튼이 있고, 열리면 포커스가 입력란으로 간다. Enter나 Go를 누르면 그
+번호로 가고 창이 닫히며 포커스는 카운터로 돌아온다. 책 밖의 번호나 숫자가 아닌 것은 아무
+일도 일으키지 않는다.
+
+Escape·Cancel·바깥 클릭으로 닫는 것은 물리는 것이다. 창 안의 버튼 위에서 누른 Escape도
+창만 닫는다 — 리더에게 가면 책을 떠난다(`R-2A3`). 떠 있는 창을 닫는 손짓이 페이지를 옮기면
+무를 길이 없다. 입력란은 열릴 때마다 새로 서므로 물린 번호가 남아 있다가 나중에 넘어가는
+일도 없다.
 
 적은 값을 Model에 두지 않는다. 적는 동안 리더가 그것을 고쳐 쓰면 손가락과 싸우게
 되고, 필요한 것은 다 적은 뒤의 한 번뿐이다. 지금 어디인지는 자리표시자가 말해 준다.
 
 적는 동안에는 리더가 키를 양보한다(`R-265`와 같은 이유). 화살표와 Space는 글자를
 옮기는 키이지 페이지를 넘기는 키가 아니다. 입력란은 Astryx `NumberInput`이지만 위·아래
-화살표와 휠로 번호를 한 칸씩 옮기는 것은 꺼 두었다 — 옮길 때마다 넘어가서 다 적은 뒤의 한
-번이 아니게 된다.
-
-Enter를 누르면 넘기고 입력란을 떠난다. 적은 번호가 입력란에 남아 있으면 그 뒤 다른 길로
-넘긴 다음 입력란을 떠날 때 옛 번호로 되돌아가기 때문이고, 떠나 있으면 곧바로 키로 페이지를
-넘길 수 있다.
+화살표와 휠로 번호를 한 칸씩 옮기는 것은 꺼 두었다.
 ✅ reader/story "a number in the book goes there", "a number outside the book, or no
 number at all, changes nothing",
-chrome/screen "a number in the box goes there when Enter is pressed", "after Enter the box lets
-go, so the number is not sent again later", "the arrow keys do not step the number in the
-box",
-e2e "R-266 · 번호를 적고 Enter를 누르면 그 페이지로 간다", "R-266 · 번호를 적는 동안
-화살표는 페이지를 넘기지 않는다"
+chrome/screen "the page box waits behind the counter until it is pressed", "a number in the
+box goes there when Enter is pressed", "after Enter the box closes and hands focus back to the
+counter", "closing the box with Escape takes the number back", "the arrow keys do not step the
+number in the box", "the go menu steps through bookmarks and sends focus to the page box",
+e2e "R-266 · 번호를 적고 Enter를 누르면 그 페이지로 간다", "R-266 · Go 메뉴의 Go to page가
+번호 입력란을 연다", "R-266 · 창 안의 버튼에서 누른 Escape는 창만 닫고 책을 떠나지 않는다", "R-266 · 번호를 적는 동안 화살표는 페이지를 넘기지 않는다"
 
 ⚠️ 퍼센트로 가는 길은 없다. 슬라이더가 이미 비율로 잡는 자리다.
 
