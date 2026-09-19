@@ -81,11 +81,18 @@ const trigger = (container: HTMLElement, label: string): HTMLElement => {
   return found
 }
 
-/** 슬라이더의 트랙과 그 위를 덮는 채움. `R-264`는 이 둘의 색과 너비로 확인한다. */
+/**
+ * 슬라이더의 트랙과 그 위를 덮는 채움. `R-264`는 이 둘의 색과 자리로 확인한다.
+ *
+ * 트랙은 Astryx가 테마용으로 다는 고정 클래스로 찾는다. 채움에는 그런 이름이 없어서 트랙
+ * 바로 뒤에 서는 것을 집는다.
+ */
 const trackAndFill = (container: HTMLElement): readonly [HTMLElement, HTMLElement] => {
-  const track = container.querySelector<HTMLElement>('[data-slider-track]')
-  const fill = container.querySelector<HTMLElement>('[data-slider-fill]')
-  if (track === null || fill === null) throw new Error('슬라이더가 없다')
+  const track = container.querySelector('.astryx-slider-track')
+  const fill = track?.nextElementSibling
+  if (!(track instanceof HTMLElement) || !(fill instanceof HTMLElement)) {
+    throw new Error('슬라이더가 없다')
+  }
   return [track, fill]
 }
 
@@ -540,36 +547,67 @@ test('reading left to right, it runs the usual way', async () => {
   await expect.element(thumb).toHaveAttribute('aria-valuemax', '5')
 })
 
-test('reading right to left, the slider starts full and empties leftward', async () => {
+test('reading right to left, the slider stands right to left and still counts pages', async () => {
   const { screen } = await renderChrome({ direction: 'rtl' })
 
   const thumb = screen.getByRole('slider', { name: 'Page' })
-  // 3페이지, 여섯 장짜리 책. 오른쪽에서 왼쪽이면 자리는 뒤집히고 번호는 그대로다.
-  await expect.element(thumb).toHaveAttribute('aria-valuenow', '3')
+  // 값은 페이지 번호 그대로다. 첫 페이지를 오른쪽 끝에 두는 것은 `dir`이 한다.
+  await expect.element(thumb).toHaveAttribute('aria-valuenow', '2')
   await expect.element(thumb).toHaveAttribute('aria-valuetext', 'Page 3')
+  expect(thumb.element().closest('[dir]')?.getAttribute('dir')).toBe('rtl')
 })
 
 test('reading right to left, the filled part of the track sits on the right', async () => {
   const { screen } = await renderChrome({ direction: 'rtl' })
 
   const [track, fill] = trackAndFill(screen.container)
+  const trackBox = track.getBoundingClientRect()
+  const fillBox = fill.getBoundingClientRect()
 
   // 둘이 같은 색으로 풀리면 아래 비교는 무엇도 재지 못한다.
   expect(backgroundOf(track)).not.toBe(backgroundOf(fill))
-  expect(backgroundOf(track)).toBe(tokenColour(track, '--color-accent'))
-  expect(backgroundOf(fill)).toBe(tokenColour(track, '--color-track'))
-  // 3페이지까지 읽었으니 왼쪽 3/5는 아직 읽지 않은 몫이다.
-  expect(fill.style.width).toBe('60%')
+  expect(backgroundOf(fill)).toBe(tokenColour(track, '--color-accent'))
+  // 3페이지까지 읽었으니 오른쪽 끝에서 2/5만큼이 채워진다.
+  expect(Math.abs(fillBox.right - trackBox.right)).toBeLessThan(1)
+  expect(fillBox.width / trackBox.width).toBeCloseTo(0.4, 1)
 })
 
 test('reading left to right, the fill is the fill', async () => {
   const { screen } = await renderChrome({ direction: 'ltr' })
 
   const [track, fill] = trackAndFill(screen.container)
+  const trackBox = track.getBoundingClientRect()
+  const fillBox = fill.getBoundingClientRect()
 
-  expect(backgroundOf(track)).toBe(tokenColour(track, '--color-track'))
   expect(backgroundOf(fill)).toBe(tokenColour(track, '--color-accent'))
-  expect(fill.style.width).toBe('40%')
+  expect(Math.abs(fillBox.left - trackBox.left)).toBeLessThan(1)
+  expect(fillBox.width / trackBox.width).toBeCloseTo(0.4, 1)
+})
+
+test('every page of a short book stands on the slider as a tick', async () => {
+  const { screen } = await renderChrome()
+
+  const ticks = [...screen.container.querySelectorAll<HTMLElement>('[data-mark-value]')]
+  expect(ticks.map((tick) => tick.dataset.markValue)).toEqual(['0', '1', '2', '3', '4', '5'])
+})
+
+test('pressing a tick goes to that page', async () => {
+  const { actions, screen } = await renderChrome()
+
+  const tick = screen.container.querySelector<HTMLElement>('[data-mark-value="4"]')
+  if (tick === null) throw new Error('눈금이 없다')
+  const box = tick.getBoundingClientRect()
+  tick.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId: 1,
+      isPrimary: true,
+      clientX: box.left + box.width / 2,
+      clientY: box.top + box.height / 2,
+    }),
+  )
+
+  expect(actions.onSlide).toHaveBeenLastCalledWith(4)
 })
 
 test('the slider moves by step, by page and to either end', async () => {
@@ -606,6 +644,10 @@ test('reading right to left, the slider keys follow what the eye sees', async ()
   // 오른쪽 화살표는 트랙 위에서 오른쪽으로 가고, 그쪽이 책의 앞이다.
   await userEvent.keyboard('{ArrowRight}')
   expect(actions.onSlide).toHaveBeenLastCalledWith(1)
+
+  await userEvent.keyboard('{ArrowLeft}')
+  expect(actions.onSlide).toHaveBeenLastCalledWith(3)
+  expect(actions.onSlide).toHaveBeenCalledTimes(2)
 })
 
 test('read from offers both directions and marks the one in use', async () => {
