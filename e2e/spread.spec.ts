@@ -108,3 +108,34 @@ test('R-227 · 한 장 모드에는 뒤집을 묶기가 없다', async ({ page }
     await expect(item).toHaveCount(0)
   })
 })
+
+/**
+ * 두 장이 나란히 서 있는지. 한 줄에 선 둘은 윗변이 같다 — 한 장이 다음 줄로 밀려나면
+ * 화면 밖으로 나가 한 장 모드처럼 보인다.
+ */
+const expectSideBySide = async (page: Page): Promise<void> => {
+  const images = stage(page).getByRole('img')
+  await expect(images).toHaveCount(2)
+  const tops = await images.evaluateAll((elements) =>
+    elements.map((element) => Math.round(element.getBoundingClientRect().top)),
+  )
+  expect(new Set(tops).size).toBe(1)
+}
+
+test('R-222 · 두 장이 화면보다 넓어도 뒤로 넘기면 두 장이 나란히 선다', async ({ page }) => {
+  // 세로로 긴 창에 세로로 긴 페이지 둘. 둘을 합친 폭이 창보다 넓다.
+  await page.setViewportSize({ width: 600, height: 900 })
+  await readBook(page, {
+    fileName: 'volume-1.cbz',
+    pageCount: 8,
+    size: { width: 800, height: 1200 },
+  })
+  await use(page, 'view')
+
+  await use(page, 'next')
+  await use(page, 'next')
+  await expectSideBySide(page)
+
+  await use(page, 'previous')
+  await expectSideBySide(page)
+})

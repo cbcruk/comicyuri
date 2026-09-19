@@ -67,9 +67,9 @@ const styles = stylex.create({
     backgroundColor: `color-mix(in srgb, ${colorVars['--color-overlay']} 40%, transparent)`,
   },
   /**
-   * 페이지를 담는 상자. 맞춤 모드는 페이지에 `100%` 크기를 거는데, 퍼센트는 담는 상자가 크기를
-   * 정해 두어야 풀린다. 이 상자는 스테이지의 flex 자식이라 내버려 두면 내용만큼만 커져서, 페이지가
-   * 자기 크기를 기준으로 자기를 재는 꼴이 된다.
+   * 페이지를 담는 상자. 맞춤 모드는 페이지에 이 상자를 기준으로 한 크기(`100cqw`·`100cqh`)를
+   * 거는데, 그러려면 이 상자가 크기를 정해 둔 컨테이너여야 한다. 스테이지의 flex 자식이라
+   * 내버려 두면 내용만큼만 커져서, 페이지가 자기 크기를 기준으로 자기를 재는 꼴이 된다.
    *
    * 세로 자리는 `safe center`다. 화면에 들어가는 페이지는 가운데에 놓고, 넘치는 페이지는 잘리는
    * 쪽 대신 시작하는 쪽에 붙인다.
@@ -78,7 +78,6 @@ const styles = stylex.create({
     display: 'flex',
     alignItems: 'safe center',
     justifyContent: 'center',
-    gap: spacingVars['--spacing-1'],
     containerType: 'size',
     width: '100%',
     height: '100%',
@@ -88,11 +87,25 @@ const styles = stylex.create({
     width: '100cqh',
     height: '100cqw',
   },
+  /**
+   * 스프레드의 페이지들을 한 줄로 묶는 그릇. 페이지 상자에게는 이것 하나가 유일한 자식이다.
+   *
+   * 페이지를 상자의 자식으로 바로 두면 뒤로 넘겨 온 스프레드(`enteredFromEnd`)에서 두 장이
+   * 갈라선다. `wrap-reverse`가 줄바꿈까지 켜서, 두 장의 폭 합이 화면보다 넓으면 한 장이 다음
+   * 줄로 밀려나 화면 밖에 선다. 자식이 하나면 바꿀 줄이 없다. 그래서 맞춤 모드의 크기도
+   * 이 그릇이 아니라 페이지 상자를 기준(`cqw`·`cqh`)으로 잰다.
+   */
+  spread: {
+    display: 'flex',
+    flexShrink: 0,
+    alignItems: 'center',
+    gap: spacingVars['--spacing-1'],
+  },
   rightToLeft: {
     flexDirection: 'row-reverse',
   },
   // 뒤로 넘겨 온 페이지는 끝에서 시작한다(`R-247`). 교차축의 시작이 아래로 뒤집히므로 넘치는
-  // 쪽에 붙는 자리도 함께 뒤집힌다.
+  // 쪽에 붙는 자리도 함께 뒤집힌다. 자식은 스프레드 그릇 하나뿐이라 줄은 바뀌지 않는다.
   enteredFromEnd: {
     flexWrap: 'wrap-reverse',
   },
@@ -102,16 +115,16 @@ const styles = stylex.create({
   },
   /** 통째로 맞춤은 최대 크기만 건다. 화면보다 작은 페이지는 원래 크기 그대로 선다. */
   fitContain: {
-    maxWidth: '100%',
-    maxHeight: '100%',
+    maxWidth: '100cqw',
+    maxHeight: '100cqh',
     objectFit: 'contain',
   },
   fitWidth: {
-    width: '100%',
+    width: '100cqw',
     objectFit: 'contain',
   },
   fitHeight: {
-    height: '100%',
+    height: '100cqh',
     objectFit: 'contain',
   },
   fitOriginal: {
@@ -282,7 +295,6 @@ const pageBoxStyle = (model: Model, entry: PageEntry, { zoom, pan }: Transform) 
   stylex.props(
     styles.pageBox,
     swapsSides(model.rotation) && styles.pageBoxOnItsSide,
-    model.settings.direction === 'rtl' && styles.rightToLeft,
     entry === 'end' && styles.enteredFromEnd,
     zoom === ZOOM_MIN && pan.x === 0 && pan.y === 0 && styles.settling,
   )
@@ -307,7 +319,7 @@ const SpreadPanels = ({
   const maybeHalf = splitOf(model, layout, shown)
 
   return (
-    <>
+    <div {...stylex.props(styles.spread, model.settings.direction === 'rtl' && styles.rightToLeft)}>
       {shown.panels.map((panel) =>
         Option.match(maybeHalf, {
           onNone: () => (
@@ -323,7 +335,7 @@ const SpreadPanels = ({
           ),
         }),
       )}
-    </>
+    </div>
   )
 }
 
