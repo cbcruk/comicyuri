@@ -3,20 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { openMenu, readBook, readMenuItem, stage, use } from './fixture/app.ts'
-
-/**
- * 설정 패널을 여닫는다.
- *
- * `use(page, 'settings')`를 쓰지 못한다. 이 항목은 상태를 지므로
- * `menuitemcheckbox`인데, 픽스처의 `openMenu`는 이름에 `bookmark`·`fullscreen`·
- * `slideshow`가 든 것만 그 역할로 찾기 때문이다. 픽스처가 그것을 알게 되면
- * 이 helper는 `use(page, 'settings')` 한 줄로 줄어든다.
- */
-const useSettings = async (page: Page): Promise<void> => {
-  await openMenu(page, 'settings')
-  await page.getByRole('menuitemcheckbox', { name: 'Reading settings' }).click()
-}
+import { readBook, readMenuItem, stage, use } from './fixture/app.ts'
 
 /** 화면보다 훨씬 작은 저해상도 스캔본. */
 const SMALL = { width: 240, height: 360 }
@@ -44,7 +31,7 @@ const expectFit = (page: Page, value: string) =>
 
 /** 설정 패널에서 늘리기 스위치를 끈다. */
 const stopStretching = async (page: Page): Promise<void> => {
-  await useSettings(page)
+  await use(page, 'settings')
   await page.getByRole('switch', { name: 'Stretch small pages to fit' }).click()
   await page.getByRole('button', { name: 'Close' }).click()
 }

@@ -20,8 +20,6 @@ export type ChromeState = Readonly<{
   fit: FitMode
   /** 지금 페이지가 책갈피에 들어 있는지. 책갈피 항목의 이름이 이것으로 갈린다. */
   isBookmarked: boolean
-  isThumbsOpen: boolean
-  isSettingsOpen: boolean
   isFullscreen: boolean
   isPlaying: boolean
   /**

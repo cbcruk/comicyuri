@@ -6,19 +6,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { openMenu, readBook } from './fixture/app.ts'
-
-/**
- * 썸네일 격자를 여닫는다.
- *
- * `use(page, 'everyPage')`를 쓰지 못한다. 이 항목은 상태를 지므로
- * `menuitemcheckbox`인데, 픽스처의 `openMenu`는 이름에 `bookmark`·`fullscreen`·
- * `slideshow`가 든 것만 그 역할로 찾기 때문이다.
- */
-const useEveryPage = async (page: Page): Promise<void> => {
-  await openMenu(page, 'everyPage')
-  await page.getByRole('menuitemcheckbox', { name: 'Show every page' }).click()
-}
+import { readBook, use } from './fixture/app.ts'
 
 /** 지금 한 행에 서 있는 칸의 수와 좌우 여백. */
 const rowOf = (page: Page) =>
@@ -37,7 +25,7 @@ const rowOf = (page: Page) =>
 
 const openGrid = async (page: Page): Promise<void> => {
   await readBook(page, { fileName: 'volume-1.cbz', pageCount: 24 })
-  await useEveryPage(page)
+  await use(page, 'everyPage')
   await expect(page.getByRole('button', { name: 'Go to page 1', exact: true })).toBeVisible()
 }
 

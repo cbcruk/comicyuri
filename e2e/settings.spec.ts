@@ -12,26 +12,12 @@ import {
   expectDirection,
   importBook,
   importBooks,
-  openMenu,
   openReader,
   openShelf,
   readBook,
   stage,
   use,
 } from './fixture/app.ts'
-
-/**
- * 설정 패널을 여닫는다.
- *
- * `use(page, 'settings')`를 쓰지 못한다. 이 항목은 상태를 지므로
- * `menuitemcheckbox`인데, 픽스처의 `openMenu`는 이름에 `bookmark`·`fullscreen`·
- * `slideshow`가 든 것만 그 역할로 찾기 때문이다. 픽스처가 그것을 알게 되면
- * 이 helper는 `use(page, 'settings')` 한 줄로 줄어든다.
- */
-const useSettings = async (page: Page): Promise<void> => {
-  await openMenu(page, 'settings')
-  await page.getByRole('menuitemcheckbox', { name: 'Reading settings' }).click()
-}
 
 const panel = (page: Page) => page.getByRole('dialog', { name: 'Reading settings' })
 const coverAlone = (page: Page) => page.getByRole('switch', { name: 'Cover on its own' })
@@ -40,7 +26,7 @@ test('R-2B1 · ⚙ 버튼이 패널을 열고 닫는다', async ({ page }) => {
   await readBook(page)
 
   await expect(panel(page)).toHaveCount(0)
-  await useSettings(page)
+  await use(page, 'settings')
   await expect(panel(page)).toBeVisible()
 
   await page.getByRole('button', { name: 'Close' }).click()
@@ -54,7 +40,7 @@ test('R-2B1 · 표지를 혼자 두지 않기로 하면 배치가 바로 바뀌�
   await use(page, 'view')
   await expect(stage(page).getByRole('img')).toHaveCount(1)
 
-  await useSettings(page)
+  await use(page, 'settings')
   await coverAlone(page).click()
   await expect(coverAlone(page)).not.toBeChecked()
 
@@ -69,7 +55,7 @@ test('R-2B1 · 표지를 혼자 두지 않기로 하면 배치가 바로 바뀌�
 test('R-2B1 · 책 끝 동작을 고르면 그대로 남는다', async ({ page }) => {
   await readBook(page)
 
-  await useSettings(page)
+  await use(page, 'settings')
   await page.getByRole('radio', { name: 'Stay put' }).click()
   await expect(page.getByRole('radio', { name: 'Stay put' })).toHaveAttribute(
     'aria-checked',
@@ -77,7 +63,7 @@ test('R-2B1 · 책 끝 동작을 고르면 그대로 남는다', async ({ page }
   )
 
   await page.reload()
-  await useSettings(page)
+  await use(page, 'settings')
   await expect(page.getByRole('radio', { name: 'Stay put' })).toHaveAttribute(
     'aria-checked',
     'true',
@@ -94,7 +80,7 @@ test('R-2B3 · 책마다 기억하기를 켜면 방향이 그 책에만 남는�
   ])
 
   await openReader(page, titles[0]!)
-  await useSettings(page)
+  await use(page, 'settings')
   await remember(page).click()
   await page.getByRole('button', { name: 'Close' }).click()
 
@@ -117,13 +103,13 @@ test('R-2B3 · 책마다 기억하기를 켜면 방향이 그 책에만 남는�
 test('R-2B3 · 스위치를 끄면 전역 기본값으로 돌아간다', async ({ page }) => {
   await readBook(page)
 
-  await useSettings(page)
+  await use(page, 'settings')
   await remember(page).click()
   await page.getByRole('button', { name: 'Close' }).click()
   await chooseDirection(page, 'Left to right')
   await expectDirection(page, 'Left to right')
 
-  await useSettings(page)
+  await use(page, 'settings')
   await remember(page).click()
   await page.getByRole('button', { name: 'Close' }).click()
 
@@ -170,6 +156,6 @@ test('R-2B6 · 책장에서 정한 것이 새로고침을 넘기고, 리더의 �
 
   // 같은 값을 리더의 패널이 그대로 보여 준다. 한 자리를 두 곳에서 여는 것이다.
   await openReader(page, title)
-  await useSettings(page)
+  await use(page, 'settings')
   await expect(page.getByRole('switch', { name: 'Cover on its own' })).not.toBeChecked()
 })

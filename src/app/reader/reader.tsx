@@ -175,8 +175,6 @@ export const ReaderView = ({
         view: model.settings.view,
         fit: model.settings.fit,
         isBookmarked: Array.contains(model.bookmarks, model.page),
-        isThumbsOpen: model.isThumbsOpen,
-        isSettingsOpen: model.isSettingsOpen,
         isFullscreen: model.isFullscreen,
         isPlaying: model.isPlaying,
         isChromeVisible: model.isChromeVisible,

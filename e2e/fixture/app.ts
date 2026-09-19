@@ -105,8 +105,8 @@ export const counter = (page: Page) => page.locator('footer [data-counter]')
  * 메뉴바가 지고 있는 컨트롤과, 그것이 어느 메뉴에 사는지.
  *
  * 예전에는 툴바에 버튼 열넷이 늘어서 있었고 e2e가 그것을 `button` 역할로 곧장 찾았다.
- * 지금은 네이티브 앱처럼 메뉴바라서, 같은 이름이 `menuitem`(또는 상태를 지는
- * `menuitemcheckbox`)으로 메뉴 안에 있다. 이름은 하나도 바뀌지 않았고 사는 곳만 바뀌었다.
+ * 지금은 네이티브 앱처럼 메뉴바라서, 같은 이름이 `menuitem`으로 메뉴 안에 있다. 이름은
+ * 하나도 바뀌지 않았고 사는 곳만 바뀌었다.
  */
 const MENU_OF = {
   shelf: 'Book',
@@ -134,7 +134,7 @@ const MENU_OF = {
 /** 메뉴 항목의 접근 가능한 이름. 상태에 따라 갈리는 것은 정규식이다. */
 const ITEM_NAME: Readonly<Record<keyof typeof MENU_OF, string | RegExp>> = {
   shelf: '← Shelf',
-  bookmark: /bookmark/i,
+  bookmark: /^(Bookmark this page|Remove bookmark from this page)/,
   everyPage: 'Show every page',
   view: 'Toggle one or two pages',
   fit: 'Change how pages are fitted',
@@ -151,18 +151,9 @@ const ITEM_NAME: Readonly<Record<keyof typeof MENU_OF, string | RegExp>> = {
   goToPage: 'Go to page',
   nextBookmark: 'Next bookmark',
   previousBookmark: 'Previous bookmark',
-  slideshow: /slideshow/i,
+  slideshow: /^(Start|Stop) the slideshow/,
   settings: 'Reading settings',
 }
-
-/**
- * 상태를 지는 항목들. 켜짐이 `aria-checked`로 드러나므로 역할이 `menuitemcheckbox`다.
- *
- * 패널을 여는 둘(`everyPage`, `settings`)은 `aria-expanded`도 함께 진다(`R-271`, `R-2B1`).
- * 나머지는 상태가 아니라 명령이라 평범한 `menuitem`이다 — 전체화면도 그렇다. 예전 툴바의
- * 버튼도 눌림을 지지 않았고, 지금 어느 상태인지는 항목의 이름이 말한다.
- */
-const CHECKABLE: ReadonlySet<string> = new Set(['bookmark', 'everyPage', 'settings', 'slideshow'])
 
 /** 메뉴에 사는 컨트롤의 이름. */
 export type MenuControl = keyof typeof MENU_OF
@@ -182,7 +173,7 @@ export const openMenu = async (page: Page, control: MenuControl) => {
     await menu.hover()
     await menu.click()
   }
-  return page.getByRole(CHECKABLE.has(control) ? 'menuitemcheckbox' : 'menuitem', {
+  return page.getByRole('menuitem', {
     name: ITEM_NAME[control],
     // `Next`가 `Next bookmark`까지 집지 않도록, 글자로 준 이름은 통째로 맞춘다.
     exact: typeof ITEM_NAME[control] === 'string',

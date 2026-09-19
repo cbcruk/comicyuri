@@ -3,16 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import {
-  counter,
-  openMenu,
-  openReader,
-  pageBox,
-  readBook,
-  stage,
-  use,
-  zoomOf,
-} from './fixture/app.ts'
+import { counter, openReader, pageBox, readBook, stage, use, zoomOf } from './fixture/app.ts'
 
 /** 스테이지 세로 한가운데의 y. 탭과 드래그는 모두 이 높이에서 한다. */
 const middleY = async (page: Page): Promise<number> => {
@@ -177,8 +168,7 @@ test('R-233 · 스테이지 위아래가 비대칭이어도 손가락 사이 지
   await use(page, 'next')
   await expect(counter(page)).toHaveText('3 / 6')
 
-  await openMenu(page, 'settings')
-  await page.getByRole('menuitemcheckbox', { name: 'Reading settings' }).click()
+  await use(page, 'settings')
   await page.getByRole('radio', { name: 'Ask', exact: true }).click()
   await page.getByRole('button', { name: 'Close' }).click()
   await use(page, 'shelf')

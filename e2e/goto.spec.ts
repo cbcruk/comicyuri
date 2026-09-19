@@ -1,22 +1,8 @@
 /** R-266 · 번호를 적어 그 페이지로 간다. R-2C1 · 슬라이드쇼. */
 
 import { expect, test } from '@playwright/test'
-import type { Page } from '@playwright/test'
 
-import { counter, openGoToPage, openMenu, readBook, stage, use } from './fixture/app.ts'
-
-/**
- * 설정 패널을 여닫는다.
- *
- * `use(page, 'settings')`를 쓰지 못한다. 이 항목은 상태를 지므로
- * `menuitemcheckbox`인데, 픽스처의 `openMenu`는 이름에 `bookmark`·`fullscreen`·
- * `slideshow`가 든 것만 그 역할로 찾기 때문이다. 픽스처가 그것을 알게 되면
- * 이 helper는 `use(page, 'settings')` 한 줄로 줄어든다.
- */
-const useSettings = async (page: Page): Promise<void> => {
-  await openMenu(page, 'settings')
-  await page.getByRole('menuitemcheckbox', { name: 'Reading settings' }).click()
-}
+import { counter, openGoToPage, readBook, stage, use } from './fixture/app.ts'
 
 const BOOK = { fileName: 'volume-1.cbz', pageCount: 12 }
 
@@ -72,7 +58,7 @@ test('R-2C1 · 슬라이드쇼가 스스로 페이지를 넘긴다', async ({ pa
 
   // 가장 짧은 간격으로 줄여 둔다.
   const panel = page.getByRole('dialog', { name: 'Reading settings' })
-  await useSettings(page)
+  await use(page, 'settings')
   for (let step = 0; step < 3; step++) {
     await panel.getByRole('button', { name: 'Spend less time on a page' }).click()
   }

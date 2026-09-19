@@ -27,8 +27,6 @@ const BASE: ChromeState = {
   view: 'spread',
   fit: 'contain',
   isBookmarked: false,
-  isThumbsOpen: false,
-  isSettingsOpen: false,
   isFullscreen: false,
   isPlaying: false,
   isChromeVisible: true,
@@ -181,32 +179,23 @@ const chooseFromMenu = async (screen: Rendered, menu: string, item: string) => {
   await screen.getByRole('menuitem', { name: item, exact: true }).click()
 }
 
-/**
- * 메뉴 하나를 열고 그 안의 켜고 끄는 항목을 부른다. 그런 항목은
- * `menuitemcheckbox`라 역할이 다르다.
- */
-const toggleFromMenu = async (screen: Rendered, menu: string, item: string) => {
-  await screen.getByRole('menuitem', { name: menu, exact: true }).click()
-  await screen.getByRole('menuitemcheckbox', { name: item, exact: true }).click()
-}
-
 test('the book menu carries the shelf, the bookmark and the page grid', async () => {
   const { actions, screen } = await renderChrome()
 
   await chooseFromMenu(screen, 'Book', '← Shelf')
   expect(actions.onExit).toHaveBeenCalled()
 
-  await toggleFromMenu(screen, 'Book', 'Bookmark this page')
+  await chooseFromMenu(screen, 'Book', 'Bookmark this page')
   expect(actions.onToggleBookmark).toHaveBeenCalled()
 
-  await toggleFromMenu(screen, 'Book', 'Show every page')
+  await chooseFromMenu(screen, 'Book', 'Show every page')
   expect(actions.onToggleThumbs).toHaveBeenCalled()
 })
 
 test('a bookmarked page offers to take the bookmark away instead', async () => {
   const { actions, screen } = await renderChrome({ isBookmarked: true })
 
-  await toggleFromMenu(screen, 'Book', 'Remove bookmark from this page')
+  await chooseFromMenu(screen, 'Book', 'Remove bookmark from this page')
   expect(actions.onToggleBookmark).toHaveBeenCalled()
 })
 
@@ -255,17 +244,17 @@ test('fullscreen and the slideshow say how to leave once they are on', async () 
   await chooseFromMenu(screen, 'View', 'Leave fullscreen')
   expect(actions.onToggleFullscreen).toHaveBeenCalled()
 
-  await toggleFromMenu(screen, 'Play', 'Stop the slideshow')
+  await chooseFromMenu(screen, 'Play', 'Stop the slideshow')
   expect(actions.onToggleSlideshow).toHaveBeenCalled()
 })
 
 test('the play menu starts the slideshow and the settings menu opens the panel', async () => {
   const { actions, screen } = await renderChrome()
 
-  await toggleFromMenu(screen, 'Play', 'Start the slideshow')
+  await chooseFromMenu(screen, 'Play', 'Start the slideshow')
   expect(actions.onToggleSlideshow).toHaveBeenCalled()
 
-  await toggleFromMenu(screen, 'Settings', 'Reading settings')
+  await chooseFromMenu(screen, 'Settings', 'Reading settings')
   expect(actions.onToggleSettings).toHaveBeenCalled()
 })
 
@@ -439,15 +428,11 @@ test('Enter opens a menu and Escape closes it again', async () => {
   trigger(screen.container, 'Play').focus()
 
   await userEvent.keyboard('{Enter}')
-  await expect
-    .element(screen.getByRole('menuitemcheckbox', { name: 'Start the slideshow' }))
-    .toBeVisible()
+  await expect.element(screen.getByRole('menuitem', { name: 'Start the slideshow' })).toBeVisible()
 
   await userEvent.keyboard('{Escape}')
   await expect
-    .poll(
-      () => screen.getByRole('menuitemcheckbox', { name: 'Start the slideshow' }).elements().length,
-    )
+    .poll(() => screen.getByRole('menuitem', { name: 'Start the slideshow' }).elements().length)
     .toBe(0)
 })
 
@@ -456,15 +441,11 @@ test('an open menu hands the arrow keys to its neighbour', async () => {
 
   trigger(screen.container, 'Play').focus()
   await userEvent.keyboard('{Enter}')
-  await expect
-    .element(screen.getByRole('menuitemcheckbox', { name: 'Start the slideshow' }))
-    .toBeVisible()
+  await expect.element(screen.getByRole('menuitem', { name: 'Start the slideshow' })).toBeVisible()
 
   await userEvent.keyboard('{ArrowRight}')
 
-  await expect
-    .element(screen.getByRole('menuitemcheckbox', { name: 'Reading settings' }))
-    .toBeVisible()
+  await expect.element(screen.getByRole('menuitem', { name: 'Reading settings' })).toBeVisible()
 })
 
 test('every item shows the key that does the same thing', async () => {
@@ -479,62 +460,28 @@ test('every item shows the key that does the same thing', async () => {
   expect(shown).toEqual(['v', 'r', 's', '+', '-', 'f', 'h'])
 })
 
-test('a bookmarked page, an open grid and an open panel all say so on their row', async () => {
-  const { screen } = await renderChrome({
-    isBookmarked: true,
-    isThumbsOpen: true,
-    isSettingsOpen: true,
-  })
+test('no row is a checkbox: a row that changes what it does says so by its name', async () => {
+  const { screen } = await renderChrome({ isBookmarked: true, isPlaying: true })
+
+  for (const menu of ['Book', 'View', 'Go', 'Play', 'Settings']) {
+    await screen.getByRole('menuitem', { name: menu, exact: true }).click()
+    const open = openMenuElement(screen.container)
+    await expect
+      .poll(() => open?.querySelectorAll('[role="menuitem"]').length ?? 0)
+      .toBeGreaterThan(0)
+    // 읽는 방향의 라디오(`menuitemradio`)는 고르기라서 `aria-checked`를 진다. 세는 것은 그 밖이다.
+    const checkable = '[role="menuitemcheckbox"], [role="menuitem"][aria-checked]'
+    expect(open?.querySelectorAll(checkable).length).toBe(0)
+    await userEvent.keyboard('{Escape}')
+  }
 
   await screen.getByRole('menuitem', { name: 'Book', exact: true }).click()
   await expect
-    .element(screen.getByRole('menuitemcheckbox', { name: 'Remove bookmark from this page' }))
-    .toHaveAttribute('aria-checked', 'true')
-  await expect
-    .element(screen.getByRole('menuitemcheckbox', { name: 'Show every page' }))
-    .toHaveAttribute('aria-expanded', 'true')
-
-  await screen.getByRole('menuitem', { name: 'Settings', exact: true }).click()
-  const settings = screen.getByRole('menuitemcheckbox', { name: 'Reading settings' })
-  await expect.element(settings).toHaveAttribute('aria-checked', 'true')
-  await expect.element(settings).toHaveAttribute('aria-expanded', 'true')
-})
-
-test('a running slideshow says so on its row', async () => {
-  const { screen } = await renderChrome({ isPlaying: true })
-
+    .element(screen.getByRole('menuitem', { name: 'Remove bookmark from this page' }))
+    .toBeVisible()
+  await userEvent.keyboard('{Escape}')
   await screen.getByRole('menuitem', { name: 'Play', exact: true }).click()
-  await expect
-    .element(screen.getByRole('menuitemcheckbox', { name: 'Stop the slideshow' }))
-    .toHaveAttribute('aria-checked', 'true')
-})
-
-test('and a stopped one says that', async () => {
-  const { screen } = await renderChrome()
-
-  await screen.getByRole('menuitem', { name: 'Play', exact: true }).click()
-  await expect
-    .element(screen.getByRole('menuitemcheckbox', { name: 'Start the slideshow' }))
-    .toHaveAttribute('aria-checked', 'false')
-})
-
-test('a page with no bookmark leaves its row unchecked', async () => {
-  const { screen } = await renderChrome()
-
-  await screen.getByRole('menuitem', { name: 'Book', exact: true }).click()
-  await expect
-    .element(screen.getByRole('menuitemcheckbox', { name: 'Bookmark this page' }))
-    .toHaveAttribute('aria-checked', 'false')
-})
-
-test('hiding the toolbar is a command, not a state', async () => {
-  const { screen } = await renderChrome()
-
-  await screen.getByRole('menuitem', { name: 'View', exact: true }).click()
-
-  const hide = screen.getByRole('menuitem', { name: 'Hide the toolbar', exact: true })
-  await expect.element(hide).toBeVisible()
-  expect(hide.element().hasAttribute('aria-checked')).toBe(false)
+  await expect.element(screen.getByRole('menuitem', { name: 'Stop the slideshow' })).toBeVisible()
 })
 
 test('reading left to right, it runs the usual way', async () => {
