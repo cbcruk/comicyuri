@@ -138,6 +138,10 @@ const styles = stylex.create({
   noEnlargeHeight: {
     maxHeight: 'max-content',
   },
+  // 두 장이 걸리면 Fit과 Width는 스프레드 전체에 걸린다. 한 장이 쓸 수 있는 폭은 페이지
+  // 상자에서 간격을 빼고 장수로 나눈 만큼이다(`R-224`).
+  containShare: (width: string) => ({ maxWidth: width }),
+  widthShare: (width: string) => ({ width }),
   half: {
     position: 'relative',
     overflow: 'hidden',
@@ -205,6 +209,24 @@ const FIT_STYLE = {
   original: styles.fitOriginal,
 } satisfies Record<FitMode, unknown>
 
+/**
+ * 스프레드의 한 장이 쓸 수 있는 폭. 한 장이면 페이지 상자 전체이고, 두 장이면 간격을 뺀
+ * 나머지의 절반이다.
+ */
+const panelWidth = (panels: number): string =>
+  panels <= 1 ? '100cqw' : `calc((100cqw - ${spacingVars['--spacing-1']}) / ${panels})`
+
+/**
+ * 스프레드 전체에 거는 맞춤. 높이를 채우는 맞춤과 원래 크기는 한 장씩 걸어도 스프레드에
+ * 그대로 걸리므로 없다.
+ */
+const shareStyle = (fit: FitMode, panels: number) =>
+  fit === 'contain'
+    ? styles.containShare(panelWidth(panels))
+    : fit === 'width'
+      ? styles.widthShare(panelWidth(panels))
+      : null
+
 /** 늘리지 않기로 했을 때 그 맞춤에 더할 상한. 줄이기만 하는 맞춤에는 없다. */
 const NO_ENLARGE_STYLE = {
   contain: null,
@@ -247,13 +269,19 @@ const HalfPanel = ({ panel, half }: Readonly<{ panel: SpreadPanel; half: SplitHa
   )
 }
 
+/** 스프레드의 한 장. `panels`는 그 스프레드에 걸린 장수다 — 맞춤이 그만큼 폭을 나눈다. */
 const FitPanel = ({
   panel,
+  panels,
   fit,
   enlargeToFit,
-}: Readonly<{ panel: SpreadPanel; fit: FitMode; enlargeToFit: boolean }>) => (
+}: Readonly<{ panel: SpreadPanel; panels: number; fit: FitMode; enlargeToFit: boolean }>) => (
   <img
-    {...stylex.props(FIT_STYLE[fit], !enlargeToFit && NO_ENLARGE_STYLE[fit])}
+    {...stylex.props(
+      FIT_STYLE[fit],
+      shareStyle(fit, panels),
+      !enlargeToFit && NO_ENLARGE_STYLE[fit],
+    )}
     src={panel.url}
     alt={`Page ${panel.page + 1}`}
     // 이미지는 기본으로 끌 수 있고, 끌기 시작하면 브라우저가 포인터 이벤트를 거두어 드래그
@@ -326,6 +354,7 @@ const SpreadPanels = ({
             <FitPanel
               key={panel.page}
               panel={panel}
+              panels={shown.panels.length}
               fit={model.settings.fit}
               enlargeToFit={model.settings.enlargeToFit}
             />
