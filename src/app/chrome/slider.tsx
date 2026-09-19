@@ -1,116 +1,38 @@
 /**
- * 책 전체를 훑는 자리.
+ * 책 전체를 훑는 자리. Astryx `Slider` 하나에, 그것이 모르는 두 가지를 바깥에서 얹는다.
  *
- * Astryx의 `Slider`를 쓰지 않고 손으로 짠 이유는 `R-264` 하나다. 오른쪽에서
- * 왼쪽으로 읽으면 트랙과 채움의 색이 자리를 바꿔야 하는데, Astryx의 것은 트랙과
- * 채움을 스스로 그리고 그 안으로 손을 넣을 길이 없다. 그래서 Foldkit의 Slider가
- * 하던 것을 그대로 옮겼다 — `role="slider"`를 진 손잡이, `aria-valuemin`/`max`/
- * `now`/`valuetext`, 걸음·페이지·처음·끝 키, 끌기, 그리고 끄는 중의 Escape가
- * 잡기 전 자리로 되돌리는 것.
+ * - **눈에 보이는 쪽을 따르는 좌우 화살표.** 오른쪽에서 왼쪽으로 읽으면 슬라이더가
+ *   `dir="rtl"`로 서서 첫 페이지가 오른쪽 끝이다. Astryx는 그때도 오른쪽 화살표로 값을
+ *   늘리므로, 손잡이가 누른 화살표의 반대쪽으로 간다.
+ * - **끄는 중의 Escape.** 잡기 전 자리로 되돌린다. 손잡이를 잘못 집어 읽던 자리를 잃는
+ *   일을 이 한 키가 무른다.
+ *
+ * 둘 다 슬라이더를 감싼 상자가 캡처 단계에서 먼저 받는다. Astryx의 손잡이가 키를 보기
+ * 전에 끝내야 하기 때문이다.
  */
 
 import * as stylex from '@stylexjs/stylex'
+import { Slider } from '@astryxdesign/core/Slider'
 import type { KeyboardEvent, PointerEvent } from 'react'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 
-import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex'
-
-import { mirrorForDirection } from '../../reader/spread.ts'
 import type { ReadingDirection } from '../../types.ts'
+import { pageTicks } from './ticks.ts'
 
-/** PageUp·PageDown 한 번이 걸음 몇 개인지. Foldkit Slider의 것과 같은 값이다. */
-const PAGE_STEP = 10
-
-/** 값을 `0`과 `max` 사이로 자른다. */
-const clamp = (value: number, max: number): number => Math.min(Math.max(value, 0), max)
-
-/**
- * 키가 옮겨 놓는 값. 슬라이더가 가져가지 않는 키면 `undefined`다.
- *
- * 화살표는 눈에 보이는 쪽을 따른다 — 값 자체가 이미 읽는 방향으로 뒤집혀 있으므로
- * (`R-264`), 여기서는 오른쪽·위가 늘 증가다.
- */
-const valueForKey = (key: string, value: number, max: number): number | undefined => {
-  if (key === 'ArrowRight' || key === 'ArrowUp') return clamp(value + 1, max)
-  if (key === 'ArrowLeft' || key === 'ArrowDown') return clamp(value - 1, max)
-  if (key === 'PageUp') return clamp(value + PAGE_STEP, max)
-  if (key === 'PageDown') return clamp(value - PAGE_STEP, max)
-  if (key === 'Home') return 0
-  if (key === 'End') return max
-  return undefined
-}
-
-/**
- * 끄는 동안 붙잡아 두는 것. 잡은 포인터와, 잡기 전에 슬라이더가 가리키던 값이다.
- *
- * 잡기 전 값을 적어 두는 이유는 끄는 중의 Escape가 그리로 되돌리기 때문이다 —
- * 손잡이를 잘못 집어 읽던 자리를 잃는 일을 이 한 키가 무른다.
- */
-type Drag = Readonly<{ pointerId: number; originValue: number }>
-
-/**
- * 슬라이더의 모양.
- *
- * 채움이 트랙 위를 덮는다. 오른쪽에서 왼쪽으로 읽으면 두 색이 자리를 바꾼다 — 트랙이 읽은
- * 색을 깔고 채움이 아직 읽지 않은 몫을 덮는다(`R-264`).
- */
+/** 슬라이더를 감싼 상자. 넘김 줄에서 남는 너비를 다 가진다. */
 const styles = stylex.create({
   root: {
-    position: 'relative',
-    display: 'flex',
     flex: '1',
-    alignItems: 'center',
-    height: spacingVars['--spacing-6'],
-    touchAction: 'none',
-    userSelect: 'none',
-  },
-  track: {
-    position: 'relative',
-    width: '100%',
-    height: spacingVars['--spacing-1-5'],
-    borderRadius: 9999,
-  },
-  fill: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    borderRadius: 9999,
-    pointerEvents: 'none',
-  },
-  read: {
-    backgroundColor: colorVars['--color-accent'],
-  },
-  // 불투명해야 한다. 오른쪽에서 왼쪽으로 읽으면 이 색이 읽은 색 위를 덮는데, 반투명한
-  // `--color-border`로 칠하면 아래가 비쳐 트랙 전체가 읽은 것처럼 보인다. Astryx `Slider`가
-  // 트랙에 쓰는 토큰이다.
-  unread: {
-    backgroundColor: colorVars['--color-track'],
-  },
-  thumb: {
-    position: 'absolute',
-    width: spacingVars['--spacing-4'],
-    height: spacingVars['--spacing-4'],
-    transform: 'translateX(-50%)',
-    borderWidth: 2,
-    borderStyle: 'solid',
-    borderColor: colorVars['--color-accent'],
-    borderRadius: 9999,
-    backgroundColor: colorVars['--color-background-surface'],
-    cursor: 'grab',
-    touchAction: 'none',
-    outlineStyle: { default: 'none', ':focus-visible': 'solid' },
-    outlineWidth: 2,
-    outlineOffset: 2,
-    outlineColor: colorVars['--color-accent'],
-  },
-  dragging: {
-    cursor: 'grabbing',
+    minWidth: 0,
   },
 })
 
-/** 소수를 CSS 백분율로. 자리를 지나치게 잘게 적지 않는다. */
-const percent = (fraction: number): string => `${Math.round(fraction * 10000) / 100}%`
+/**
+ * 끄는 동안 붙잡아 두는 것. 잡은 포인터와, 잡기 전에 가리키던 페이지다.
+ *
+ * 잡기 전 페이지를 적어 두는 이유는 끄는 중의 Escape가 그리로 되돌리기 때문이다.
+ */
+type Drag = Readonly<{ pointerId: number; originPage: number }>
 
 /** 슬라이더가 받는 것. */
 export type PageSliderProps = Readonly<{
@@ -126,59 +48,29 @@ export type PageSliderProps = Readonly<{
 /**
  * 페이지 슬라이더를 그린다.
  *
- * 오른쪽에서 왼쪽으로 읽으면 첫 페이지가 오른쪽 끝이다. 슬라이더의 값은 늘 자기
- * 최솟값(왼쪽)부터 채워지므로 이 방향에서는 값을 뒤집고, 트랙이 길이 전체에 읽은
- * 색을 깔고 채움이 아직 읽지 않은 만큼을 덮는다(`R-264`). 페이지 번호는 뒤집히지
- * 않으므로 `aria-valuetext`는 그대로 1부터 센다.
+ * 값은 페이지 번호 그대로다. 오른쪽에서 왼쪽으로 읽으면 `dir="rtl"`만 걸고, 첫 페이지를
+ * 오른쪽 끝에 두는 일과 채움을 오른쪽부터 그리는 일은 Astryx가 한다(`R-264`). 채워진
+ * 구간이 곧 읽은 만큼이다.
+ *
+ * 트랙 위에 페이지 눈금을 찍는다(`R-267`). 짧은 책은 모든 페이지에, 긴 책은 쉬운 간격마다
+ * 찍고, 눈금을 누르면 그 페이지로 간다.
  */
 export const PageSlider = ({ page, pageCount, direction, onSlide }: PageSliderProps) => {
   const isRightToLeft = direction === 'rtl'
   const max = Math.max(pageCount - 1, 0)
-
-  /** 슬라이더의 값과 페이지 번호를 서로 옮긴다. 자기 역함수라 양쪽에 같은 것을 쓴다. */
-  const turn = (value: number): number => mirrorForDirection(value, pageCount, direction)
-
-  const value = turn(page)
-  const fraction = max === 0 ? 0 : value / max
-
-  const rootRef = useRef<HTMLDivElement>(null)
-  const trackRef = useRef<HTMLDivElement>(null)
-  const thumbRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<Drag | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
 
-  const slideTo = (nextValue: number) => {
-    if (nextValue !== value) onSlide(turn(nextValue))
-  }
-
-  /** 포인터가 놓인 가로 자리를 값으로 읽는다. 트랙 밖이면 가까운 끝이다. */
-  const valueAt = (clientX: number): number => {
-    const box = trackRef.current?.getBoundingClientRect()
-    if (box === undefined || box.width === 0) return value
-    return Math.round(clamp((clientX - box.left) / box.width, 1) * max)
-  }
-
-  /** 끌기를 끝내고 잡아 두었던 포인터를 놓는다. 값은 건드리지 않는다. */
-  const endDrag = () => {
-    const drag = dragRef.current
-    const root = rootRef.current
-    if (drag !== null && root !== null && root.hasPointerCapture(drag.pointerId)) {
-      root.releasePointerCapture(drag.pointerId)
-    }
-    dragRef.current = null
-    setIsDragging(false)
+  const slideTo = (next: number) => {
+    const clamped = Math.min(Math.max(next, 0), max)
+    if (clamped !== page) onSlide(clamped)
   }
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId)
-    dragRef.current = { pointerId: event.pointerId, originValue: value }
-    setIsDragging(true)
-    thumbRef.current?.focus()
-    slideTo(valueAt(event.clientX))
+    dragRef.current = { pointerId: event.pointerId, originPage: page }
   }
 
-  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (isDragging) slideTo(valueAt(event.clientX))
+  const handlePointerEnd = () => {
+    dragRef.current = null
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -191,53 +83,57 @@ export const PageSlider = ({ page, pageCount, direction, onSlide }: PageSliderPr
       // 무르려고 누른 Escape가 문서까지 올라가면 리더가 그것을 한 겹 벗기라는 뜻으로
       // 읽는다(`R-2A3`). 리더의 키 구독은 document에 걸려 있으므로 네이티브 쪽을 멈춘다.
       event.nativeEvent.stopPropagation()
-      endDrag()
-      slideTo(drag.originValue)
+      endAstryxDrag(event.currentTarget, drag.pointerId)
+      dragRef.current = null
+      slideTo(drag.originPage)
       return
     }
 
-    const next = valueForKey(event.key, value, max)
-    if (next === undefined) return
-    event.preventDefault()
-    slideTo(next)
+    if (isRightToLeft && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+      event.preventDefault()
+      event.stopPropagation()
+      slideTo(page + (event.key === 'ArrowLeft' ? 1 : -1))
+    }
   }
 
   return (
     <div
-      ref={rootRef}
+      dir={isRightToLeft ? 'rtl' : 'ltr'}
+      onPointerDownCapture={handlePointerDown}
+      onPointerUpCapture={handlePointerEnd}
+      onPointerCancelCapture={handlePointerEnd}
+      onKeyDownCapture={handleKeyDown}
       {...stylex.props(styles.root)}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
     >
-      {/* 트랙이 깔고 채움이 덮는다. 읽는 방향이 뒤집히면 두 색이 자리를 바꾼다. */}
-      <div
-        ref={trackRef}
-        data-slider-track=""
-        {...stylex.props(styles.track, isRightToLeft ? styles.read : styles.unread)}
-      >
-        <div
-          data-slider-fill=""
-          {...stylex.props(styles.fill, isRightToLeft ? styles.unread : styles.read)}
-          style={{ width: percent(fraction) }}
-        />
-      </div>
-      <div
-        ref={thumbRef}
-        role="slider"
-        tabIndex={0}
-        aria-label="Page"
-        aria-orientation="horizontal"
-        aria-valuemin={0}
-        aria-valuemax={max}
-        aria-valuenow={value}
-        aria-valuetext={`Page ${turn(value) + 1}`}
-        data-dragging={isDragging ? '' : undefined}
-        {...stylex.props(styles.thumb, isDragging && styles.dragging)}
-        style={{ left: percent(fraction) }}
-        onKeyDown={handleKeyDown}
+      <Slider
+        label="Page"
+        isLabelHidden={true}
+        width="100%"
+        min={0}
+        max={max}
+        value={Math.min(page, max)}
+        valueDisplay="tooltip"
+        marks={pageTicks(pageCount).map((value) => ({ value }))}
+        formatValue={(value) => `Page ${value + 1}`}
+        onChange={slideTo}
       />
     </div>
   )
+}
+
+/**
+ * Astryx의 끌기를 끝낸다.
+ *
+ * Astryx는 끄는 중인지를 스스로 쥐고 포인터를 놓을 때만 푼다. 그래서 포인터를 받는 그릇에
+ * `pointerup` 하나를 보내고, 잡아 두었던 포인터도 놓는다 — 놓지 않으면 이어진 움직임이 그대로
+ * 값을 옮긴다.
+ *
+ * 그릇은 Astryx가 테마용으로 다는 고정 클래스로 찾는다. 손잡이의 부모로 찾으면 툴팁이
+ * 손잡이를 한 겹 감쌀 때 엉뚱한 요소를 잡는다.
+ */
+const endAstryxDrag = (root: HTMLElement, pointerId: number): void => {
+  const control = root.querySelector('.astryx-slider-control')
+  if (control === null) return
+  control.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerId }))
+  if (control.hasPointerCapture(pointerId)) control.releasePointerCapture(pointerId)
 }

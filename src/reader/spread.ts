@@ -163,16 +163,3 @@ export const pageAtEdge = (
   step: number,
 ): Option.Option<number> =>
   Option.flatMap(step > 0 ? Array.head(spreads) : Array.last(spreads), Array.head)
-
-/**
- * 페이지에 대한 슬라이더 값이자, 그 값에 대한 페이지. 오른쪽에서 왼쪽으로 읽으면
- * 슬라이더도 반대로 가므로, 값은 끝에서부터 센 페이지가 된다. 픽셀이 아니라 값을
- * 뒤집으므로 컴포넌트 자신의 포인터 계산과 화살표 키가 기대한 쪽을 가리킨다.
- *
- * 스스로의 역함수라서, 이 매핑의 양방향을 한 함수가 맡는다.
- */
-export const mirrorForDirection = (
-  page: number,
-  pageCount: number,
-  direction: Settings['direction'],
-): number => (direction === 'rtl' ? Math.max(0, pageCount - 1) - page : page)

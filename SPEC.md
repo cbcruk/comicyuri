@@ -809,15 +809,20 @@ e2e "R-252 · `h` 키가 툴바를 숨기면 스테이지가 그 높이를 가�
 ### 2.7 페이지 슬라이더
 
 **R-261 · 슬라이더가 현재 위치를 보여주고 옮긴다**
-`aria-valuenow`가 트랙 위의 자리, `aria-valuetext`가 페이지 번호, 이름은 "Page".
+Astryx `Slider`다. `aria-valuenow`는 `0`부터 센 페이지, `aria-valuetext`는 1부터 센 페이지
+번호(`Page 3`), 이름은 "Page". 읽는 방향과 상관없이 값은 페이지 번호 그대로다.
 ✅ chrome/screen "reading left to right, it runs the usual way",
-'the footer turns the page and names its slider "Page"'
+"the go menu turns the page, and the footer only slides"
 
 **R-262 · 범위는 책을 연 순간 쪽수에 맞춰진다**
 ✅ chrome/screen "reading left to right, it runs the usual way"
 
 **R-263 · 키보드로도 움직인다**
-화살표, PageUp/Down, Home/End.
+화살표, PageUp/Down, Home/End. Home은 첫 페이지, End는 마지막 페이지다 — 읽는 방향과
+상관없다. 좌우 화살표만은 눈에 보이는 쪽을 따른다(`R-264`).
+
+Astryx `Slider`에는 끌기를 무르는 길이 없어서, 슬라이더를 감싼 상자가 캡처 단계에서
+Escape를 먼저 받아 Astryx의 끌기를 끝내고 잡기 전 자리로 되돌린다.
 
 끄는 도중의 Escape는 손잡이를 잡기 전 자리로 되돌린다. 손잡이를 잘못 집어 읽던 자리를
 잃는 일을 이 한 키가 무른다. 끌지 않는 중의 Escape는 리더의 것이라 그대로 흘려보낸다
@@ -829,15 +834,18 @@ to the reader"
 
 **R-264 · 오른쪽에서 왼쪽으로 읽으면 슬라이더도 뒤집힌다**
 첫 페이지가 오른쪽 끝이고, 읽을수록 thumb이 왼쪽으로 간다. 채워진 구간은 읽은
-만큼이므로 오른쪽 끝에서 thumb까지다 — 컴포넌트는 늘 자기 최솟값(왼쪽)부터
-채우기 때문에, 이 방향에서는 트랙과 채움의 색이 자리를 바꾼다. 푸터의 순서도
-함께 뒤집혀, 카운터가 슬라이더가 다 차는 쪽에 선다. 페이지 번호는 뒤집히지 않으므로 `aria-valuetext`는 그대로
-1부터 센다.
-✅ chrome/screen "reading right to left, the slider starts full and empties
-leftward", "reading right to left, the filled part of the track sits on the
-right", "reading left to right, the fill is the fill", "the row of controls
-turns around with the reading direction", "and reading left to right it stays
-as written", "reading right to left, the slider keys follow what the eye sees"
+만큼이므로 오른쪽 끝에서 thumb까지다. 슬라이더에 `dir="rtl"`을 걸면 Astryx `Slider`가
+그렇게 선다 — 값을 뒤집거나 색을 바꿔 칠할 필요가 없다. 푸터의 순서도 함께 뒤집혀,
+카운터가 슬라이더가 다 차는 쪽에 선다.
+
+Astryx는 `rtl`에서도 오른쪽 화살표로 값을 늘리므로, 그대로 두면 손잡이가 누른 화살표의
+반대쪽으로 간다. 좌우 화살표는 감싼 상자가 먼저 받아 눈에 보이는 쪽으로 옮긴다 — 오른쪽
+화살표가 책의 앞이다.
+✅ chrome/screen "reading right to left, the slider stands right to left and still counts
+pages", "reading right to left, the filled part of the track sits on the right", "reading
+left to right, the fill is the fill", "the row of controls turns around with the reading
+direction", "and reading left to right it stays as written", "reading right to left, the
+slider keys follow what the eye sees"
 🔍 2026-09-09 · 만화를 넘겨보며 채워지는 쪽과 줄어드는 쪽을 확인함
 
 **R-265 · 키를 스스로 쓰는 위젯 위에서는 리더가 키를 양보한다**
@@ -901,6 +909,17 @@ e2e "R-266 · 번호를 적고 Enter를 누르면 그 페이지로 간다", "R-2
 번호 입력란을 연다", "R-266 · 창 안의 버튼에서 누른 Escape는 창만 닫고 책을 떠나지 않는다", "R-266 · 번호를 적는 동안 화살표는 페이지를 넘기지 않는다"
 
 ⚠️ 퍼센트로 가는 길은 없다. 슬라이더가 이미 비율로 잡는 자리다.
+
+**R-267 · 슬라이더 트랙 위에 페이지 눈금이 찍힌다**
+Astryx `Slider`의 `marks`다. 짧은 책은 모든 페이지에 찍는다. 긴 책은 간격을 1·2·5·10·20·50…
+가운데 눈금이 20개를 넘지 않는 가장 작은 값으로 골라, 첫 페이지와 1부터 센 번호가 그 간격의
+배수인 페이지에 찍는다 — 120쪽이면 1·10·20…·120쪽이다. 눈금을 누르면 그 페이지로 간다.
+라벨은 달지 않는다. 어느 페이지인지는 손잡이의 툴팁이 말한다.
+✅ ticks "a short book marks every page", "a longer book spaces its marks by an easy number",
+"every page of a short book gets a mark", "a long book marks the first page and every tenth",
+"an empty book has no marks",
+chrome/screen "every page of a short book stands on the slider as a tick", "pressing a tick
+goes to that page"
 
 ### 2.8 모든 페이지 (썸네일)
 
