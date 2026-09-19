@@ -113,7 +113,6 @@ const MENU_OF = {
   bookmark: 'Book',
   everyPage: 'Book',
   view: 'View',
-  fit: 'View',
   rotate: 'View',
   binding: 'View',
   zoomIn: 'View',
@@ -137,7 +136,6 @@ const ITEM_NAME: Readonly<Record<keyof typeof MENU_OF, string | RegExp>> = {
   bookmark: /^(Bookmark this page|Remove bookmark from this page)/,
   everyPage: 'Show every page',
   view: 'Toggle one or two pages',
-  fit: 'Change how pages are fitted',
   rotate: 'Turn the page a quarter clockwise',
   binding: 'Flip how this spread is paired',
   zoomIn: 'Zoom in',
@@ -205,29 +203,49 @@ export const readMenuItem = async (
 /** 읽는 방향의 이름. 보기 메뉴의 "Read from" 서브메뉴에 선 라디오 둘이다(`R-221`). */
 export type DirectionName = 'Right to left' | 'Left to right'
 
-/** 보기 메뉴를 열고 "Read from"의 flyout까지 펼친다. */
-const openReadFrom = async (page: Page): Promise<void> => {
+/** 보기 메뉴를 열고 서브메뉴 하나의 flyout까지 펼친다. */
+const openViewSubMenu = async (page: Page, subMenu: 'Read from' | 'Fit to'): Promise<void> => {
   await page.getByRole('menuitem', { name: 'View', exact: true }).click()
-  await page.getByRole('menuitem', { name: 'Read from' }).click()
+  await page.getByRole('menuitem', { name: subMenu }).click()
+}
+
+/**
+ * 서브메뉴에서 고른 표시가 그 라디오에 붙어 있는지 보고 메뉴를 닫는다.
+ *
+ * Escape가 둘인 이유는 첫 번째가 flyout만 닫고 보기 메뉴로 돌아가기 때문이다.
+ */
+const expectChosen = async (page: Page, subMenu: 'Read from' | 'Fit to', name: string) => {
+  await openViewSubMenu(page, subMenu)
+  await expect(page.getByRole('menuitemradio', { name, exact: true })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  )
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
 }
 
 /** "Read from"에서 방향 하나를 고른다. 뒤집기가 아니므로 같은 쪽을 골라도 그대로다. */
 export const chooseDirection = async (page: Page, name: DirectionName): Promise<void> => {
-  await openReadFrom(page)
+  await openViewSubMenu(page, 'Read from')
   await page.getByRole('menuitemradio', { name }).click()
 }
 
-/**
- * "Read from"에서 고른 표시가 그 방향에 붙어 있는지 보고 메뉴를 닫는다.
- *
- * Escape가 둘인 이유는 첫 번째가 flyout만 닫고 보기 메뉴로 돌아가기 때문이다.
- */
-export const expectDirection = async (page: Page, name: DirectionName): Promise<void> => {
-  await openReadFrom(page)
-  await expect(page.getByRole('menuitemradio', { name })).toHaveAttribute('aria-checked', 'true')
-  await page.keyboard.press('Escape')
-  await page.keyboard.press('Escape')
+/** "Read from"에서 고른 표시가 그 방향에 붙어 있는지 보고 메뉴를 닫는다. */
+export const expectDirection = (page: Page, name: DirectionName): Promise<void> =>
+  expectChosen(page, 'Read from', name)
+
+/** 맞춤 모드의 이름. 보기 메뉴의 "Fit to" 서브메뉴에 선 라디오 넷이다(`R-224`). */
+export type FitName = 'Page' | 'Width' | 'Height' | 'Original size'
+
+/** "Fit to"에서 맞춤 모드 하나를 고른다. 순환이 아니므로 몇 번째 모드든 한 번이다. */
+export const chooseFit = async (page: Page, name: FitName): Promise<void> => {
+  await openViewSubMenu(page, 'Fit to')
+  await page.getByRole('menuitemradio', { name, exact: true }).click()
 }
+
+/** "Fit to"에서 고른 표시가 그 모드에 붙어 있는지 보고 메뉴를 닫는다. */
+export const expectFit = (page: Page, name: FitName): Promise<void> =>
+  expectChosen(page, 'Fit to', name)
 
 /**
  * 메뉴 밖에 그대로 남아 있는 컨트롤. 푸터의 슬라이더다. 번호 입력란은 카운터를 눌러야

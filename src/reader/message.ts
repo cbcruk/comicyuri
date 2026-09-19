@@ -44,7 +44,8 @@ export type Message = Data.TaggedEnum<{
   ChoseDirection: { readonly direction: Settings['direction'] }
   ClickedToggleView: {}
   ClickedToggleBinding: {}
-  ClickedCycleFit: {}
+  /** 메뉴에서 맞춤 모드를 골랐다. 이미 걸린 모드를 골라도 그대로 둔다. */
+  ChoseFit: { readonly fit: Settings['fit'] }
   ClickedSkip: { readonly pages: number }
   /** 번호를 적고 Enter를 눌렀거나 입력란을 떠났다. 적힌 것이 무엇이든 지고 온다. */
   SubmittedGoToPage: { readonly text: string }

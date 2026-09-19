@@ -38,8 +38,7 @@ import { Schema } from 'effect'
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 
-import { ReadingDirection } from '../../types.ts'
-import type { FitMode } from '../../types.ts'
+import { FitMode, ReadingDirection } from '../../types.ts'
 import { SHORTCUTS } from './shortcuts.ts'
 import type { ChromeActions, ChromeState } from './types.ts'
 
@@ -64,14 +63,17 @@ const MENU_LABELS: Readonly<Record<MenuId, string>> = {
 }
 
 /**
- * 맞춤 모드가 적히는 이름. 예전 툴바 버튼의 글자와 같다(`R-224`).
+ * `Fit to` 서브메뉴에 서는 맞춤 모드들, 위에서부터(`R-224`).
+ *
+ * 이름은 서브메뉴 이름에 이어 읽힌다 — "Fit to Page", "Fit to Width". 원래 크기만은 맞추는
+ * 것이 아니라서 제 이름을 그대로 쓴다.
  */
-const FIT_LABEL: Readonly<Record<FitMode, string>> = {
-  contain: 'Fit',
-  width: 'Width',
-  height: 'Height',
-  original: '1:1',
-}
+const FIT_CHOICES: ReadonlyArray<Readonly<{ fit: FitMode; label: string }>> = [
+  { fit: 'contain', label: 'Page' },
+  { fit: 'width', label: 'Width' },
+  { fit: 'height', label: 'Height' },
+  { fit: 'original', label: 'Original size' },
+]
 
 /** 메뉴바와 곁글의 모양. */
 const styles = stylex.create({
@@ -293,11 +295,20 @@ export const ReaderMenubar = ({ state, actions, onOpenGoToPage }: MenubarProps) 
             <MenuHint value={state.view === 'spread' ? 'Two' : 'One'} shortcut={SHORTCUTS.view} />
           }
         />
-        <DropdownMenuItem
-          label="Change how pages are fitted"
-          onClick={actions.onCycleFit}
-          endContent={<MenuHint value={FIT_LABEL[state.fit]} />}
-        />
+        {/* 순환이 아니라 고르기다. 원하는 모드까지 여러 번 열고 누를 일이 없다(`R-224`). */}
+        <DropdownMenuSubMenu label="Fit to">
+          <DropdownMenuRadioGroup
+            label="Fit to"
+            value={state.fit}
+            onChange={(value) => {
+              if (Schema.is(FitMode)(value)) actions.onChooseFit(value)
+            }}
+          >
+            {FIT_CHOICES.map(({ fit, label }) => (
+              <DropdownMenuRadioItem key={fit} value={fit} label={label} />
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuSubMenu>
         <DropdownMenuItem
           label="Turn the page a quarter clockwise"
           onClick={actions.onRotate}

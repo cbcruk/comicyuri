@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { readBook, readMenuItem, stage, use } from './fixture/app.ts'
+import { chooseFit, expectFit, readBook, stage, use } from './fixture/app.ts'
 
 /** 화면보다 훨씬 작은 저해상도 스캔본. */
 const SMALL = { width: 240, height: 360 }
@@ -21,14 +21,6 @@ const roomWidth = async (page: Page) => {
   return box.width - 16
 }
 
-/**
- * 맞춤 항목이 곁글에 적고 있는 지금 모드. 예전에는 툴바 버튼의 글자였다.
- */
-const expectFit = (page: Page, value: string) =>
-  readMenuItem(page, 'fit', async (item) => {
-    await expect(item.locator('span[aria-hidden="true"] > span')).toHaveText(value)
-  })
-
 /** 설정 패널에서 늘리기 스위치를 끈다. */
 const stopStretching = async (page: Page): Promise<void> => {
   await use(page, 'settings')
@@ -38,8 +30,7 @@ const stopStretching = async (page: Page): Promise<void> => {
 
 test('R-2B4 · 켜 두면 작은 페이지가 너비를 채운다', async ({ page }) => {
   await readBook(page, BOOK)
-  await use(page, 'fit')
-  await expectFit(page, 'Width')
+  await chooseFit(page, 'Width')
 
   const image = await imageBox(page)
   expect(image.width).toBeCloseTo(await roomWidth(page), 0)
@@ -48,7 +39,7 @@ test('R-2B4 · 켜 두면 작은 페이지가 너비를 채운다', async ({ pag
 
 test('R-2B4 · 끄면 원래 크기를 넘지 않는다', async ({ page }) => {
   await readBook(page, BOOK)
-  await use(page, 'fit')
+  await chooseFit(page, 'Width')
   await stopStretching(page)
 
   await expect(async () => {
@@ -68,7 +59,7 @@ test('R-224 · 통째로 맞춤은 켜 두어도 작은 페이지를 늘리지 �
 
 test('R-2B4 · 끈 것은 새로고침을 넘긴다', async ({ page }) => {
   await readBook(page, BOOK)
-  await use(page, 'fit')
+  await chooseFit(page, 'Width')
   await stopStretching(page)
 
   await page.reload()

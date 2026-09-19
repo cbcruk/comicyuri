@@ -3,17 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { openReader, readBook, readMenuItem, stage, use } from './fixture/app.ts'
-import type { MenuControl } from './fixture/app.ts'
-
-/**
- * 메뉴 항목 오른쪽 곁글에 적힌 지금 값을 본다. 예전 툴바 버튼에 적혀 있던 글자가
- * 그리로 옮겨 갔다 — 항목 자체의 이름은 상태와 상관없이 그대로다.
- */
-const expectHint = (page: Page, which: MenuControl, value: string): Promise<void> =>
-  readMenuItem(page, which, async (item) => {
-    await expect(item.locator('[aria-hidden="true"] > span')).toHaveText(value)
-  })
+import { expectFit, openReader, readBook, stage, use } from './fixture/app.ts'
 
 /** 세로로 긴 페이지. 눕혀 스캔된 책이 바로 이 모양으로 들어온다. */
 const BOOK = { fileName: 'volume-1.cbz', pageCount: 6, size: { width: 1600, height: 2400 } }
@@ -69,7 +59,7 @@ test('R-228 · 네 번 세우면 제자리로 돌아온다', async ({ page }) =>
 test('R-228 · 화면에 다 들어가는 세운 페이지는 굴려도 밀리지 않는다', async ({ page }) => {
   await readBook(page, BOOK)
   await use(page, 'rotate')
-  await expectHint(page, 'fit', 'Fit')
+  await expectFit(page, 'Page')
 
   const box = await stage(page).boundingBox()
   if (box === null) throw new Error('스테이지가 없다')

@@ -42,7 +42,7 @@ const spies = (): ChromeActions => ({
   onToggleChrome: vi.fn(),
   onChooseDirection: vi.fn(),
   onToggleView: vi.fn(),
-  onCycleFit: vi.fn(),
+  onChooseFit: vi.fn(),
   onToggleBinding: vi.fn(),
   onToggleSlideshow: vi.fn(),
   onRotate: vi.fn(),
@@ -166,12 +166,18 @@ const openGoToPage = async (screen: Rendered) => {
   return box
 }
 
-/** 보기 메뉴를 열고 "Read from" 서브메뉴의 flyout까지 펼친다. */
-const openReadFrom = async (screen: Rendered) => {
+/** 보기 메뉴를 열고 서브메뉴 하나의 flyout까지 펼친다. `first`는 그 안의 첫 라디오다. */
+const openViewSubMenu = async (screen: Rendered, subMenu: string, first: string) => {
   await screen.getByRole('menuitem', { name: 'View', exact: true }).click()
-  await screen.getByRole('menuitem', { name: 'Read from' }).click()
-  await expect.element(screen.getByRole('menuitemradio', { name: 'Right to left' })).toBeVisible()
+  await screen.getByRole('menuitem', { name: subMenu }).click()
+  await expect.element(screen.getByRole('menuitemradio', { name: first })).toBeVisible()
 }
+
+/** 보기 메뉴의 "Read from" 서브메뉴를 펼친다. */
+const openReadFrom = (screen: Rendered) => openViewSubMenu(screen, 'Read from', 'Right to left')
+
+/** 보기 메뉴의 "Fit to" 서브메뉴를 펼친다. */
+const openFitTo = (screen: Rendered) => openViewSubMenu(screen, 'Fit to', 'Page')
 
 /** 메뉴 하나를 열고 그 안의 항목을 부른다. */
 const chooseFromMenu = async (screen: Rendered, menu: string, item: string) => {
@@ -204,9 +210,6 @@ test('the view menu carries every control that changes how a page is shown', asy
 
   await chooseFromMenu(screen, 'View', 'Toggle one or two pages')
   expect(actions.onToggleView).toHaveBeenCalled()
-
-  await chooseFromMenu(screen, 'View', 'Change how pages are fitted')
-  expect(actions.onCycleFit).toHaveBeenCalled()
 
   await chooseFromMenu(screen, 'View', 'Turn the page a quarter clockwise')
   expect(actions.onRotate).toHaveBeenCalled()
@@ -617,6 +620,26 @@ test('choosing a direction asks for that direction, not a flip', async () => {
   await screen.getByRole('menuitemradio', { name: 'Left to right' }).click()
 
   expect(actions.onChooseDirection).toHaveBeenLastCalledWith('ltr')
+})
+
+test('fit to offers the four modes and marks the one in use', async () => {
+  const { screen } = await renderChrome({ fit: 'width' })
+
+  await openFitTo(screen)
+
+  const radios = [...screen.container.querySelectorAll('[role="menuitemradio"]')]
+    .filter((radio) => radio.closest('[aria-label="Fit to"]') !== null)
+    .map((radio) => `${radio.textContent} ${radio.getAttribute('aria-checked')}`)
+  expect(radios).toEqual(['Page false', 'Width true', 'Height false', 'Original size false'])
+})
+
+test('choosing a fit mode asks for that mode, not the next one', async () => {
+  const { actions, screen } = await renderChrome({ fit: 'contain' })
+
+  await openFitTo(screen)
+  await screen.getByRole('menuitemradio', { name: 'Original size' }).click()
+
+  expect(actions.onChooseFit).toHaveBeenLastCalledWith('original')
 })
 
 test('the left arrow in the read from flyout goes back to its row, not the next menu', async () => {
