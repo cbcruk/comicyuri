@@ -47,9 +47,9 @@ test('P-302 · 읽던 위치와 북마크가 남는다', async ({ page }) => {
   await page.reload()
   await expect(page.getByRole('img', { name: 'Page 3' })).toBeVisible()
   await expect(counter(page)).toHaveText('3 / 6')
-  // 북마크는 메뉴로 접히며 `menuitemcheckbox`가 되었고, 켜졌다는 말을 `aria-checked`로 한다.
+  // 북마크가 걸린 페이지에서는 메뉴 항목이 그것을 걷어 내겠다고 이름으로 말한다.
   await readMenuItem(page, 'bookmark', async (item) => {
-    await expect(item).toHaveAttribute('aria-checked', 'true')
+    await expect(item).toHaveText(/Remove bookmark from this page/)
   })
 
   // 책장을 거쳐 다시 들어와도 같은 자리다.

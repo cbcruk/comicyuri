@@ -770,12 +770,14 @@ e2e "R-244 · 10px 이내로 움직인 누름은 탭으로 친다"
 리더의 위쪽 줄은 버튼이 늘어선 툴바가 아니라 메뉴바다(`role="menubar"`, 이름 "Reader
 menus"). `Book`·`View`·`Go`·`Play`·`Settings` 다섯 메뉴 안에 예전 툴바의 컨트롤이 그대로
 들어 있고, 이름도 그대로다. 트리거의 이름도 앱의 다른 모든 문구와 같이 영어다.
-메뉴 항목은 `menuitem`이며, 상태를 지는 넷 — 북마크(`Bookmark this
-page`/`Remove bookmark from this page`), 격자(`Show every page`), 설정(`Reading
-settings`), 슬라이드쇼 — 은 `menuitemcheckbox`라 `aria-checked`를 진다. 그중 패널을
-여는 둘(격자·설정)은 `aria-expanded`도 함께 진다. `Hide the toolbar`는 상태가 아니라
-명령이므로 평범한 `menuitem`이다. 읽는 방향만은 서브메뉴 안의 `menuitemradio` 둘이다
-(`R-221`).
+메뉴 항목은 모두 평범한 `menuitem`이다. 체크 상자(`menuitemcheckbox`)는 없다. 상태에
+따라 하는 일이 바뀌는 항목은 이름이 그것을 말한다 — 북마크(`Bookmark this page`/`Remove
+bookmark from this page`), 슬라이드쇼(`Start the slideshow`/`Stop the slideshow`),
+전체화면(`Enter fullscreen`/`Leave fullscreen`). 여기에 `aria-checked`를 얹으면 같은 말을
+두 번 하고, "Stop the slideshow, 체크됨"은 멈춤이 걸렸다는 말로 들린다. 패널을 여는 항목
+(`Show every page`, `Reading settings`)과 `Hide the toolbar`는 누르면 그것이 메뉴바를 덮거나
+치우므로, 체크 상자로 두면 늘 "체크 안 됨"이라 읽혀 틀린 말을 한다. 읽는 방향만은 두 값
+가운데 하나를 고르는 것이라 서브메뉴 안의 `menuitemradio` 둘이다(`R-221`).
 
 슬라이더와 카운터는 메뉴에 접지 않고 푸터에 남는다. 읽는 동안 손이 계속
 가는 것들이다. 한 장씩·끝으로 넘기는 First·Previous·Next·Last는 Go 메뉴에만 있다 — 키와
@@ -785,8 +787,7 @@ view menu carries every control that changes how a page is shown", "the go menu 
 through bookmarks and sends focus to the page box", "the play menu starts the slideshow and
 the settings menu opens the panel", "left and right arrows walk the menubar", "Enter opens a
 menu and Escape closes it again", "an open menu hands the arrow keys to its neighbour",
-"every item shows the key that does the same thing", "hiding the toolbar is a command, not a
-state"
+"every item shows the key that does the same thing", "no row is a checkbox: a row that changes what it does says so by its name"
 
 **R-251 · 메뉴바는 스스로 숨지 않는다**
 책을 열면 메뉴바와 푸터가 떠 있고, 사람이 숨기기 전까지 그대로 있다. 페이지를 넘기거나
@@ -805,14 +806,13 @@ e2e "R-251 · 가만히 두어도 툴바가 사라지지 않는다"
 
 `Hide the toolbar`는 메뉴바 안에 있으므로 숨길 때만 쓸 수 있다. 되부르는 길은 `h` 키와
 가운데 탭(`R-242`)이다. 숨긴 메뉴바는 탭 순서에서도 빠지므로, 키보드로 읽는 사람에게는
-`h`가 그 길이다. 이 항목은 상태가 아니라 명령이라 `aria-checked`를 지지 않는다.
+`h`가 그 길이다.
 
 숨긴 상태는 저장하지 않는다. 책을 새로 열면 메뉴바는 다시 떠 있다.
 ✅ reader/story "the hide control takes the chrome down and brings it back", "the h key
 does what the hide control does", "a middle tap brings hidden chrome back",
 reader/screen "the toolbar hides and the stage takes the height",
-chrome/screen "a hidden chrome leaves neither bar behind", "hiding the toolbar is a command,
-not a state",
+chrome/screen "a hidden chrome leaves neither bar behind",
 keys `"h" is the same thing the ClickedToggleChrome control does`,
 e2e "R-252 · `h` 키가 툴바를 숨기면 스테이지가 그 높이를 가져가고, 다시 누르면
 돌아온다", "R-252 · `Hide` 버튼으로 숨긴 툴바는 가운데 탭으로 돌아온다"
@@ -935,12 +935,11 @@ goes to that page"
 ### 2.8 모든 페이지 (썸네일)
 
 **R-271 · 책 메뉴의 `Show every page`가 전체 페이지 그리드를 연다**
-리더 위에 덮이는 패널(`dialog`, 이름 "Every page"). 그 항목은 `menuitemcheckbox`라
-격자가 열려 있는 동안 `aria-checked`와 `aria-expanded`가 참이다.
+리더 위에 덮이는 패널(`dialog`, 이름 "Every page"). 그 항목은 평범한 `menuitem`이다 —
+격자가 열려 있는 동안 메뉴바는 그 아래에 덮인다.
 ✅ reader/screen "escape closes one layer at a time",
 thumbs/screen "closing the grid is asked of the parent",
-chrome/screen "the book menu carries the shelf, the bookmark and the page grid", "a
-bookmarked page, an open grid and an open panel all say so on their row"
+chrome/screen "the book menu carries the shelf, the bookmark and the page grid"
 
 **R-272 · 화면에 보일 만큼만 추출한다**
 스크롤 위치에서 창을 계산해 그 주변 2행까지만 읽는다. 500쪽 책이 500장을 풀지 않는다.
@@ -993,11 +992,9 @@ e2e "R-276 · 넓은 창에는 더 많은 칸이 선다", "R-276 · 격자가 �
 
 **R-281 · 책 메뉴의 북마크 항목이 현재 페이지를 북마크한다**
 이름이 지금 상태를 말한다 — 북마크가 없으면 "Bookmark this page", 있으면 "Remove
-bookmark from this page"다. `menuitemcheckbox`라 `aria-checked`가 상태를 반영한다.
+bookmark from this page"다. 체크 상자가 아니라 이름이 상태를 말한다.
 ✅ chrome/screen "the book menu carries the shelf, the bookmark and the page grid", "a
-bookmarked page offers to take the bookmark away instead", "a bookmarked page, an open grid
-and an open panel all say so on their row", "a page with no bookmark leaves its row
-unchecked"
+bookmarked page offers to take the bookmark away instead", "no row is a checkbox: a row that changes what it does says so by its name"
 
 **R-282 · 북마크는 페이지 순서를 유지한다**
 ✅ reader/story "bookmarks stay in page order however they were added"
@@ -1055,8 +1052,8 @@ e2e "R-292 · 브라우저 쪽에서 나가도 상태가 맞는다"
 ### 2.11 설정 패널
 
 **R-2B1 · 설정 메뉴의 `Reading settings`와 `,` 키가 읽기 설정 패널을 연다**
-그 항목은 `menuitemcheckbox`라 패널이 열려 있는 동안 `aria-checked`와 `aria-expanded`가
-참이다. 메뉴에 자기 항목이 없던 설정 여섯이 여기 있다 — 표지를 혼자 둘지(`coverAlone`), 넓은
+그 항목은 평범한 `menuitem`이다 — 패널은 화면 전체를 덮는 Dialog라 열려 있는 동안 메뉴바에
+닿지 않는다. 메뉴에 자기 항목이 없던 설정 여섯이 여기 있다 — 표지를 혼자 둘지(`coverAlone`), 넓은
 페이지를 가르는 문턱(`singleThreshold`), 넓은 페이지를 반씩 읽을지(`splitWide`), 작은
 페이지를 늘릴지(`enlargeToFit`), 슬라이드쇼가 한 장에 머무는 시간(`slideSeconds`),
 책의 끝에서 무엇을 할지(`atBookEnd`).
@@ -1074,8 +1071,7 @@ e2e "R-292 · 브라우저 쪽에서 나가도 상태가 맞는다"
 rule off reports the new settings", "turning on reading wide pages in halves reports it
 too", "picking what happens at the end of a book reports it", "the close button hands the
 panel back to whoever opened it",
-chrome/screen "the play menu starts the slideshow and the settings menu opens the panel", "a
-bookmarked page, an open grid and an open panel all say so on their row",
+chrome/screen "the play menu starts the slideshow and the settings menu opens the panel",
 reader/story "a setting picked in the panel lays the book out again at once",
 e2e "R-2B1 · ⚙ 버튼이 패널을 열고 닫는다", "R-2B1 · 표지를 혼자 두지 않기로 하면
 배치가 바로 바뀌고 새로고침을 넘긴다", "R-2B1 · 책 끝 동작을 고르면 그대로 남는다"
@@ -1217,7 +1213,7 @@ e2e "R-2A5 · Shift와 함께 누른 넘김 키가 열 장을 건너뛴다", "R-
 **더 갈 곳이 없으면 스스로 멈춘다.** 책 끝 동작(`R-212`)이 `stop`이면 마지막 장에서
 멈추고, `wrap`이면 계속 돌고, `next`면 이웃한 책이 열리며 그 책은 멈춘 채로 시작한다.
 
-도는 동안 그 항목의 이름은 "Stop the slideshow"가 되고 `aria-checked`가 참이 된다.
+도는 동안 그 항목의 이름은 "Stop the slideshow"가 된다.
 
 **돌기 시작하면 메뉴바가 함께 숨는다**(`R-252`). 도는 동안 화면에는 페이지만 남는다.
 멈출 때는 메뉴바를 되부르지 않는다 — 슬라이드쇼 전에 손으로 숨겨 두었을 수도 있고,
@@ -1230,8 +1226,7 @@ left", "stopping it leaves the chrome down",
 reader/subscription "moving to the other half of a page starts the wait again", "turning to
 another page starts the wait again", "a reader that is not playing is not waiting for
 anything",
-chrome/screen "a running slideshow says so on its row", "and a stopped one says that",
-"fullscreen and the slideshow say how to leave once they are on",
+chrome/screen "fullscreen and the slideshow say how to leave once they are on", "no row is a checkbox: a row that changes what it does says so by its name",
 e2e "R-2C1 · 슬라이드쇼가 스스로 페이지를 넘긴다"
 
 ---

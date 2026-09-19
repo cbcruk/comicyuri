@@ -9,15 +9,16 @@
  * 포털이 아니라 제자리에 서므로, 닫혀 있는 메뉴의 항목까지 그 줄의 차례에
  * 끌려 들어온다.
  *
- * 상태를 지는 항목은 `DropdownMenuCheckboxItem`이다. 예전 툴바 버튼이 `aria-pressed`
- * 와 `aria-expanded`로 말하던 것을 `menuitemcheckbox`의 `aria-checked`가 이어받고,
- * 패널을 여는 둘은 `aria-expanded`도 함께 진다 — `R-271`과 `R-2B1`이 그것으로
- * 확인된다. 나머지는 상태가 아니라 명령이므로 평범한 `menuitem`으로 둔다.
+ * 항목은 모두 평범한 `menuitem`이다. 체크 상자(`menuitemcheckbox`)로 둘 만한 것이 없다.
+ * 상태에 따라 하는 일이 바뀌는 항목은 이름이 그것을 말하고(`Bookmark this page` ↔
+ * `Remove bookmark from this page`), 여기에 `aria-checked`까지 얹으면 같은 말을 두 번
+ * 한다. 패널을 여는 항목은 패널이 메뉴바를 덮으므로 "열림"이 읽힐 때가 없다 — 늘 "체크
+ * 안 됨"이라 말하는 체크 상자는 틀린 말을 하는 셈이다. 읽는 방향만은 두 값 가운데 하나를
+ * 고르는 것이라 `menuitemradio`다(`R-221`).
  */
 
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuDivider,
   DropdownMenuItem,
   DropdownMenuRadioGroup,
@@ -256,19 +257,14 @@ export const ReaderMenubar = ({ state, actions, onOpenGoToPage }: MenubarProps) 
           onClick={actions.onExit}
           endContent={<MenuHint shortcut={SHORTCUTS.exit} />}
         />
-        <DropdownMenuCheckboxItem
+        <DropdownMenuItem
           label={state.isBookmarked ? 'Remove bookmark from this page' : 'Bookmark this page'}
-          value={state.isBookmarked}
-          onChange={actions.onToggleBookmark}
-          hasCloseOnSelect
+          onClick={actions.onToggleBookmark}
           endContent={<MenuHint shortcut={SHORTCUTS.bookmark} />}
         />
-        <DropdownMenuCheckboxItem
+        <DropdownMenuItem
           label="Show every page"
-          value={state.isThumbsOpen}
-          aria-expanded={state.isThumbsOpen}
-          onChange={actions.onToggleThumbs}
-          hasCloseOnSelect
+          onClick={actions.onToggleThumbs}
           endContent={<MenuHint shortcut={SHORTCUTS.thumbs} />}
         />
       </Menu>
@@ -332,11 +328,6 @@ export const ReaderMenubar = ({ state, actions, onOpenGoToPage }: MenubarProps) 
           onClick={actions.onToggleFullscreen}
           endContent={<MenuHint shortcut={SHORTCUTS.fullscreen} />}
         />
-        {/*
-          숨기기는 상태가 아니라 명령이다. 이 항목이 보이는 동안 툴바는 언제나 서
-          있으므로 체크 상자로 두면 늘 "체크 안 됨"이라 읽히고, 그것은 실제로
-          작동하는 버튼에 대해 틀린 말을 하는 셈이다.
-        */}
         <DropdownMenuItem
           label="Hide the toolbar"
           onClick={actions.onToggleChrome}
@@ -385,22 +376,17 @@ export const ReaderMenubar = ({ state, actions, onOpenGoToPage }: MenubarProps) 
       </Menu>
 
       <Menu id="play" openMenu={openMenu} onOpenChange={changeOpen}>
-        <DropdownMenuCheckboxItem
+        <DropdownMenuItem
           label={state.isPlaying ? 'Stop the slideshow' : 'Start the slideshow'}
-          value={state.isPlaying}
-          onChange={actions.onToggleSlideshow}
-          hasCloseOnSelect
+          onClick={actions.onToggleSlideshow}
           endContent={<MenuHint shortcut={SHORTCUTS.slideshow} />}
         />
       </Menu>
 
       <Menu id="settings" openMenu={openMenu} onOpenChange={changeOpen}>
-        <DropdownMenuCheckboxItem
+        <DropdownMenuItem
           label="Reading settings"
-          value={state.isSettingsOpen}
-          aria-expanded={state.isSettingsOpen}
-          onChange={actions.onToggleSettings}
-          hasCloseOnSelect
+          onClick={actions.onToggleSettings}
           endContent={<MenuHint shortcut={SHORTCUTS.settings} />}
         />
       </Menu>
