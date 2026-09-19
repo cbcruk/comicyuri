@@ -31,14 +31,6 @@ export type OpenState = Data.TaggedEnum<{
     readonly pageCount: number
     /** 페이지별 가로세로비. 임포트할 때 재지 못한 페이지는 없음이다. */
     readonly ratios: ReadonlyArray<Option.Option<number>>
-    /**
-     * 페이지별 파일 이름. 폴더는 떼어 낸 것이다.
-     *
-     * 정렬이 이상할 때 그것을 알아볼 유일한 단서다 — 화면에 걸린 것이 몇 번째
-     * 페이지인지는 카운터가 말해 주지만, 그 번호가 왜 그 그림인지는 파일 이름만이
-     * 말해 준다.
-     */
-    readonly names: ReadonlyArray<string>
   }
   Failed: { readonly text: string }
 }>

@@ -331,7 +331,7 @@ describe('opening a record as a book', () => {
       }),
     )
 
-    // 폴더는 떼어 낸다. 카운터 아래에 서는 것은 파일 이름이다.
+    // 폴더는 떼어 낸다.
     expect(book.pages.map(({ name }) => name)).toStrictEqual(['01.png', '02.png'])
   })
 })

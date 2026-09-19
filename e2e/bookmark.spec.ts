@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, counter, openMenu, readBook, use } from './fixture/app.ts'
+import { counter, openMenu, readBook, use } from './fixture/app.ts'
 
 /**
  * 썸네일 격자를 여닫는다.
@@ -21,8 +21,8 @@ test('R-284 · 그리드를 북마크만으로 좁힌다', async ({ page }) => {
   await readBook(page)
 
   await use(page, 'bookmark')
-  await control.next(page).click()
-  await control.next(page).click()
+  await use(page, 'next')
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('3 / 6')
   await use(page, 'bookmark')
 
@@ -46,11 +46,11 @@ test('R-285 · `[`/`]`가 앞뒤 북마크로 건너뛴다', async ({ page }) =>
   await readBook(page)
 
   await use(page, 'bookmark')
-  await control.last(page).click()
+  await use(page, 'last')
   await expect(counter(page)).toHaveText('6 / 6')
   await use(page, 'bookmark')
 
-  await control.first(page).click()
+  await use(page, 'first')
   await expect(counter(page)).toHaveText('1 / 6')
 
   await page.keyboard.press(']')
@@ -68,8 +68,8 @@ test('R-286 · 목록에서 북마크를 바로 지우고, 그것이 새로고�
   await readBook(page)
 
   await use(page, 'bookmark')
-  await control.next(page).click()
-  await control.next(page).click()
+  await use(page, 'next')
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('3 / 6')
   await use(page, 'bookmark')
 

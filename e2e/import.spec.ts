@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
 
 import { png } from './fixture/archive.ts'
-import { control, counter, importBook, openReader, openShelf, use } from './fixture/app.ts'
+import { counter, importBook, openReader, openShelf, use } from './fixture/app.ts'
 
 /**
  * 이 파일이 디스크에 만든 폴더들. 테스트가 끝나면 치운다.
@@ -54,7 +54,7 @@ test('S-113 · 폴더를 고르면 폴더 이름의 책 한 권이 된다', asyn
   // 낱장 이미지들이 한 권으로 묶였는지는 리더에서 드러난다.
   await openReader(page, 'collected-pages')
   await expect(page.getByRole('img', { name: 'Page 1' })).toBeVisible()
-  await expect(page.locator('header span').first()).toHaveText('1 / 4')
+  await expect(counter(page)).toHaveText('1 / 4')
 })
 
 test('S-112 · "Open files"가 여러 개를 고를 수 있는 선택창을 연다', async ({ page }) => {
@@ -74,7 +74,7 @@ test('S-115 · 같은 파일을 다시 열면 같은 책이고, 읽던 자리도
   await openShelf(page)
   const title = await importBook(page)
   await openReader(page, title)
-  await control.next(page).click()
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('2 / 6')
   await use(page, 'shelf')
 

@@ -1,5 +1,5 @@
 /**
- * 리더의 크롬. 위의 헤더(메뉴바와 카운터)와 아래의 넘김 줄을 함께 세운다.
+ * 리더의 크롬. 위의 메뉴바와 아래의 넘김 줄을 함께 세운다.
  *
  * 스스로 숨지 않고, 손으로 숨기면 둘이 함께 화면에서 빠진다(`R-251`, `R-252`).
  * 흐리게 두지 않고 아예 그리지 않는 이유는 자리를 차지한 채 투명해지면
@@ -11,18 +11,17 @@ import type { ReactNode } from 'react'
 import { useRef } from 'react'
 
 import { HStack } from '@astryxdesign/core/HStack'
-import { colorVars, textSizeVars } from '@astryxdesign/core/theme/tokens.stylex'
-import { VStack } from '@astryxdesign/core/VStack'
+import { colorVars } from '@astryxdesign/core/theme/tokens.stylex'
 
 import { ReaderFooter } from './footer.tsx'
 import { ReaderMenubar } from './menubar.tsx'
 import type { ChromeProps } from './types.ts'
 
 /**
- * 리더 머리의 모양. 크기와 색은 모두 Astryx 토큰에서 온다.
+ * 리더 머리의 모양. 색은 Astryx 토큰에서 온다.
  *
- * 줄 세우기와 간격은 `HStack`·`VStack`의 props가 맡고, 여기에는 그것들이 말하지 못하는
- * 것만 남는다.
+ * 줄 세우기와 간격은 `HStack`의 props가 맡고, 여기에는 그것이 말하지 못하는 테두리만
+ * 남는다.
  */
 const styles = stylex.create({
   header: {
@@ -30,84 +29,14 @@ const styles = stylex.create({
     borderBottomStyle: 'solid',
     borderBottomColor: colorVars['--color-border'],
   },
-  // 카운터가 DOM에서는 먼저, 눈에는 메뉴바 오른쪽에 선다. 그 이유는 `Counter`에 있다.
-  center: {
-    order: 2,
-    minWidth: 0,
-    marginInline: 'auto',
-  },
-  menus: {
-    order: 1,
-  },
-  counterBox: {
-    minWidth: 0,
-  },
-  counter: {
-    fontSize: textSizeVars['--font-size-base'],
-    color: colorVars['--color-text-secondary'],
-  },
-  // 파일 이름은 카운터보다 한 겹 더 물러선다.
-  faint: {
-    fontSize: textSizeVars['--font-size-sm'],
-    color: colorVars['--color-text-secondary'],
-    opacity: 0.7,
-  },
-  fileNames: {
-    maxWidth: '28ch',
-    overflow: 'hidden',
-    whiteSpace: 'nowrap',
-    textOverflow: 'ellipsis',
-  },
 })
 
-/**
- * 긴 파일 이름을 줄일 때 남길 글자 수. 한 장이면 넉넉하고, 두 장이면 둘이 나란히
- * 서야 하므로 절반씩이다.
- */
-const nameTailFor = (count: number): number => (count > 1 ? 12 : 24)
-
-/**
- * 이름을 꼬리부터 남기고 앞을 줄인다.
- *
- * 줄일 곳이 앞인 이유는 스캔본의 이름이 대개 `Vol.01 Ch.003 - 045.jpg`처럼 공통된
- * 머리에 번호가 붙는 꼴이기 때문이다. 뒤를 자르면 남는 것이 페이지마다 똑같은
- * 머리뿐이라, 정렬을 확인하려고 띄운 이름이 아무것도 말해 주지 않는다(`R-217`).
- */
-const clipStart = (name: string, tail: number): string =>
-  name.length <= tail ? name : `…${name.slice(-(tail - 1))}`
-
-/**
- * 카운터 자리. 몇 번째 장인지 위에, 그것이 어느 파일인지 아래에 둔다.
- *
- * 카운터가 헤더의 첫 `span`이어야 한다 — e2e가 그것으로 지금 자리를 읽는다. 그래서
- * 이것이 헤더의 첫 자식 안에서도 맨 앞이고, 눈에 보이는 차례는 `order`가 맡아
- * 메뉴바를 왼쪽에 둔다.
- */
-const Counter = ({
-  counter,
-  fileNames,
-}: Readonly<{ counter: string; fileNames: ReadonlyArray<string> }>) => {
-  const tail = nameTailFor(fileNames.length)
-  const names = fileNames.map((name) => clipStart(name, tail)).join(' · ')
-
-  return (
-    <VStack align="center" xstyle={styles.counterBox}>
-      <span {...stylex.props(styles.counter)}>{counter}</span>
-      {names === '' ? null : (
-        <span title={fileNames.join(' · ')} {...stylex.props(styles.faint, styles.fileNames)}>
-          {names}
-        </span>
-      )}
-    </VStack>
-  )
-}
-
-/** 리더 위쪽 줄. 메뉴바와 카운터가 여기 선다. */
+/** 리더 위쪽 줄. 메뉴바가 여기 선다. */
 export const ReaderHeader = ({
   state,
   actions,
-  onFocusGoToPage,
-}: ChromeProps & Readonly<{ onFocusGoToPage?: () => void }>) => (
+  onOpenGoToPage,
+}: ChromeProps & Readonly<{ onOpenGoToPage?: () => void }>) => (
   <HStack
     as="header"
     wrap="wrap"
@@ -117,12 +46,7 @@ export const ReaderHeader = ({
     paddingBlock={2}
     xstyle={styles.header}
   >
-    <HStack align="center" xstyle={styles.center}>
-      <Counter counter={state.counter} fileNames={state.fileNames} />
-    </HStack>
-    <div {...stylex.props(styles.menus)}>
-      <ReaderMenubar state={state} actions={actions} onFocusGoToPage={onFocusGoToPage} />
-    </div>
+    <ReaderMenubar state={state} actions={actions} onOpenGoToPage={onOpenGoToPage} />
   </HStack>
 )
 
@@ -132,15 +56,15 @@ export const ReaderHeader = ({
  * 스테이지를 자식으로 받는 이유는 셋이 위에서 아래로 쌓여야 하기 때문이다. 크롬이
  * 숨으면 헤더와 푸터만 빠지고 스테이지가 그 높이를 가져간다(`R-252`).
  *
- * 번호를 적는 입력란은 푸터에 있고 그리로 보내는 항목은 메뉴에 있어서, 둘을 잇는
- * ref를 여기서 쥔다.
+ * 번호 창을 여는 카운터는 푸터에 있고 그것을 부르는 항목은 메뉴에 있어서, 둘을
+ * 잇는 ref를 여기서 쥔다.
  */
 export const ReaderChrome = ({
   state,
   actions,
   children,
 }: ChromeProps & Readonly<{ children?: ReactNode }>) => {
-  const goToPageRef = useRef<HTMLInputElement>(null)
+  const goToPageRef = useRef<HTMLButtonElement>(null)
 
   return (
     <>
@@ -148,7 +72,7 @@ export const ReaderChrome = ({
         <ReaderHeader
           state={state}
           actions={actions}
-          onFocusGoToPage={() => goToPageRef.current?.focus()}
+          onOpenGoToPage={() => goToPageRef.current?.click()}
         />
       ) : null}
       {children}

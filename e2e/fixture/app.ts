@@ -98,8 +98,8 @@ export const readBook = async (page: Page, book: Book = DEFAULT_BOOK): Promise<s
 /** 리더의 제스처 면. 탭·스와이프·핀치는 모두 이 위에서 일어난다. */
 export const stage = (page: Page) => page.locator('#reader-stage')
 
-/** 툴바가 세는 현재 자리, `3 / 6` 같은 문자열. */
-export const counter = (page: Page) => page.locator('header span').first()
+/** 넘김 줄의 카운터가 세는 현재 자리, `3 / 6` 같은 문자열. */
+export const counter = (page: Page) => page.locator('footer [data-counter]')
 
 /**
  * 메뉴바가 지고 있는 컨트롤과, 그것이 어느 메뉴에 사는지.
@@ -120,6 +120,11 @@ const MENU_OF = {
   zoomOut: 'View',
   fullscreen: 'View',
   hideToolbar: 'View',
+  first: 'Go',
+  previous: 'Go',
+  next: 'Go',
+  last: 'Go',
+  goToPage: 'Go',
   nextBookmark: 'Go',
   previousBookmark: 'Go',
   slideshow: 'Play',
@@ -139,6 +144,11 @@ const ITEM_NAME: Readonly<Record<keyof typeof MENU_OF, string | RegExp>> = {
   zoomOut: 'Zoom out',
   fullscreen: /fullscreen/i,
   hideToolbar: 'Hide the toolbar',
+  first: 'First',
+  previous: 'Previous',
+  next: 'Next',
+  last: 'Last',
+  goToPage: 'Go to page',
   nextBookmark: 'Next bookmark',
   previousBookmark: 'Previous bookmark',
   slideshow: /slideshow/i,
@@ -174,6 +184,8 @@ export const openMenu = async (page: Page, control: MenuControl) => {
   }
   return page.getByRole(CHECKABLE.has(control) ? 'menuitemcheckbox' : 'menuitem', {
     name: ITEM_NAME[control],
+    // `Next`가 `Next bookmark`까지 집지 않도록, 글자로 준 이름은 통째로 맞춘다.
+    exact: typeof ITEM_NAME[control] === 'string',
   })
 }
 
@@ -181,6 +193,8 @@ export const openMenu = async (page: Page, control: MenuControl) => {
 export const use = async (page: Page, control: MenuControl): Promise<void> => {
   const item = await openMenu(page, control)
   await item.click()
+  // 메뉴바는 고른 뒤 한 프레임 뒤에 포커스를 놓는다. 그 전에 누른 키는 메뉴바가 가져간다.
+  await expect(page.locator('[role="menubar"] :focus')).toHaveCount(0)
 }
 
 /**
@@ -225,18 +239,22 @@ export const expectDirection = async (page: Page, name: DirectionName): Promise<
 }
 
 /**
- * 메뉴 밖에 그대로 남아 있는 컨트롤들. 푸터의 넘김 줄과 번호 입력란, 슬라이더다.
+ * 메뉴 밖에 그대로 남아 있는 컨트롤. 푸터의 슬라이더다. 번호 입력란은 카운터를 눌러야
+ * 열리므로 {@linkcode openGoToPage}로 연다.
  *
- * 읽는 동안 손이 계속 가는 것이라 메뉴에 접지 않았다. `Next`는 설정 패널의 "Next book"과
- * 이름이 겹치므로 정확히 맞는 것만 고른다.
+ * 읽는 동안 손이 계속 가는 것이라 메뉴에 접지 않았다. 한 장씩·끝으로 넘기는 것은 Go
+ * 메뉴에 있으므로 `use(page, 'next')`처럼 부른다.
  */
 export const control = {
-  previous: (page: Page) => page.getByRole('button', { name: 'Previous', exact: true }),
-  next: (page: Page) => page.getByRole('button', { name: 'Next', exact: true }),
-  first: (page: Page) => page.getByRole('button', { name: 'First', exact: true }),
-  last: (page: Page) => page.getByRole('button', { name: 'Last', exact: true }),
-  goToPage: (page: Page) => page.getByRole('spinbutton', { name: 'Go to page' }),
   slider: (page: Page) => page.getByRole('slider', { name: 'Page' }),
+}
+
+/** 카운터를 눌러 번호 창을 열고, 그 안의 입력란을 돌려준다(`R-266`). */
+export const openGoToPage = async (page: Page) => {
+  await counter(page).click()
+  const box = page.getByRole('spinbutton', { name: /^Page/ })
+  await expect(box).toBeFocused()
+  return box
 }
 
 /**

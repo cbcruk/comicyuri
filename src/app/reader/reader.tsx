@@ -41,7 +41,7 @@ import { ReaderChrome } from '../chrome/index.ts'
 import type { ChromeActions, ChromeState } from '../chrome/index.ts'
 import { SettingsPanel } from '../settings/index.ts'
 import { ThumbsPanel } from '../thumbs/index.ts'
-import { counterLabel, fileNamesFor } from './layout.ts'
+import { counterLabel } from './layout.ts'
 import { browserPersistence } from './persistence.ts'
 import type { ReaderPersistence } from './persistence.ts'
 import { makeReaderSession } from './session.ts'
@@ -169,7 +169,6 @@ export const ReaderView = ({
     onSome: (drawn) => {
       const state: ChromeState = {
         counter: counterLabel(drawn.here, drawn.pageCount),
-        fileNames: fileNamesFor(drawn.here, drawn.names),
         page: model.page,
         pageCount: drawn.pageCount,
         direction: model.settings.direction,

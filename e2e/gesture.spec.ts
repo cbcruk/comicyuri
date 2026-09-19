@@ -4,7 +4,6 @@ import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
 import {
-  control,
   counter,
   openMenu,
   openReader,
@@ -174,8 +173,8 @@ test('R-233 · 스테이지 위아래가 비대칭이어도 손가락 사이 지
   // 이어 읽기 줄은 스테이지 위에만 선다. 그 줄의 높이만큼 스테이지의 가운데가 창의 가운데에서
   // 내려가므로, 창 가운데로 손가락을 재면 그 절반만큼 미끄러진다.
   const title = await readBook(page)
-  await control.next(page).click()
-  await control.next(page).click()
+  await use(page, 'next')
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('3 / 6')
 
   await openMenu(page, 'settings')
@@ -198,7 +197,7 @@ test('R-239 · 페이지를 넘기면 줌이 처음으로 돌아온다', async (
   await pinch(page, centre, 100, 200)
   await expect.poll(() => zoomOf(page)).toBeGreaterThan(1)
 
-  await control.next(page).click()
+  await use(page, 'next')
 
   await expect(counter(page)).toHaveText('2 / 6')
   await expect.poll(() => zoomOf(page)).toBe(1)

@@ -2,7 +2,7 @@
 
 import { expect, test } from '@playwright/test'
 
-import { control, counter, openMenu, openReader, readBook, use } from './fixture/app.ts'
+import { counter, openMenu, openReader, readBook, use } from './fixture/app.ts'
 
 /**
  * 설정 패널을 연다.
@@ -22,8 +22,8 @@ const readThenChoose = async (
 ): Promise<string> => {
   const title = await readBook(page)
 
-  await control.next(page).click()
-  await control.next(page).click()
+  await use(page, 'next')
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('3 / 6')
 
   await openSettings(page)
@@ -37,7 +37,7 @@ const readThenChoose = async (
 test('R-2B5 · 기본값은 조용히 읽던 자리로 간다', async ({ page }) => {
   const title = await readBook(page)
 
-  await control.next(page).click()
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('2 / 6')
   await use(page, 'shelf')
 

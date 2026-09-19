@@ -11,11 +11,6 @@ import type { FitMode, ReadingDirection, ViewMode } from '../../types.ts'
 export type ChromeState = Readonly<{
   /** 카운터에 적히는 글자. 한 장이면 `3 / 120`, 두 장이면 `4–5 / 120`(`R-213`). */
   counter: string
-  /**
-   * 지금 화면에 걸린 파일들의 이름, 읽는 순서대로(`R-217`). 줄이는 일은 크롬이
-   * 하므로 아카이브 안의 이름을 그대로 준다.
-   */
-  fileNames: ReadonlyArray<string>
   /** 슬라이더와 자리표시자가 가리키는 페이지. `0`부터 센다. */
   page: number
   /** 책의 페이지 수. */

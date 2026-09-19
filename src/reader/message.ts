@@ -31,7 +31,6 @@ export type Message = Data.TaggedEnum<{
     readonly title: string
     readonly pageCount: number
     readonly ratios: ReadonlyArray<Option.Option<number>>
-    readonly names: ReadonlyArray<string>
   }
   FailedOpenBook: { readonly text: string }
 

@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { counter, openMenu, readBook, use } from './fixture/app.ts'
+import { counter, openGoToPage, openMenu, readBook, stage, use } from './fixture/app.ts'
 
 /**
  * 설정 패널을 여닫는다.
@@ -20,25 +20,47 @@ const useSettings = async (page: Page): Promise<void> => {
 
 const BOOK = { fileName: 'volume-1.cbz', pageCount: 12 }
 
-const goTo = (page: Page) => page.getByRole('spinbutton', { name: 'Go to page' })
-
 test('R-266 · 번호를 적고 Enter를 누르면 그 페이지로 간다', async ({ page }) => {
   await readBook(page, BOOK)
 
-  await goTo(page).fill('7')
-  await goTo(page).press('Enter')
+  const box = await openGoToPage(page)
+  await box.fill('7')
+  await box.press('Enter')
   await expect(counter(page)).toHaveText('7 / 12')
 
   // 책 밖의 번호는 아무 일도 일으키지 않는다.
-  await goTo(page).fill('99')
-  await goTo(page).press('Enter')
+  const again = await openGoToPage(page)
+  await again.fill('99')
+  await again.press('Enter')
   await expect(counter(page)).toHaveText('7 / 12')
+})
+
+test('R-266 · Go 메뉴의 Go to page가 번호 입력란을 연다', async ({ page }) => {
+  await readBook(page, BOOK)
+
+  await use(page, 'goToPage')
+  await expect(page.getByRole('spinbutton', { name: /^Page/ })).toBeFocused()
+  await page.keyboard.type('5')
+  await page.keyboard.press('Enter')
+  await expect(counter(page)).toHaveText('5 / 12')
+})
+
+test('R-266 · 창 안의 버튼에서 누른 Escape는 창만 닫고 책을 떠나지 않는다', async ({ page }) => {
+  await readBook(page, BOOK)
+
+  await openGoToPage(page)
+  await page.getByRole('button', { name: 'Cancel' }).focus()
+  await page.keyboard.press('Escape')
+
+  await expect(page.getByRole('dialog', { name: 'Go to page' })).toBeHidden()
+  await expect(stage(page)).toBeVisible()
+  await expect(counter(page)).toBeFocused()
 })
 
 test('R-266 · 번호를 적는 동안 화살표는 페이지를 넘기지 않는다', async ({ page }) => {
   await readBook(page, BOOK)
 
-  await goTo(page).click()
+  await openGoToPage(page)
   await page.keyboard.press('ArrowLeft')
   await page.keyboard.press('ArrowRight')
 

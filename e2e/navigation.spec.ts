@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { control, counter, importBook, openReader, openShelf, stage, use } from './fixture/app.ts'
+import { counter, importBook, openReader, openShelf, stage, use } from './fixture/app.ts'
 
 /**
  * 이 문서에 표를 하나 꽂아 둔다. 페이지를 다시 읽으면 새 문서가 오므로 표가
@@ -56,7 +56,7 @@ test('N-403 · 새로고침해도 읽던 책으로 돌아온다', async ({ page 
   await openShelf(page)
   const title = await importBook(page)
   await openReader(page, title)
-  await control.next(page).click()
+  await use(page, 'next')
   await expect(counter(page)).toHaveText('2 / 6')
 
   await page.reload()
