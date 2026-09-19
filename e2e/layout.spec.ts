@@ -94,3 +94,51 @@ test('R-224 · 1:1은 원래 픽셀 크기로 둔다', async ({ page }) => {
   expect(image.width).toBeCloseTo(PAGE_SIZE.width, 0)
   expect(image.height).toBeCloseTo(PAGE_SIZE.height, 0)
 })
+
+/** 두 장 스프레드가 차지한 상자. 두 이미지를 감싸는 가장 작은 사각형이다. */
+const spreadBox = async (page: Page) => {
+  const images = stage(page).getByRole('img')
+  await expect(images).toHaveCount(2)
+  const boxes = await images.evaluateAll((elements) =>
+    elements.map((element) => {
+      const { left, right, top, bottom } = element.getBoundingClientRect()
+      return { left, right, top, bottom }
+    }),
+  )
+  const left = Math.min(...boxes.map((box) => box.left))
+  const right = Math.max(...boxes.map((box) => box.right))
+  const top = Math.min(...boxes.map((box) => box.top))
+  const bottom = Math.max(...boxes.map((box) => box.bottom))
+  return { width: right - left, height: bottom - top }
+}
+
+/** 세로로 긴 창에서 두 장 모드로 연다. 두 장의 원래 폭 합이 창보다 넓다. */
+const readSpreadInPortrait = async (page: Page): Promise<void> => {
+  await page.setViewportSize({ width: 600, height: 900 })
+  await readBook(page, { fileName: 'volume-1.cbz', pageCount: 6, size: PAGE_SIZE })
+  await use(page, 'view')
+  await use(page, 'next')
+}
+
+test('R-224 · 두 장 모드의 Fit은 두 장을 합쳐 화면 안에 넣는다', async ({ page }) => {
+  await readSpreadInPortrait(page)
+
+  const room = await stageBox(page)
+  const spread = await spreadBox(page)
+
+  expect(spread.width).toBeLessThanOrEqual(room.width + 1)
+  expect(spread.height).toBeLessThanOrEqual(room.height + 1)
+  // 세로로 긴 창이라 이번에는 너비가 먼저 닿는다.
+  expect(spread.width).toBeCloseTo(room.width, 0)
+})
+
+test('R-224 · 두 장 모드의 Width는 두 장을 합쳐 너비를 채운다', async ({ page }) => {
+  await readSpreadInPortrait(page)
+  await use(page, 'fit')
+  await expectHint(page, 'fit', 'Width')
+
+  const room = await stageBox(page)
+  const spread = await spreadBox(page)
+
+  expect(spread.width).toBeCloseTo(room.width, 0)
+})

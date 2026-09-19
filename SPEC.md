@@ -480,8 +480,10 @@ reader/story "choosing a direction sets it rather than flipping it",
 
 **R-222 · 한 장 / 두 장 (One / Two)**
 두 장 모드에서도 지금 읽던 페이지를 중심으로 다시 묶는다. 지금 어느 쪽인지는 보기
-메뉴 항목의 곁글에 적힌다.
-✅ reader/story "two-page mode regroups around the page being read"
+메뉴 항목의 곁글에 적힌다. 두 장의 폭 합이 화면보다 넓어도, 앞으로 넘기든 뒤로 넘기든 두
+장은 한 줄에 나란히 선다(`R-247`).
+✅ reader/story "two-page mode regroups around the page being read",
+e2e "R-222 · 두 장이 화면보다 넓어도 뒤로 넘기면 두 장이 나란히 선다"
 
 **R-223 · 두 장 모드에서 표지는 혼자 나온다**
 그래서 이후 쌍이 인쇄된 책처럼 맞는다. 설정 패널에서 끌 수 있다(`R-2B1`).
@@ -494,13 +496,18 @@ Fit은 화면 안에 통째로, Width는 너비를, Height는 높이를 채우�
 크기다. 세로로 긴 페이지에서는 Fit과 Height가 같은 그림이 된다 — 정의상 Fit은 먼저
 닿는 쪽을 따른다.
 
+두 장 모드에서는 Fit과 Width가 스프레드 전체에 걸린다. 두 장을 합쳐 화면 안에 넣고, 두
+장을 합쳐 너비를 채운다 — 한 장이 쓸 수 있는 폭은 간격을 뺀 나머지의 절반이다. Height는
+한 장씩 걸어도 스프레드가 높이를 채우고, 1:1은 원래 크기라 나눌 것이 없다.
+
 Fit과 1:1은 줄이기만 하고 늘리지 않는다. 화면보다 작은 페이지는 원래 크기 그대로
 선다. 채우는 두 모드(Width·Height)만 늘리고, 그것을 멈추는 것이 `R-2B4`다.
 
 메뉴 항목의 이름은 늘 "Change how pages are fitted"이고, 지금 값은 그 곁글에 적힌다.
 ✅ reader/story "cycling the fit mode walks the four modes and comes back",
 chrome/screen "the view menu carries every control that changes how a page is shown",
-e2e "R-224 · Fit은 페이지를 화면 안에 통째로 넣는다", "R-224 · Width는 너비를
+e2e "R-224 · Fit은 페이지를 화면 안에 통째로 넣는다", "R-224 · 두 장 모드의 Fit은 두 장을
+합쳐 화면 안에 넣는다", "R-224 · 두 장 모드의 Width는 두 장을 합쳐 너비를 채운다", "R-224 · Width는 너비를
 채운다", "R-224 · Height는 높이를 채운다", "R-224 · 1:1은 원래 픽셀 크기로 둔다",
 "R-224 · 통째로 맞춤은 켜 두어도 작은 페이지를 늘리지 않는다"
 📖 메뉴 항목 옆에 지금 걸린 모드가 적히는 것 — 재는 테스트가 없다
@@ -686,6 +693,10 @@ e2e "R-246 · 끝에 닿은 뒤 다시 굴리면 페이지가 넘어간다", "R-
 처음이다.
 
 세우는 일은 CSS가 한다(`align-items: safe center`, 그리고 뒤로 왔을 때 `flex-wrap: wrap-reverse`).
+`wrap-reverse`는 줄바꿈까지 켜므로, 스프레드의 페이지들은 한 줄짜리 그릇 하나로 묶여 페이지
+상자의 유일한 자식이 된다. 페이지를 상자에 바로 두면 두 장의 폭 합이 화면보다 넓을 때 한 장이
+다음 줄로 밀려나 한 장 모드처럼 보인다(`R-222`). 맞춤 모드의 크기는 그 그릇이 아니라 페이지
+상자를 기준(`cqw`·`cqh`)으로 잰다.
 재고 나서 옮기는 것이 아니라 처음부터 그 자리에 그려지므로, 긴 페이지가 가운데
 걸렸다가 튀는 일이 없다. 페이지를 담은 상자는 페이지 번호를 키로 삼는다 — 그러지
 않으면 앞 페이지를 굴려 둔 자리에서 새 페이지가 미끄러져 들어온다.
