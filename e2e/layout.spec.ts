@@ -3,17 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { readBook, readMenuItem, stage, use } from './fixture/app.ts'
-import type { MenuControl } from './fixture/app.ts'
-
-/**
- * 메뉴 항목 오른쪽 곁글에 적힌 지금 값을 본다. 예전 툴바 버튼에 적혀 있던 글자가
- * 그리로 옮겨 갔다 — 항목 자체의 이름은 상태와 상관없이 그대로다.
- */
-const expectHint = (page: Page, which: MenuControl, value: string): Promise<void> =>
-  readMenuItem(page, which, async (item) => {
-    await expect(item.locator('[aria-hidden="true"] > span')).toHaveText(value)
-  })
+import { chooseFit, readBook, stage, use } from './fixture/app.ts'
 
 // 실제 만화 페이지처럼 화면보다 큰 크기. 맞춤 모드는 줄이는 쪽으로 일한다.
 const PAGE_SIZE = { width: 1600, height: 2400 }
@@ -61,8 +51,7 @@ test('R-224 · Fit은 페이지를 화면 안에 통째로 넣는다', async ({ 
 
 test('R-224 · Width는 너비를 채운다', async ({ page }) => {
   await readBook(page, { fileName: 'volume-1.cbz', pageCount: 6, size: PAGE_SIZE })
-  await use(page, 'fit')
-  await expectHint(page, 'fit', 'Width')
+  await chooseFit(page, 'Width')
 
   const room = await stageBox(page)
   const image = await imageBox(page)
@@ -72,9 +61,7 @@ test('R-224 · Width는 너비를 채운다', async ({ page }) => {
 
 test('R-224 · Height는 높이를 채운다', async ({ page }) => {
   await readBook(page, { fileName: 'volume-1.cbz', pageCount: 6, size: PAGE_SIZE })
-  await use(page, 'fit')
-  await use(page, 'fit')
-  await expectHint(page, 'fit', 'Height')
+  await chooseFit(page, 'Height')
 
   const room = await stageBox(page)
   const image = await imageBox(page)
@@ -84,10 +71,7 @@ test('R-224 · Height는 높이를 채운다', async ({ page }) => {
 
 test('R-224 · 1:1은 원래 픽셀 크기로 둔다', async ({ page }) => {
   await readBook(page, { fileName: 'volume-1.cbz', pageCount: 6, size: PAGE_SIZE })
-  await use(page, 'fit')
-  await use(page, 'fit')
-  await use(page, 'fit')
-  await expectHint(page, 'fit', '1:1')
+  await chooseFit(page, 'Original size')
 
   const image = await imageBox(page)
 
@@ -134,8 +118,7 @@ test('R-224 · 두 장 모드의 Fit은 두 장을 합쳐 화면 안에 넣는�
 
 test('R-224 · 두 장 모드의 Width는 두 장을 합쳐 너비를 채운다', async ({ page }) => {
   await readSpreadInPortrait(page)
-  await use(page, 'fit')
-  await expectHint(page, 'fit', 'Width')
+  await chooseFit(page, 'Width')
 
   const room = await stageBox(page)
   const spread = await spreadBox(page)

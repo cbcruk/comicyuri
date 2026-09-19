@@ -3,17 +3,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-import { counter, readBook, readMenuItem, stage, use } from './fixture/app.ts'
-import type { MenuControl } from './fixture/app.ts'
-
-/**
- * 메뉴 항목 오른쪽 곁글에 적힌 지금 값을 본다. 예전 툴바 버튼에 적혀 있던 글자가
- * 그리로 옮겨 갔다 — 항목 자체의 이름은 상태와 상관없이 그대로다.
- */
-const expectHint = (page: Page, which: MenuControl, value: string): Promise<void> =>
-  readMenuItem(page, which, async (item) => {
-    await expect(item.locator('[aria-hidden="true"] > span')).toHaveText(value)
-  })
+import { chooseFit, counter, readBook, stage, use } from './fixture/app.ts'
 
 /** 너비를 채우면 화면보다 훨씬 길어지는 페이지. */
 const TALL_BOOK = { fileName: 'volume-1.cbz', pageCount: 6, size: { width: 800, height: 4000 } }
@@ -45,8 +35,7 @@ const scrollToBottom = async (page: Page): Promise<void> => {
 /** 페이지를 너비에 맞춘 채로 연다. 그래야 화면보다 길어져 굴릴 것이 생긴다. */
 const readTall = async (page: Page): Promise<void> => {
   await readBook(page, TALL_BOOK)
-  await use(page, 'fit')
-  await expectHint(page, 'fit', 'Width')
+  await chooseFit(page, 'Width')
 
   const box = await boxOf(page, 'stage')
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)

@@ -490,9 +490,14 @@ e2e "R-222 · 두 장이 화면보다 넓어도 뒤로 넘기면 두 장이 나�
 ✅ spreads "two-page mode leaves the cover alone so the pairs after it line up",
 "without the cover rule the pairing starts at the first page"
 
-**R-224 · 맞춤 모드는 네 가지를 순환한다**
-Fit → Width → Height → 1:1 → Fit.
-Fit은 화면 안에 통째로, Width는 너비를, Height는 높이를 채우고, 1:1은 원래 픽셀
+**R-224 · 맞춤 모드 넷 가운데 하나를 고른다**
+보기 메뉴의 `Fit to` 서브메뉴에 라디오(`menuitemradio`) 넷이 선다 — `Page`·`Width`·
+`Height`·`Original size`. 이름은 서브메뉴 이름에 이어 읽힌다("Fit to Width"). 순환이 아니라
+고르기라서 원하는 모드까지 여러 번 열고 누를 일이 없고, 이미 걸린 모드를 골라도 그대로다.
+걸린 모드가 `aria-checked`를 지므로 지금 값을 따로 적어 둘 곁글도 없다. 맞춤 모드에는
+단축키가 없다.
+
+아래에서 Fit은 `Page`, 1:1은 `Original size`다. Fit은 화면 안에 통째로, Width는 너비를, Height는 높이를 채우고, 1:1은 원래 픽셀
 크기다. 세로로 긴 페이지에서는 Fit과 Height가 같은 그림이 된다 — 정의상 Fit은 먼저
 닿는 쪽을 따른다.
 
@@ -503,14 +508,13 @@ Fit은 화면 안에 통째로, Width는 너비를, Height는 높이를 채우�
 Fit과 1:1은 줄이기만 하고 늘리지 않는다. 화면보다 작은 페이지는 원래 크기 그대로
 선다. 채우는 두 모드(Width·Height)만 늘리고, 그것을 멈추는 것이 `R-2B4`다.
 
-메뉴 항목의 이름은 늘 "Change how pages are fitted"이고, 지금 값은 그 곁글에 적힌다.
-✅ reader/story "cycling the fit mode walks the four modes and comes back",
-chrome/screen "the view menu carries every control that changes how a page is shown",
+✅ reader/story "choosing a fit mode sets it, whichever mode was on before",
+chrome/screen "fit to offers the four modes and marks the one in use", "choosing a fit mode
+asks for that mode, not the next one",
 e2e "R-224 · Fit은 페이지를 화면 안에 통째로 넣는다", "R-224 · 두 장 모드의 Fit은 두 장을
 합쳐 화면 안에 넣는다", "R-224 · 두 장 모드의 Width는 두 장을 합쳐 너비를 채운다", "R-224 · Width는 너비를
 채운다", "R-224 · Height는 높이를 채운다", "R-224 · 1:1은 원래 픽셀 크기로 둔다",
 "R-224 · 통째로 맞춤은 켜 두어도 작은 페이지를 늘리지 않는다"
-📖 메뉴 항목 옆에 지금 걸린 모드가 적히는 것 — 재는 테스트가 없다
 
 **R-225 · 바꾼 설정은 저장되고 다음 책에도 적용된다**
 ✅ state/settings "what was written is what a later session reads",
@@ -776,8 +780,9 @@ bookmark from this page`), 슬라이드쇼(`Start the slideshow`/`Stop the slide
 전체화면(`Enter fullscreen`/`Leave fullscreen`). 여기에 `aria-checked`를 얹으면 같은 말을
 두 번 하고, "Stop the slideshow, 체크됨"은 멈춤이 걸렸다는 말로 들린다. 패널을 여는 항목
 (`Show every page`, `Reading settings`)과 `Hide the toolbar`는 누르면 그것이 메뉴바를 덮거나
-치우므로, 체크 상자로 두면 늘 "체크 안 됨"이라 읽혀 틀린 말을 한다. 읽는 방향만은 두 값
-가운데 하나를 고르는 것이라 서브메뉴 안의 `menuitemradio` 둘이다(`R-221`).
+치우므로, 체크 상자로 두면 늘 "체크 안 됨"이라 읽혀 틀린 말을 한다. 읽는 방향과 맞춤
+모드만은 여럿 가운데 하나를 고르는 것이라 서브메뉴 안의 `menuitemradio`다(`R-221`,
+`R-224`).
 
 슬라이더와 카운터는 메뉴에 접지 않고 푸터에 남는다. 읽는 동안 손이 계속
 가는 것들이다. 한 장씩·끝으로 넘기는 First·Previous·Next·Last는 Go 메뉴에만 있다 — 키와

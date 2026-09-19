@@ -613,12 +613,16 @@ describe('layout', () => {
     )
   })
 
-  test('cycling the fit mode walks the four modes and comes back', () => {
+  test('choosing a fit mode sets it, whichever mode was on before', () => {
     story(
       update,
       given(openingModel()),
       ...opened(0),
-      message(Message.ClickedCycleFit()),
+      message(Message.ChoseFit({ fit: 'original' })),
+      model((model) => {
+        expect(model.settings.fit).toBe('original')
+      }),
+      message(Message.ChoseFit({ fit: 'width' })),
       model((model) => {
         expect(model.settings.fit).toBe('width')
       }),

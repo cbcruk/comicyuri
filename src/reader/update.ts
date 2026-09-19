@@ -14,7 +14,6 @@ import { rotatedRight } from '../reader/rotation.ts'
 import { pannedBy, turnFromEdge } from '../reader/scroll.ts'
 import { flipBinding, indexOfPage, pagesAt, spreadsFor } from '../reader/spread.ts'
 import { nudgedSlideSeconds, nudgedThreshold } from '../settings.ts'
-import type { FitMode } from '../types.ts'
 import { ToggleFullscreen } from './command.ts'
 import { messageForKey } from './keys.ts'
 import { Message, OutMessage } from './message.ts'
@@ -36,18 +35,6 @@ import {
   clickedToggleThumbs,
   selectedThumb,
 } from './update/thumbs.ts'
-
-const FIT_ORDER: ReadonlyArray<FitMode> = ['contain', 'width', 'height', 'original']
-
-const nextFit = (fit: FitMode): FitMode =>
-  Option.getOrElse(
-    Array.get(
-      FIT_ORDER,
-      (Array.findFirstIndex(FIT_ORDER, (f) => f === fit).pipe(Option.getOrElse(() => 0)) + 1) %
-        FIT_ORDER.length,
-    ),
-    () => fit,
-  )
 
 /**
  * 리더가 가진 설정이 바뀌었다. 다시 배치하고 애플리케이션에 알린다.
@@ -167,7 +154,8 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         },
       }),
 
-    ClickedCycleFit: (): UpdateReturn => withSettings(model, evo(model.settings, { fit: nextFit })),
+    ChoseFit: ({ fit }): UpdateReturn =>
+      withSettings(model, evo(model.settings, { fit: () => fit })),
 
     ClickedToggleBinding: (): UpdateReturn => flipBindingHere(model),
 
