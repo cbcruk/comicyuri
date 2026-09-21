@@ -32,6 +32,16 @@ export const Theme = Schema.Literals(['dark', 'light'])
 export type Theme = typeof Theme.Type
 
 /**
+ * 화면 문구의 언어. `auto`는 브라우저가 말하는 언어를 따른다(`S-151`).
+ *
+ * 읽는 방향(`R-221`)과는 아무 상관이 없다. 한국어로 읽으면서 오른쪽에서 왼쪽으로 넘길 수
+ * 있고, 영어로 읽으면서도 그럴 수 있다.
+ */
+export const LocaleSetting = Schema.Literals(['auto', 'en', 'ko'])
+/** {@linkcode LocaleSetting} 스키마의 디코딩된 값. */
+export type LocaleSetting = typeof LocaleSetting.Type
+
+/**
  * 책의 끝을 넘어서 넘기려 할 때 무엇을 할지.
  *
  * `stop`은 제자리에 머물고, `wrap`은 같은 책의 반대쪽 끝으로 가며, `next`는
@@ -61,6 +71,7 @@ const DEFAULTS = {
   view: 'single',
   fit: 'contain',
   theme: 'dark',
+  locale: 'auto',
   coverAlone: true,
   singleThreshold: 0.74,
   enlargeToFit: true,
@@ -84,6 +95,7 @@ export const Settings = Schema.Struct({
   view: ViewMode.pipe(Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.view))),
   fit: FitMode.pipe(Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.fit))),
   theme: Theme.pipe(Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.theme))),
+  locale: LocaleSetting.pipe(Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.locale))),
   /** 두 장 모드에서 맨 첫 장(표지)을 혼자 보여 준다. */
   coverAlone: Schema.Boolean.pipe(
     Schema.withDecodingDefaultKey(Effect.succeed(DEFAULTS.coverAlone)),

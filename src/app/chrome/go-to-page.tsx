@@ -20,6 +20,8 @@ import { VStack } from '@astryxdesign/core/VStack'
 import { useCallback, useRef, useState } from 'react'
 import type { Ref } from 'react'
 
+import { useMessages } from '../i18n/messages.ts'
+
 /** 카운터 버튼의 모양. 크기와 색은 모두 Astryx 토큰에서 온다. */
 const styles = stylex.create({
   counter: {
@@ -71,6 +73,7 @@ export type GoToPageProps = Readonly<{
  *   움직이면 다 적은 뒤의 한 번이라는 약속이 흐려진다.
  */
 export const GoToPage = ({ counter, page, pageCount, onGoToPage, triggerRef }: GoToPageProps) => {
+  const { footer } = useMessages()
   const [isOpen, setIsOpen] = useState(false)
   const [openings, setOpenings] = useState(0)
   const boxRef = useRef<HTMLInputElement>(null)
@@ -114,7 +117,7 @@ export const GoToPage = ({ counter, page, pageCount, onGoToPage, triggerRef }: G
         onOpenChange={changeOpen}
         purpose="info"
         width={320}
-        aria-label="Go to page"
+        aria-label={footer.goToPage}
       >
         {/*
           창을 닫는 Escape가 문서까지 올라가면 리더가 그것을 책을 떠나라는 뜻으로 읽는다. 입력란의
@@ -127,11 +130,11 @@ export const GoToPage = ({ counter, page, pageCount, onGoToPage, triggerRef }: G
           }}
         >
           <VStack gap={4}>
-            <DialogHeader title="Go to page" onOpenChange={changeOpen} />
+            <DialogHeader title={footer.goToPage} onOpenChange={changeOpen} />
             <NumberInput
               key={openings}
               ref={boxRef}
-              label={`Page (1–${pageCount})`}
+              label={footer.pageRange(pageCount)}
               hasAutoFocus={true}
               value={null}
               placeholder={String(page + 1)}
@@ -147,8 +150,8 @@ export const GoToPage = ({ counter, page, pageCount, onGoToPage, triggerRef }: G
               onEnter={submit}
             />
             <HStack justify="end" gap={2}>
-              <Button label="Cancel" variant="secondary" onClick={() => changeOpen(false)} />
-              <Button label="Go" variant="primary" onClick={submit} />
+              <Button label={footer.cancel} variant="secondary" onClick={() => changeOpen(false)} />
+              <Button label={footer.go} variant="primary" onClick={submit} />
             </HStack>
           </VStack>
         </div>

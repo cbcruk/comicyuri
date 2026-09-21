@@ -1,19 +1,31 @@
 /**
- * 앱 전체를 감싸는 것들. Atom 레지스트리와 Astryx 테마다.
+ * 앱 전체를 감싸는 것들. Atom 레지스트리와 Astryx 테마, 그리고 Astryx의 언어다.
  *
  * 레지스트리가 atom의 수명을 쥔다. 페이지 URL이 여기에 매여 있어서(`src/atoms/pages.ts`),
  * 화면이 더 이상 원하지 않는 페이지는 레지스트리가 치우며 URL도 함께 놓인다.
  *
  * 색은 모두 Astryx 중립 테마에서 온다. 루트의 `Theme`는 `<html>`에 `data-theme`과
  * `data-astryx-theme`을 세우고, 테마 CSS와 `light-dark()` 토큰이 그 둘을 따라 갈라진다(`S-142`).
+ *
+ * Astryx에도 같은 언어를 넘긴다(`S-151`). 그러지 않으면 앱은 한국어인데 Astryx가 제 문구
+ * ("Close popover" 같은 것)를 영어로 말한다.
  */
 
 import { RegistryProvider, useAtomValue } from '@effect/atom-react'
+import { InternationalizationProvider } from '@astryxdesign/core/i18n'
 import { Theme } from '@astryxdesign/core/theme'
 import { neutralTheme } from '@astryxdesign/theme-neutral/built'
+import koKR from '@astryxdesign/core/locales/ko-KR.json'
 import type { ReactNode } from 'react'
 
+import { localeAtom } from './i18n/atoms.ts'
+import { LANGUAGE_TAG } from './i18n/locale.ts'
 import { themeAtom } from './shelfAtoms.ts'
+
+/**
+ * Astryx가 제 문구에 쓸 언어. 영어 카탈로그는 Astryx가 이미 지고 있어 넘기지 않는다.
+ */
+const ASTRYX_MESSAGES = { 'ko-KR': koKR }
 
 /**
  * 고른 테마로 Astryx를 세운다.
@@ -25,9 +37,14 @@ import { themeAtom } from './shelfAtoms.ts'
  * 있으므로 런타임에 `<style>`을 다시 꽂을 일이 없고, 첫 페인트에도 서 있다(`S-144`).
  */
 const ThemedRoot = ({ children }: Readonly<{ children: ReactNode }>) => (
-  <Theme theme={neutralTheme} mode={useAtomValue(themeAtom)}>
-    {children}
-  </Theme>
+  <InternationalizationProvider
+    locale={LANGUAGE_TAG[useAtomValue(localeAtom)]}
+    messages={ASTRYX_MESSAGES}
+  >
+    <Theme theme={neutralTheme} mode={useAtomValue(themeAtom)}>
+      {children}
+    </Theme>
+  </InternationalizationProvider>
 )
 
 /** 레지스트리와 테마를 세운다. */

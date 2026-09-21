@@ -272,6 +272,29 @@ JSON이 깨졌거나 `theme`이 아는 값이 아니면 아무것도 하지 않�
 | ✅ e2e "S-144 · 라이트를 고른 사람은 어두운 첫 프레임을 보지 않는다", "S-144 · 다크를 |
 | 고른 사람의 첫 프레임은 그대로 어둡다"                                                |
 
+### 1.5 화면 언어
+
+**S-151 · 화면 문구의 언어**
+문구는 언어별 카탈로그(`src/app/i18n/`)에 모여 있고, 영어 카탈로그가 다른 언어의 본이다 —
+키가 하나라도 빠지면 타입 검사가 잡는다. 지금 있는 언어는 영어와 한국어다.
+
+설정의 `locale`이 `auto`(기본값)이면 브라우저가 매겨 둔 언어 순서(`navigator.languages`)를
+앞에서부터 훑어 카탈로그가 있는 첫 언어를 고른다. 지역 태그는 앞자리만 본다 — `ko-KR`도
+`ko`도 한국어다. 아는 언어가 없으면 영어다.
+
+고른 언어는 세 곳에 함께 걸린다. 앱의 문구, 문서 루트의 `lang`, 그리고 Astryx의 제 문구
+("Close popover" 같은 것)다. `lang`은 첫 글자가 그려지기 전에 서야 해서 `main.tsx`가 모듈을
+받자마자 세운다.
+
+읽는 방향(`R-221`)과는 아무 상관이 없다. 한국어로 읽으면서 오른쪽에서 왼쪽으로 넘길 수 있다.
+✅ i18n/locale "a chosen language wins over what the browser says", "automatic takes the
+first language it has words for", "a regional tag is the language in front of it", "a browser
+that speaks nothing it knows gets English",
+e2e "S-151 · 한국어 브라우저에서는 메뉴가 한국어로 선다", "S-151 · 문서의 언어도 한국어가 된다"
+⚠️ 옮긴 것은 아직 메뉴바와 넘김 줄뿐이다. 책장·설정 패널·오류 문구는 영어로 남아 있어서,
+한국어 브라우저에서는 두 언어가 섞여 보인다. 남은 화면을 옮기는 것이 다음 단계다.
+📖 설정에서 언어를 고르는 자리 — 아직 없다. `locale`을 적을 수는 있어도 화면에 그 줄이 없다
+
 ---
 
 ## 2. 리더
