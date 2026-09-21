@@ -7,6 +7,14 @@ import { readBook, use } from './fixture/app.ts'
 test.describe('한국어로 말하는 브라우저', () => {
   test.use({ locale: 'ko-KR' })
 
+  test('S-151 · 실패도 한국어로 말한다', async ({ page }) => {
+    await page.goto('/')
+    await page.goto('/book/gone.zip::1')
+
+    await expect(page.getByText('그 책은 책장에 없습니다 ("gone.zip::1")')).toBeVisible()
+    await expect(page.getByRole('button', { name: '← 책장' })).toBeVisible()
+  })
+
   test('S-151 · 책장이 한국어로 선다', async ({ page }) => {
     await page.goto('/')
 

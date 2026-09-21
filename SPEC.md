@@ -299,12 +299,14 @@ JSON이 깨졌거나 `theme`이 아는 값이 아니면 아무것도 하지 않�
 first language it has words for", "a regional tag is the language in front of it", "a browser
 that speaks nothing it knows gets English",
 domain/book "a book that knows its length says it in the words it was given",
+errors "each failure asks the words it needs for, with what it knows", "an archive failure
+says which of its reasons it was",
 settings/screen "S-151 · the language row offers the browser default and the languages there
 are words for",
-e2e "S-151 · 책장이 한국어로 선다", "S-151 · 설정에서 고른 언어가 화면에 걸리고 새로고침을
-넘긴다"
-⚠️ 오류 문구(`src/errors.ts`와 io 계층의 `reason`)는 아직 영어다. 화면에 나오는 것은 대부분
-책장의 상태 줄이고, 그것을 옮기려면 io 계층까지 함께 고쳐야 한다.
+e2e "S-151 · 책장이 한국어로 선다", "S-151 · 실패도 한국어로 말한다", "S-151 · 설정에서 고른
+언어가 화면에 걸리고 새로고침을 넘긴다"
+실패도 읽는 사람의 언어로 말한다. io 계층은 영어 문장이 아니라 무엇이 잘못됐는지의 이름만
+남기고(`ArchiveReason`·`CoverReason`), 문장으로 바꾸는 일은 `describe`가 화면의 언어로 한다.
 
 ---
 

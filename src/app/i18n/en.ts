@@ -125,6 +125,29 @@ export const en = {
     title: 'Nothing here',
     backToShelf: 'Back to the shelf',
   },
+  error: {
+    db: (op: string) => `Shelf storage is unavailable (${op})`,
+    emptyBook: (title: string) => `No images found in "${title}"`,
+    missingBook: (id: string) => `That book is no longer on the shelf ("${id}")`,
+    noComicFiles: 'No comic files found (images or .cbz/.zip)',
+    unknown: 'Something went wrong',
+    openBook: 'Could not open the book',
+    showPage: 'This page could not be shown',
+    archive: {
+      notAnArchive: 'Not a valid ZIP/CBZ archive',
+      directoryCorrupt: 'The archive directory is corrupt',
+      inflate: 'Could not decompress an archive entry',
+      unsupportedMethod: (method: number) => `Unsupported compression method ${method}`,
+      unreadable: (name: string) => `Could not read "${name}"`,
+      pageMissing: (page: number) => `Page ${page} is not in this book`,
+    },
+    cover: {
+      decode: 'Could not decode the cover image',
+      timeout: 'Timed out decoding the cover image',
+      noCanvas: 'Canvas 2D is unavailable',
+      encode: 'Could not encode the cover image',
+    },
+  },
   footer: {
     slider: 'Page',
     /** 손잡이를 끌 때 뜨는 글자. `page`는 1부터 센 번호다. */

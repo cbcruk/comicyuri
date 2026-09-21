@@ -10,6 +10,7 @@
 
 import { Effect } from 'effect'
 import { ArchiveError } from '../errors.ts'
+import type { ArchiveReason } from '../errors.ts'
 
 /** 중앙 디렉터리에 적힌 파일 하나. 자리는 찾았지만 아직 읽지는 않았다. */
 export interface ZipEntry {
@@ -39,7 +40,7 @@ const inflateRaw = (
       const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))
       return new Uint8Array(await new Response(stream).arrayBuffer())
     },
-    catch: (cause) => new ArchiveError({ reason: 'Could not decompress an archive entry', cause }),
+    catch: (cause) => new ArchiveError({ reason: { kind: 'inflate' }, cause }),
   })
 
 /** blob에서 `[start, end)` 구간만 읽는다. 파일 끝을 넘는 부분은 잘려서 온다. */
@@ -47,7 +48,7 @@ const readRange = (
   blob: Blob,
   start: number,
   end: number,
-  reason: string,
+  reason: ArchiveReason,
 ): Effect.Effect<ArrayBuffer, ArchiveError> =>
   Effect.tryPromise({
     try: () => blob.slice(start, end).arrayBuffer(),
@@ -119,25 +120,20 @@ export class ZipArchive {
   static open(blob: Blob): Effect.Effect<ZipArchive, ArchiveError> {
     return Effect.gen(function* () {
       const tailStart = Math.max(0, blob.size - (EOCD_SIZE + MAX_COMMENT))
-      const tail = yield* readRange(blob, tailStart, blob.size, 'Could not read the archive')
+      const tail = yield* readRange(blob, tailStart, blob.size, { kind: 'notAnArchive' })
       const eocd = findEocd(new DataView(tail))
-      if (eocd < 0) return yield* new ArchiveError({ reason: 'Not a valid ZIP/CBZ archive' })
+      if (eocd < 0) return yield* new ArchiveError({ reason: { kind: 'notAnArchive' } })
 
       const view = new DataView(tail)
       const count = view.getUint16(eocd + 10, true)
       const size = view.getUint32(eocd + 12, true)
       const offset = view.getUint32(eocd + 16, true)
 
-      const directory = yield* readRange(
-        blob,
-        offset,
-        offset + size,
-        'Could not read the archive directory',
-      )
+      const directory = yield* readRange(blob, offset, offset + size, { kind: 'directoryCorrupt' })
 
       const entries = yield* Effect.try({
         try: () => readCentralDirectory(directory, count),
-        catch: (cause) => new ArchiveError({ reason: 'The archive directory is corrupt', cause }),
+        catch: (cause) => new ArchiveError({ reason: { kind: 'directoryCorrupt' }, cause }),
       })
 
       return new ZipArchive(blob, entries)
@@ -151,7 +147,7 @@ export class ZipArchive {
    * 확인하는 곳은 없고, 다른 데서 온 오프셋은 엉뚱한 바이트를 읽는다.
    */
   extract(entry: ZipEntry): Effect.Effect<Uint8Array<ArrayBuffer>, ArchiveError> {
-    const reason = `Could not read "${entry.name}"`
+    const reason: ArchiveReason = { kind: 'unreadable', name: entry.name }
     const blob = this.blob
 
     return Effect.gen(function* () {
@@ -178,7 +174,7 @@ export class ZipArchive {
       if (entry.method === 0) return bytes
       if (entry.method === 8) return yield* inflateRaw(bytes)
       return yield* new ArchiveError({
-        reason: `Unsupported compression method ${entry.method}`,
+        reason: { kind: 'unsupportedMethod', method: entry.method },
       })
     })
   }

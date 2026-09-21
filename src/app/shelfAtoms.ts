@@ -63,7 +63,7 @@ export const shelfAtom = Atom.make((get) => {
 
   return get.result(recordsAtom).pipe(
     Effect.map((records) => records.map((record) => toShelfBook(record, words))),
-    Effect.catch((error) => Effect.fail(describe(error))),
+    Effect.catch((error) => Effect.fail(describe(error, catalogFor(get(localeAtom)).error))),
   )
 })
 
@@ -153,7 +153,9 @@ export const importFilesAtom = Atom.fn<ReadonlyArray<File>>()((files, get) =>
     Effect.tap(() => Effect.sync(() => get.refresh(recordsAtom))),
     Effect.tap(() => requestPersistentStorage),
     Effect.as(Option.none<string>()),
-    Effect.catch((error) => Effect.succeed(Option.some(describe(error)))),
+    Effect.catch((error) =>
+      Effect.succeed(Option.some(describe(error, catalogFor(get(localeAtom)).error))),
+    ),
   ),
 )
 
@@ -168,7 +170,9 @@ export const deleteBookAtom = Atom.fn<string>()((id: string, get) =>
   deleteBook(id).pipe(
     Effect.tap(() => Effect.sync(() => get.refresh(recordsAtom))),
     Effect.as(Option.none<string>()),
-    Effect.catch((error) => Effect.succeed(Option.some(describe(error)))),
+    Effect.catch((error) =>
+      Effect.succeed(Option.some(describe(error, catalogFor(get(localeAtom)).error))),
+    ),
   ),
 )
 
