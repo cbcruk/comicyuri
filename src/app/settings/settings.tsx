@@ -36,7 +36,7 @@ import {
   THRESHOLD_STEP,
 } from '../../settings.ts'
 import type { AtBookEnd, LocaleSetting, Resume, Settings } from '../../types.ts'
-import type { Catalog } from '../i18n/en.ts'
+import type { Translate } from '../i18n/format.ts'
 import { useMessages } from '../i18n/messages.ts'
 
 const AT_BOOK_END_ORDER: ReadonlyArray<AtBookEnd> = ['next', 'wrap', 'stop']
@@ -46,16 +46,16 @@ const RESUME_ORDER: ReadonlyArray<Resume> = ['continue', 'ask', 'restart']
 const LOCALE_ORDER: ReadonlyArray<LocaleSetting> = ['auto', 'en', 'ko']
 
 /** 고르는 줄에 적히는 이름들. 같은 카탈로그에서 온다(`S-151`). */
-const atBookEndLabels = (words: Catalog['settings']): Readonly<Record<AtBookEnd, string>> => ({
-  next: words.nextBook,
-  wrap: words.backToStart,
-  stop: words.stayPut,
+const atBookEndLabels = (t: Translate): Readonly<Record<AtBookEnd, string>> => ({
+  next: t('settings.nextBook'),
+  wrap: t('settings.backToStart'),
+  stop: t('settings.stayPut'),
 })
 
-const resumeLabels = (words: Catalog['settings']): Readonly<Record<Resume, string>> => ({
-  continue: words.goThere,
-  ask: words.ask,
-  restart: words.startOver,
+const resumeLabels = (t: Translate): Readonly<Record<Resume, string>> => ({
+  continue: t('settings.goThere'),
+  ask: t('settings.ask'),
+  restart: t('settings.startOver'),
 })
 
 /**
@@ -64,10 +64,10 @@ const resumeLabels = (words: Catalog['settings']): Readonly<Record<Resume, strin
  * 언어 이름은 그 언어로 적는다 — `English`와 `한국어`다. 영어로 보는 중에 한국어를 찾는
  * 사람에게 `Korean`은 읽을 수 없는 이름이다. `auto`만은 무엇을 따른다는 말이라 옮긴다.
  */
-const localeLabels = (words: Catalog['settings']): Readonly<Record<LocaleSetting, string>> => ({
-  auto: words.languageAuto,
-  en: words.languageEnglish,
-  ko: words.languageKorean,
+const localeLabels = (t: Translate): Readonly<Record<LocaleSetting, string>> => ({
+  auto: t('settings.languageAuto'),
+  en: t('settings.languageEnglish'),
+  ko: t('settings.languageKorean'),
 })
 
 /**
@@ -288,7 +288,7 @@ export const SettingsPanel = ({
   onSelectResume,
   onSelectLocale,
 }: SettingsPanelProps) => {
-  const words = useMessages().settings
+  const t = useMessages()
 
   return (
     <Dialog
@@ -299,7 +299,7 @@ export const SettingsPanel = ({
       variant="fullscreen"
       purpose="form"
       padding={0}
-      aria-label={title ?? words.title}
+      aria-label={title ?? t('settings.title')}
     >
       <Layout
         padding={0}
@@ -307,82 +307,82 @@ export const SettingsPanel = ({
         header={
           <LayoutHeader hasDivider={true} padding={0}>
             <HStack align="center" gap={2} paddingInline={4} paddingBlock={2}>
-              <span {...stylex.props(styles.title)}>{title ?? words.title}</span>
-              <Button label={words.close} variant="secondary" size="sm" onClick={onClose} />
+              <span {...stylex.props(styles.title)}>{title ?? t('settings.title')}</span>
+              <Button label={t('settings.close')} variant="secondary" size="sm" onClick={onClose} />
             </HStack>
           </LayoutHeader>
         }
       >
         <LayoutContent padding={0} xstyle={styles.rows}>
           <SwitchRow
-            label={words.coverAlone}
+            label={t('settings.coverAlone')}
             isChecked={settings.coverAlone}
             onToggle={onToggleCoverAlone}
           />
-          <SettingRow label={words.threshold}>
+          <SettingRow label={t('settings.threshold')}>
             <NudgeRow
               shown={settings.singleThreshold.toFixed(2)}
               down={{
-                label: words.pairMore,
+                label: t('settings.pairMore'),
                 isBlocked: settings.singleThreshold <= THRESHOLD_MIN,
                 onNudge: () => onNudgeThreshold(-THRESHOLD_STEP),
               }}
               up={{
-                label: words.pairFewer,
+                label: t('settings.pairFewer'),
                 isBlocked: settings.singleThreshold >= THRESHOLD_MAX,
                 onNudge: () => onNudgeThreshold(THRESHOLD_STEP),
               }}
             />
           </SettingRow>
           <SwitchRow
-            label={words.splitWide}
+            label={t('settings.splitWide')}
             isChecked={settings.splitWide}
             onToggle={onToggleSplitWide}
           />
           <SwitchRow
-            label={words.enlargeToFit}
+            label={t('settings.enlargeToFit')}
             isChecked={settings.enlargeToFit}
             onToggle={onToggleEnlargeToFit}
           />
           <SwitchRow
-            label={words.rememberBookSettings}
+            label={t('settings.rememberBookSettings')}
             isChecked={settings.rememberBookSettings}
             onToggle={onToggleRememberBookSettings}
           />
-          <SettingRow label={words.slideSeconds}>
+          <SettingRow label={t('settings.slideSeconds')}>
             <NudgeRow
               shown={`${settings.slideSeconds}s`}
               down={{
-                label: words.lessTime,
+                label: t('settings.lessTime'),
                 isBlocked: settings.slideSeconds <= SLIDE_MIN,
                 onNudge: () => onNudgeSlideSeconds(-SLIDE_STEP),
               }}
               up={{
-                label: words.moreTime,
+                label: t('settings.moreTime'),
                 isBlocked: settings.slideSeconds >= SLIDE_MAX,
                 onNudge: () => onNudgeSlideSeconds(SLIDE_STEP),
               }}
             />
           </SettingRow>
           <ChoiceRow
-            label={words.atBookEnd}
+            label={t('settings.atBookEnd')}
             options={AT_BOOK_END_ORDER}
             chosen={settings.atBookEnd}
-            labels={atBookEndLabels(words)}
+            labels={atBookEndLabels(t)}
             onSelect={onSelectAtBookEnd}
           />
           <ChoiceRow
-            label={words.resume}
+            label={t('settings.resume')}
             options={RESUME_ORDER}
             chosen={settings.resume}
-            labels={resumeLabels(words)}
+            labels={resumeLabels(t)}
             onSelect={onSelectResume}
           />
           <ChoiceRow
-            label={words.language}
+            label={t('settings.language')}
             options={LOCALE_ORDER}
             chosen={settings.locale}
-            labels={localeLabels(words)}
+            labels={localeLabels(t)}
             onSelect={onSelectLocale}
           />
         </LayoutContent>

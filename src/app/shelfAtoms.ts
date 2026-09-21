@@ -24,8 +24,8 @@ import type { StoredBook } from '../io/db.ts'
 import { bookFromStored, measurePages, storedBooksFromFiles } from '../io/loader.ts'
 import { loadSettings, saveSettings } from '../io/storage.ts'
 import { localeAtom } from './i18n/atoms.ts'
-import type { Catalog } from './i18n/en.ts'
-import { catalogFor } from './i18n/messages.ts'
+import { translatorFor } from './i18n/format.ts'
+import type { Translate } from './i18n/format.ts'
 import { makeCover } from '../io/thumbnail.ts'
 import type { Theme } from '../types.ts'
 
@@ -37,10 +37,10 @@ export type ShelfBook = Readonly<{
   countLabel: string
 }>
 
-const toShelfBook = (stored: StoredBook, words: Catalog['shelf']): ShelfBook => ({
+const toShelfBook = (stored: StoredBook, t: Translate): ShelfBook => ({
   id: stored.id,
   title: stored.title,
-  countLabel: Book.pageCountLabel(Book.fromRecord(stored, Option.none()), words),
+  countLabel: Book.pageCountLabel(Book.fromRecord(stored, Option.none()), t),
 })
 
 /**
@@ -59,11 +59,11 @@ const recordsAtom = Atom.make(getAllBooks)
  * 것은 `Cause`가 아니라 문장이다.
  */
 export const shelfAtom = Atom.make((get) => {
-  const words = catalogFor(get(localeAtom)).shelf
+  const t = translatorFor(get(localeAtom))
 
   return get.result(recordsAtom).pipe(
-    Effect.map((records) => records.map((record) => toShelfBook(record, words))),
-    Effect.catch((error) => Effect.fail(describe(error, catalogFor(get(localeAtom)).error))),
+    Effect.map((records) => records.map((record) => toShelfBook(record, t))),
+    Effect.catch((error) => Effect.fail(describe(error, translatorFor(get(localeAtom))))),
   )
 })
 
@@ -154,7 +154,7 @@ export const importFilesAtom = Atom.fn<ReadonlyArray<File>>()((files, get) =>
     Effect.tap(() => requestPersistentStorage),
     Effect.as(Option.none<string>()),
     Effect.catch((error) =>
-      Effect.succeed(Option.some(describe(error, catalogFor(get(localeAtom)).error))),
+      Effect.succeed(Option.some(describe(error, translatorFor(get(localeAtom))))),
     ),
   ),
 )
@@ -171,7 +171,7 @@ export const deleteBookAtom = Atom.fn<string>()((id: string, get) =>
     Effect.tap(() => Effect.sync(() => get.refresh(recordsAtom))),
     Effect.as(Option.none<string>()),
     Effect.catch((error) =>
-      Effect.succeed(Option.some(describe(error, catalogFor(get(localeAtom)).error))),
+      Effect.succeed(Option.some(describe(error, translatorFor(get(localeAtom))))),
     ),
   ),
 )

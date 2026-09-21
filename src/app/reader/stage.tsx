@@ -252,7 +252,7 @@ type SplitHalf = Readonly<{
  * 상자가 누우면 `cqw`·`cqh`도 함께 누우므로 반쪽이 그것을 따라간다.
  */
 const HalfPanel = ({ panel, half }: Readonly<{ panel: SpreadPanel; half: SplitHalf }>) => {
-  const { reader } = useMessages()
+  const t = useMessages()
   const ratio = half.ratio / 2
 
   return (
@@ -264,7 +264,7 @@ const HalfPanel = ({ panel, half }: Readonly<{ panel: SpreadPanel; half: SplitHa
         {...stylex.props(styles.halfImage)}
         style={{ left: half.side === 'left' ? '0' : '-100%' }}
         src={panel.url}
-        alt={reader.pageAlt(panel.page + 1)}
+        alt={t('reader.pageAlt', { page: panel.page + 1 })}
         draggable={false}
       />
     </div>
@@ -286,7 +286,7 @@ const FitPanel = ({
     )}
     src={panel.url}
     // eslint-disable-next-line react-hooks/rules-of-hooks -- 컴포넌트의 본문이다. JSX 안이라 눈에 그렇게 보일 뿐이다.
-    alt={useMessages().reader.pageAlt(panel.page + 1)}
+    alt={useMessages()('reader.pageAlt', { page: panel.page + 1 })}
     // 이미지는 기본으로 끌 수 있고, 끌기 시작하면 브라우저가 포인터 이벤트를 거두어 드래그
     // 이벤트로 갈아탄다. 그러면 스와이프가 첫 움직임 뒤에 잘린다 — 포인터로 넘기려던
     // 페이지 대신 이미지가 끌려간다.
@@ -295,7 +295,9 @@ const FitPanel = ({
 )
 
 /** 아직 아무것도 그릴 수 없을 때 스테이지 가운데 서는 글자(`R-207`). */
-const LoadingMessage = () => <p {...stylex.props(styles.message)}>{useMessages().reader.loading}</p>
+const LoadingMessage = () => (
+  <p {...stylex.props(styles.message)}>{useMessages()('reader.loading')}</p>
+)
 
 /**
  * 페이지 넘김 표시를 그릴지. `import.meta.hot`은 개발과 프로덕션 빌드를 가르는 값이고 빌드
@@ -380,7 +382,7 @@ const SpreadPanels = ({
  */
 const LateMessage = () => (
   <p role="status" {...stylex.props(styles.late)}>
-    {useMessages().reader.loading}
+    {useMessages()('reader.loading')}
   </p>
 )
 

@@ -202,7 +202,7 @@ const Thumb = ({
   onSelect,
   onRemoveBookmark,
 }: ThumbProps) => {
-  const { thumbs } = useMessages()
+  const t = useMessages()
   const url = useAtomValue(pageAtoms.pageUrl(bookId, page))
 
   return (
@@ -213,7 +213,7 @@ const Thumb = ({
       */}
       <button
         type="button"
-        aria-label={thumbs.goToPage(page + 1)}
+        aria-label={t('thumbs.goToPage', { page: page + 1 })}
         onClick={() => onSelect(page)}
         {...stylex.props(styles.thumb, isBookmarked && styles.bookmarked)}
         style={{ height: `${Math.round(cellWidth * THUMB_RATIO)}px` }}
@@ -228,7 +228,7 @@ const Thumb = ({
       {canRemove ? (
         <div {...stylex.props(styles.remove)}>
           <Button
-            label={thumbs.removeBookmark(page + 1)}
+            label={t('thumbs.removeBookmark', { page: page + 1 })}
             icon={<span aria-hidden={true}>✕</span>}
             isIconOnly={true}
             variant="secondary"
@@ -281,7 +281,7 @@ export const ThumbsPanel = ({
 
   // 붙잡아 둘 까닭이 없는 계산이다. 페이지 수만큼 한 번 훑을 뿐이고, 리스트는 행의 개수와
   // 번호로만 읽으므로 배열이 새로 만들어져도 달라지는 것이 없다.
-  const { thumbs } = useMessages()
+  const t = useMessages()
   const rows = rowsFor(shownPages(pageCount, bookmarks, showsBookmarksOnly), perRowFor(width))
 
   const virtualizer = useVirtualizer({
@@ -291,7 +291,7 @@ export const ThumbsPanel = ({
     overscan: THUMB_OVERSCAN,
   })
 
-  const title = showsBookmarksOnly ? thumbs.bookmarks : thumbs.everyPage
+  const title = showsBookmarksOnly ? t('thumbs.bookmarks') : t('thumbs.everyPage')
   const isEmpty = showsBookmarksOnly && rows.length === 0
 
   return (
@@ -308,21 +308,21 @@ export const ThumbsPanel = ({
                 동안에는 둘 다 화면에 있다.
               */}
               <Button
-                label={showsBookmarksOnly ? thumbs.showAll : thumbs.showBookmarks}
+                label={showsBookmarksOnly ? t('thumbs.showAll') : t('thumbs.showBookmarks')}
                 variant="secondary"
                 size="sm"
                 onClick={onToggleBookmarksOnly}
               >
-                {showsBookmarksOnly ? thumbs.everyPage : thumbs.bookmarks}
+                {showsBookmarksOnly ? t('thumbs.everyPage') : t('thumbs.bookmarks')}
               </Button>
-              <Button label={thumbs.close} variant="secondary" size="sm" onClick={onClose} />
+              <Button label={t('thumbs.close')} variant="secondary" size="sm" onClick={onClose} />
             </HStack>
           </LayoutHeader>
         }
       >
         <LayoutContent ref={setScrollElement} id={THUMBS_ID} padding={0}>
           {/* 북마크가 없으면 행도 없어서, 트랙 위에 두어도 가상 리스트의 자리 셈이 어긋나지 않는다. */}
-          {isEmpty ? <p {...stylex.props(styles.empty)}>{thumbs.noBookmarks}</p> : null}
+          {isEmpty ? <p {...stylex.props(styles.empty)}>{t('thumbs.noBookmarks')}</p> : null}
           <div
             {...stylex.props(styles.track)}
             style={{ height: `${virtualizer.getTotalSize()}px` }}

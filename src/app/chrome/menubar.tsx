@@ -38,7 +38,7 @@ import { Schema } from 'effect'
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 
-import type { Catalog } from '../i18n/en.ts'
+import type { Translate } from '../i18n/format.ts'
 import { useMessages } from '../i18n/messages.ts'
 import { FitMode, ReadingDirection } from '../../types.ts'
 import { SHORTCUTS } from './shortcuts.ts'
@@ -56,13 +56,11 @@ type MenuId = (typeof MENU_IDS)[number]
  * 이름은 서브메뉴 이름에 이어 읽힌다 — "Fit to Page", "Fit to Width". 원래 크기만은 맞추는
  * 것이 아니라서 제 이름을 그대로 쓴다.
  */
-const fitChoices = (
-  item: Catalog['item'],
-): ReadonlyArray<Readonly<{ fit: FitMode; label: string }>> => [
-  { fit: 'contain', label: item.fitPage },
-  { fit: 'width', label: item.fitWidth },
-  { fit: 'height', label: item.fitHeight },
-  { fit: 'original', label: item.fitOriginal },
+const fitChoices = (t: Translate): ReadonlyArray<Readonly<{ fit: FitMode; label: string }>> => [
+  { fit: 'contain', label: t('item.fitPage') },
+  { fit: 'width', label: t('item.fitWidth') },
+  { fit: 'height', label: t('item.fitHeight') },
+  { fit: 'original', label: t('item.fitOriginal') },
 ]
 
 /** 메뉴바와 곁글의 모양. */
@@ -176,7 +174,7 @@ export type MenubarProps = Readonly<{
  * 움직인다. 위아래 화살표·Enter·Escape·글자로 찾기는 `DropdownMenu`의 것이다.
  */
 export const ReaderMenubar = ({ state, actions, onOpenGoToPage }: MenubarProps) => {
-  const { menu, item } = useMessages()
+  const t = useMessages()
   const [openMenu, setOpenMenu] = useState<MenuId | null>(null)
 
   const { listRef, handleKeyDown, handleFocus } = useListFocus<HTMLDivElement>({
@@ -239,160 +237,160 @@ export const ReaderMenubar = ({ state, actions, onOpenGoToPage }: MenubarProps) 
       ref={listRef}
       onClick={handleMenubarClick}
       role="menubar"
-      aria-label={menu.bar}
+      aria-label={t('menu.bar')}
       aria-orientation="horizontal"
       align="center"
       gap={1}
       onKeyDown={handleMenubarKeyDown}
       onFocus={handleFocus}
     >
-      <Menu id="book" label={menu.book} openMenu={openMenu} onOpenChange={changeOpen}>
+      <Menu id="book" label={t('menu.book')} openMenu={openMenu} onOpenChange={changeOpen}>
         <DropdownMenuItem
-          label={item.shelf}
+          label={t('item.shelf')}
           onClick={actions.onExit}
           endContent={<MenuHint shortcut={SHORTCUTS.exit} />}
         />
         <DropdownMenuItem
-          label={state.isBookmarked ? item.removeBookmark : item.addBookmark}
+          label={state.isBookmarked ? t('item.removeBookmark') : t('item.addBookmark')}
           onClick={actions.onToggleBookmark}
           endContent={<MenuHint shortcut={SHORTCUTS.bookmark} />}
         />
         <DropdownMenuItem
-          label={item.everyPage}
+          label={t('item.everyPage')}
           onClick={actions.onToggleThumbs}
           endContent={<MenuHint shortcut={SHORTCUTS.thumbs} />}
         />
       </Menu>
 
-      <Menu id="view" label={menu.view} openMenu={openMenu} onOpenChange={changeOpen}>
+      <Menu id="view" label={t('menu.view')} openMenu={openMenu} onOpenChange={changeOpen}>
         {/*
           뒤집기가 아니라 고르기다. 두 값이 나란히 서고 걸린 쪽에 표시가 붙으므로,
           지금 어느 쪽인지 따로 적어 둘 곁글이 없다(`R-221`).
         */}
-        <DropdownMenuSubMenu label={item.readFrom}>
+        <DropdownMenuSubMenu label={t('item.readFrom')}>
           <DropdownMenuRadioGroup
-            label={item.readFrom}
+            label={t('item.readFrom')}
             value={state.direction}
             onChange={(value) => {
               if (Schema.is(ReadingDirection)(value)) actions.onChooseDirection(value)
             }}
           >
-            <DropdownMenuRadioItem value="rtl" label={item.rightToLeft} />
-            <DropdownMenuRadioItem value="ltr" label={item.leftToRight} />
+            <DropdownMenuRadioItem value="rtl" label={t('item.rightToLeft')} />
+            <DropdownMenuRadioItem value="ltr" label={t('item.leftToRight')} />
           </DropdownMenuRadioGroup>
         </DropdownMenuSubMenu>
         <DropdownMenuItem
-          label={item.toggleView}
+          label={t('item.toggleView')}
           onClick={actions.onToggleView}
           endContent={
             <MenuHint
-              value={state.view === 'spread' ? item.twoPages : item.onePage}
+              value={state.view === 'spread' ? t('item.twoPages') : t('item.onePage')}
               shortcut={SHORTCUTS.view}
             />
           }
         />
         {/* 순환이 아니라 고르기다. 원하는 모드까지 여러 번 열고 누를 일이 없다(`R-224`). */}
-        <DropdownMenuSubMenu label={item.fitTo}>
+        <DropdownMenuSubMenu label={t('item.fitTo')}>
           <DropdownMenuRadioGroup
-            label={item.fitTo}
+            label={t('item.fitTo')}
             value={state.fit}
             onChange={(value) => {
               if (Schema.is(FitMode)(value)) actions.onChooseFit(value)
             }}
           >
-            {fitChoices(item).map(({ fit, label }) => (
+            {fitChoices(t).map(({ fit, label }) => (
               <DropdownMenuRadioItem key={fit} value={fit} label={label} />
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuSubMenu>
         <DropdownMenuItem
-          label={item.rotate}
+          label={t('item.rotate')}
           onClick={actions.onRotate}
           endContent={<MenuHint shortcut={SHORTCUTS.rotate} />}
         />
         {/* 한 장 모드에는 뒤집을 묶기가 없으므로 자리도 두지 않는다(`R-227`). */}
         {state.view === 'spread' ? (
           <DropdownMenuItem
-            label={item.flipBinding}
+            label={t('item.flipBinding')}
             onClick={actions.onToggleBinding}
             endContent={<MenuHint shortcut={SHORTCUTS.binding} />}
           />
         ) : null}
         <DropdownMenuDivider />
         <DropdownMenuItem
-          label={item.zoomIn}
+          label={t('item.zoomIn')}
           onClick={actions.onZoomIn}
           endContent={<MenuHint shortcut={SHORTCUTS.zoomIn} />}
         />
         <DropdownMenuItem
-          label={item.zoomOut}
+          label={t('item.zoomOut')}
           onClick={actions.onZoomOut}
           endContent={<MenuHint shortcut={SHORTCUTS.zoomOut} />}
         />
         <DropdownMenuDivider />
         <DropdownMenuItem
-          label={state.isFullscreen ? item.leaveFullscreen : item.enterFullscreen}
+          label={state.isFullscreen ? t('item.leaveFullscreen') : t('item.enterFullscreen')}
           onClick={actions.onToggleFullscreen}
           endContent={<MenuHint shortcut={SHORTCUTS.fullscreen} />}
         />
         <DropdownMenuItem
-          label={item.hideToolbar}
+          label={t('item.hideToolbar')}
           onClick={actions.onToggleChrome}
           endContent={<MenuHint shortcut={SHORTCUTS.chrome} />}
         />
       </Menu>
 
-      <Menu id="go" label={menu.go} openMenu={openMenu} onOpenChange={changeOpen}>
+      <Menu id="go" label={t('menu.go')} openMenu={openMenu} onOpenChange={changeOpen}>
         <DropdownMenuItem
-          label={item.first}
+          label={t('item.first')}
           onClick={actions.onFirst}
           endContent={<MenuHint shortcut={SHORTCUTS.first} />}
         />
         <DropdownMenuItem
-          label={item.previous}
+          label={t('item.previous')}
           onClick={actions.onPrevious}
           endContent={<MenuHint shortcut={SHORTCUTS.previous} />}
         />
         <DropdownMenuItem
-          label={item.next}
+          label={t('item.next')}
           onClick={actions.onNext}
           endContent={<MenuHint shortcut={SHORTCUTS.next} />}
         />
         <DropdownMenuItem
-          label={item.last}
+          label={t('item.last')}
           onClick={actions.onLast}
           endContent={<MenuHint shortcut={SHORTCUTS.last} />}
         />
         <DropdownMenuDivider />
         <DropdownMenuItem
-          label={item.goToPage}
+          label={t('item.goToPage')}
           onClick={onOpenGoToPage}
           isDisabled={onOpenGoToPage === undefined}
         />
         <DropdownMenuDivider />
         <DropdownMenuItem
-          label={item.nextBookmark}
+          label={t('item.nextBookmark')}
           onClick={() => actions.onStepBookmark(1)}
           endContent={<MenuHint shortcut={SHORTCUTS.nextBookmark} />}
         />
         <DropdownMenuItem
-          label={item.previousBookmark}
+          label={t('item.previousBookmark')}
           onClick={() => actions.onStepBookmark(-1)}
           endContent={<MenuHint shortcut={SHORTCUTS.previousBookmark} />}
         />
       </Menu>
 
-      <Menu id="play" label={menu.play} openMenu={openMenu} onOpenChange={changeOpen}>
+      <Menu id="play" label={t('menu.play')} openMenu={openMenu} onOpenChange={changeOpen}>
         <DropdownMenuItem
-          label={state.isPlaying ? item.stopSlideshow : item.startSlideshow}
+          label={state.isPlaying ? t('item.stopSlideshow') : t('item.startSlideshow')}
           onClick={actions.onToggleSlideshow}
           endContent={<MenuHint shortcut={SHORTCUTS.slideshow} />}
         />
       </Menu>
 
-      <Menu id="settings" label={menu.settings} openMenu={openMenu} onOpenChange={changeOpen}>
+      <Menu id="settings" label={t('menu.settings')} openMenu={openMenu} onOpenChange={changeOpen}>
         <DropdownMenuItem
-          label={item.readingSettings}
+          label={t('item.readingSettings')}
           onClick={actions.onToggleSettings}
           endContent={<MenuHint shortcut={SHORTCUTS.settings} />}
         />

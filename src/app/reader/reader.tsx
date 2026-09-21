@@ -73,7 +73,7 @@ const styles = stylex.create({
 const OpeningScreen = ({ text, onExit }: Readonly<{ text: string; onExit: () => void }>) => (
   <VStack as="main" align="center" justify="center" gap={3} padding={6} height="100%">
     <Text color="secondary">{text}</Text>
-    <Button label={useMessages().item.shelf} variant="secondary" onClick={onExit} />
+    <Button label={useMessages()('item.shelf')} variant="secondary" onClick={onExit} />
   </VStack>
 )
 
@@ -88,7 +88,7 @@ const ResumeRow = ({
   onResume,
   onDismiss,
 }: Readonly<{ page: number; onResume: () => void; onDismiss: () => void }>) => {
-  const { reader } = useMessages()
+  const t = useMessages()
 
   return (
     <HStack
@@ -101,12 +101,12 @@ const ResumeRow = ({
       xstyle={styles.resume}
     >
       <span {...stylex.props(styles.resumeText)}>
-        <Text color="secondary">{reader.resume(page + 1)}</Text>
+        <Text color="secondary">{t('reader.resume', { page: page + 1 })}</Text>
       </span>
-      <Button label={reader.goThere} variant="secondary" size="sm" onClick={onResume} />
+      <Button label={t('reader.goThere')} variant="secondary" size="sm" onClick={onResume} />
       {/* 보이는 글자는 짧게, 이름은 무엇을 하는지 끝까지 말한다. */}
-      <Button label={reader.stayOnFirst} variant="secondary" size="sm" onClick={onDismiss}>
-        {reader.stay}
+      <Button label={t('reader.stayOnFirst')} variant="secondary" size="sm" onClick={onDismiss}>
+        {t('reader.stay')}
       </Button>
     </HStack>
   )
@@ -155,7 +155,7 @@ export const ReaderView = ({
   )
   useAtomMount(session.runtime)
 
-  const { reader } = useMessages()
+  const t = useMessages()
   const chooseLocale = useChooseLocale()
   const model = useAtomValue(session.model)
   const maybeLayout = useAtomValue(session.layout)
@@ -166,8 +166,8 @@ export const ReaderView = ({
     onNone: () => (
       <OpeningScreen
         text={OpenState.$match(model.openState, {
-          Opening: () => reader.opening,
-          Ready: () => reader.opening,
+          Opening: () => t('reader.opening'),
+          Ready: () => t('reader.opening'),
           Failed: ({ text }) => text,
         })}
         onExit={() => send(Message.ClickedExit())}

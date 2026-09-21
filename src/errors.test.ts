@@ -3,49 +3,30 @@
 import { describe as group, expect, test } from 'vite-plus/test'
 
 import { ArchiveError, CoverError, DbError, EmptyBookError, describe } from './errors.ts'
-import type { ErrorWords } from './errors.ts'
+import type { TranslateError } from './errors.ts'
 
-/** 무엇이 불렸는지만 보이게 지은 문구들. 진짜 문구는 카탈로그에 있다. */
-const words: ErrorWords = {
-  db: (op) => `db:${op}`,
-  emptyBook: (title) => `empty:${title}`,
-  missingBook: (id) => `missing:${id}`,
-  noComicFiles: 'noComicFiles',
-  unknown: 'unknown',
-  openBook: 'openBook',
-  showPage: 'showPage',
-  archive: {
-    notAnArchive: 'notAnArchive',
-    directoryCorrupt: 'directoryCorrupt',
-    inflate: 'inflate',
-    unsupportedMethod: (method) => `method:${method}`,
-    unreadable: (name) => `unreadable:${name}`,
-    pageMissing: (page) => `pageMissing:${page}`,
-  },
-  cover: {
-    decode: 'decode',
-    timeout: 'timeout',
-    noCanvas: 'noCanvas',
-    encode: 'encode',
-  },
-}
+/** 어떤 키를 어떤 값과 함께 물었는지만 드러내는 가짜 번역기. */
+const t: TranslateError = (key, values) =>
+  values === undefined ? key : `${key}(${Object.entries(values).join(',')})`
 
 group('describe', () => {
-  test('each failure asks the words it needs for, with what it knows', () => {
-    expect(describe(new DbError({ op: 'open', cause: null }), words)).toBe('db:open')
-    expect(describe(new EmptyBookError({ title: 'volume-1' }), words)).toBe('empty:volume-1')
-    expect(describe(new CoverError({ reason: 'timeout' }), words)).toBe('timeout')
+  test('each failure asks for the key that says it, with what it knows', () => {
+    expect(describe(new DbError({ op: 'open', cause: null }), t)).toBe('error.db(op,open)')
+    expect(describe(new EmptyBookError({ title: 'volume-1' }), t)).toBe(
+      'error.emptyBook(title,volume-1)',
+    )
+    expect(describe(new CoverError({ reason: 'timeout' }), t)).toBe('error.cover.timeout')
   })
 
   test('an archive failure says which of its reasons it was', () => {
-    expect(describe(new ArchiveError({ reason: { kind: 'notAnArchive' } }), words)).toBe(
-      'notAnArchive',
+    expect(describe(new ArchiveError({ reason: { kind: 'notAnArchive' } }), t)).toBe(
+      'error.archive.notAnArchive(kind,notAnArchive)',
     )
     expect(
-      describe(new ArchiveError({ reason: { kind: 'unsupportedMethod', method: 99 } }), words),
-    ).toBe('method:99')
-    expect(describe(new ArchiveError({ reason: { kind: 'pageMissing', page: 10 } }), words)).toBe(
-      'pageMissing:10',
+      describe(new ArchiveError({ reason: { kind: 'unsupportedMethod', method: 99 } }), t),
+    ).toBe('error.archive.unsupportedMethod(kind,unsupportedMethod,method,99)')
+    expect(describe(new ArchiveError({ reason: { kind: 'pageMissing', page: 10 } }), t)).toBe(
+      'error.archive.pageMissing(kind,pageMissing,page,10)',
     )
   })
 })

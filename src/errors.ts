@@ -79,62 +79,33 @@ export type AppError =
   | NoComicFilesError
   | CoverError
 
+/** {@linkcode describe}가 찾는 문구의 키들. 언어가 아니라 이름이라 이 아래에서도 쓸 수 있다. */
+export type ErrorKey =
+  | 'error.db'
+  | 'error.emptyBook'
+  | 'error.missingBook'
+  | 'error.noComicFiles'
+  | `error.archive.${ArchiveReason['kind']}`
+  | `error.cover.${CoverReason}`
+
 /**
- * 실패를 문장으로 바꾸는 데 필요한 문구들. 화면의 언어로 된 카탈로그가 이 모양이다(`S-151`).
+ * 키 하나를 읽는 사람의 언어로 찍는 함수(`S-151`).
  *
- * 문구를 받아 쓰는 이유는 이 모듈이 화면 아래에 있기 때문이다. 언어를 아는 것은 화면이고,
- * 여기서 아는 것은 무엇이 잘못됐는지까지다.
+ * 문구가 아니라 찍는 함수를 받는 이유는 이 모듈이 화면 아래에 있기 때문이다. 언어를 아는
+ * 것은 화면이고, 여기서 아는 것은 무엇이 잘못됐는지와 그것을 말할 키까지다.
  */
-export type ErrorWords = Readonly<{
-  db: (op: string) => string
-  emptyBook: (title: string) => string
-  missingBook: (id: string) => string
-  noComicFiles: string
-  unknown: string
-  /** 책을 열다 실패했는데 까닭을 찾지 못했을 때. */
-  openBook: string
-  /** 페이지를 부르다 실패했는데 까닭을 찾지 못했을 때. */
-  showPage: string
-  archive: Readonly<{
-    notAnArchive: string
-    directoryCorrupt: string
-    inflate: string
-    unsupportedMethod: (method: number) => string
-    unreadable: (name: string) => string
-    pageMissing: (page: number) => string
-  }>
-  cover: Readonly<Record<CoverReason, string>>
-}>
+export type TranslateError = (
+  key: ErrorKey,
+  values?: Readonly<Record<string, string | number>>,
+) => string
 
-/** 아카이브 실패의 까닭 하나를 문장으로. */
-const describeArchive = (reason: ArchiveReason, words: ErrorWords['archive']): string => {
-  switch (reason.kind) {
-    case 'notAnArchive':
-      return words.notAnArchive
-    case 'directoryCorrupt':
-      return words.directoryCorrupt
-    case 'inflate':
-      return words.inflate
-    case 'unsupportedMethod':
-      return words.unsupportedMethod(reason.method)
-    case 'unreadable':
-      return words.unreadable(reason.name)
-    case 'pageMissing':
-      return words.pageMissing(reason.page)
-  }
-}
-
-/**
- * 읽는 사람에게 그대로 보여 줄 수 있는 문장. 책장 상태 줄과 리더의 실패 화면이
- * 함께 쓴다.
- */
-export const describe = (error: AppError, words: ErrorWords): string =>
+export const describe = (error: AppError, t: TranslateError): string =>
   Match.value(error).pipe(
-    Match.tag('DbError', (e) => words.db(e.op)),
-    Match.tag('ArchiveError', (e) => describeArchive(e.reason, words.archive)),
-    Match.tag('EmptyBookError', (e) => words.emptyBook(e.title)),
-    Match.tag('MissingBookError', (e) => words.missingBook(e.id)),
-    Match.tag('NoComicFilesError', () => words.noComicFiles),
-    Match.tag('CoverError', (e) => words.cover[e.reason]),
+    Match.tag('DbError', (e) => t('error.db', { op: e.op })),
+    Match.tag('ArchiveError', (e) => t(`error.archive.${e.reason.kind}`, { ...e.reason })),
+    Match.tag('EmptyBookError', (e) => t('error.emptyBook', { title: e.title })),
+    Match.tag('MissingBookError', (e) => t('error.missingBook', { id: e.id })),
+    Match.tag('NoComicFilesError', () => t('error.noComicFiles')),
+    Match.tag('CoverError', (e) => t(`error.cover.${e.reason}`)),
     Match.exhaustive,
   )

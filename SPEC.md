@@ -275,8 +275,15 @@ JSON이 깨졌거나 `theme`이 아는 값이 아니면 아무것도 하지 않�
 ### 1.5 화면 언어
 
 **S-151 · 화면 문구의 언어**
-문구는 언어별 카탈로그(`src/app/i18n/`)에 모여 있고, 영어 카탈로그가 다른 언어의 본이다 —
-키가 하나라도 빠지면 타입 검사가 잡는다. 지금 있는 언어는 영어와 한국어다.
+문구는 언어별 카탈로그(`src/app/i18n/`)에 키 하나에 ICU MessageFormat 문자열 하나로 모여
+있다. 영어 카탈로그가 키 목록의 원천이고 다른 언어는 `Record<MessageKey, string>`이라, 키를
+잘못 적거나 번역을 빠뜨리면 타입 검사가 잡는다. 지금 있는 언어는 영어와 한국어다.
+
+문구를 찍는 것은 `intl-messageformat`(FormatJS의 ICU 구현)이다. 복수형·성별·숫자·날짜의
+규칙은 언어마다 다르고, 그것을 손으로 적는 대신 검증된 구현에 맡긴다 — `{count, plural, …}`
+하나로 영어는 단수와 복수를 가르고 한국어는 가르지 않는다. Astryx가 제 문구에 쓰는 것과 같은
+엔진이라 i18n 런타임이 둘 서지 않는다. Astryx의 `useTranslator`를 쓰지 않는 이유는 그것이
+React 훅이어서다 — 이 앱은 atom과 실패 문구처럼 화면 밖에서도 문구가 필요하다.
 
 언어는 설정 패널의 `Language` 줄에서 고른다 — `Browser`·`English`·`한국어`. 언어 이름은 그
 언어로 적는다. 영어로 보는 중에 한국어를 찾는 사람에게 `Korean`은 읽을 수 없는 이름이다.
@@ -292,14 +299,18 @@ JSON이 깨졌거나 `theme`이 아는 값이 아니면 아무것도 하지 않�
 받자마자 세운다.
 
 읽는 방향(`R-221`)과는 아무 상관이 없다. 한국어로 읽으면서 오른쪽에서 왼쪽으로 넘길 수 있다.
-숫자가 끼는 문구는 카탈로그의 함수다. 문장을 밖에서 이어 붙이면 영어의 어순이 코드에
-박힌다. 단수와 복수를 가르는 것도 언어마다 다르므로 카탈로그의 몫이고, 그래서 도메인의
-`pageCountLabel`은 문구를 받아 쓴다.
-✅ i18n/locale "a chosen language wins over what the browser says", "automatic takes the
+값이 끼는 자리는 문구 안에 `{title}`처럼 적는다. 문장을 밖에서 이어 붙이면 영어의 어순이
+코드에 박힌다. 화면 아래의 모듈(도메인의 `pageCountLabel`, 실패를 문장으로 바꾸는
+`describe`)은 문구가 아니라 찍는 함수를 받는다 — 언어를 아는 것은 화면이고, 그 아래에서 아는
+것은 무엇을 말할지의 키까지다.
+✅ i18n/format "a message with nothing to fill in is the message", "values go where the
+message says, in the order that language wants", "English counts in singular and plural,
+Korean in neither",
+i18n/locale "a chosen language wins over what the browser says", "automatic takes the
 first language it has words for", "a regional tag is the language in front of it", "a browser
 that speaks nothing it knows gets English",
 domain/book "a book that knows its length says it in the words it was given",
-errors "each failure asks the words it needs for, with what it knows", "an archive failure
+errors "each failure asks for the key that says it, with what it knows", "an archive failure
 says which of its reasons it was",
 settings/screen "S-151 · the language row offers the browser default and the languages there
 are words for",

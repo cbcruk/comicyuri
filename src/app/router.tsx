@@ -29,15 +29,15 @@ import { ShelfScreen } from './shelf.tsx'
  * 가리킨다(`N-407`).
  */
 const NotFound = () => {
-  const { notFound } = useMessages()
+  const t = useMessages()
   useDocumentTitle('comicyuri — not found')
 
   return (
     <VStack as="main" align="center" justify="center" gap={3} padding={6} height="100%">
-      <Heading level={1}>{notFound.title}</Heading>
+      <Heading level={1}>{t('notFound.title')}</Heading>
       <Text color="secondary">{window.location.pathname}</Text>
       <RouterLink to="/" hasUnderline={true}>
-        {notFound.backToShelf}
+        {t('notFound.backToShelf')}
       </RouterLink>
     </VStack>
   )

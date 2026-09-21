@@ -78,21 +78,19 @@ describe('the book next to this one', () => {
 })
 
 describe('how a card says its length', () => {
-  /** 문구는 카탈로그에서 온다(`S-151`). 여기서는 무엇이 불렸는지만 본다. */
-  const words = {
-    pages: (count: number) => `${count} pages`,
-    unknownPages: 'Page count unknown',
-  }
+  /** 문구는 카탈로그에서 온다(`S-151`). 여기서는 무엇을 물었는지만 본다. */
+  const t = (key: string, values?: Readonly<{ count: number }>): string =>
+    values === undefined ? key : `${key}:${values.count}`
 
   test('a book nobody has opened yet does not claim a page count', () => {
-    expect(pageCountLabel({ ...book('volume-1'), maybePageCount: Option.none() }, words)).toBe(
-      'Page count unknown',
+    expect(pageCountLabel({ ...book('volume-1'), maybePageCount: Option.none() }, t)).toBe(
+      'shelf.unknownPages',
     )
   })
 
   test('a book that knows its length says it in the words it was given', () => {
-    expect(pageCountLabel({ ...book('volume-1'), maybePageCount: Option.some(6) }, words)).toBe(
-      '6 pages',
+    expect(pageCountLabel({ ...book('volume-1'), maybePageCount: Option.some(6) }, t)).toBe(
+      'shelf.pages:6',
     )
   })
 })

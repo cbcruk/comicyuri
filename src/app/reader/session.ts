@@ -25,7 +25,7 @@ import { Atom, AsyncResult } from 'effect/unstable/reactivity'
 import type { PageAtoms, SpreadPanel } from '../../atoms/pages.ts'
 import { Reading } from '../../domain/index.ts'
 import { describe } from '../../errors.ts'
-import type { AppError, ErrorWords } from '../../errors.ts'
+import type { AppError, TranslateError } from '../../errors.ts'
 import { dispatch, makeReaderAtom } from '../../reader/atom.ts'
 import type { Command } from '../../reader/command.ts'
 import type { Point } from '../../reader/gesture.ts'
@@ -49,7 +49,7 @@ import {
 } from '../../reader/subscription.ts'
 import type { SlideshowWait } from '../../reader/subscription.ts'
 import { localeAtom } from '../i18n/atoms.ts'
-import { catalogFor } from '../i18n/messages.ts'
+import { translatorFor } from '../i18n/format.ts'
 import { readerLayout } from './layout.ts'
 import type { ReaderLayout } from './layout.ts'
 import type { ReaderPersistence } from './persistence.ts'
@@ -149,10 +149,10 @@ const runCommand = (command: Command): void => {
  *
  * 문구는 화면의 언어로 온다(`S-151`).
  */
-const failureText = (cause: Cause.Cause<AppError>, words: ErrorWords, fallback: string): string =>
+const failureText = (cause: Cause.Cause<AppError>, t: TranslateError, fallback: string): string =>
   Option.match(Cause.findErrorOption(cause), {
     onNone: () => fallback,
-    onSome: (error) => describe(error, words),
+    onSome: (error) => describe(error, t),
   })
 
 /** 둘이 같은 페이지 목록인지. 다시 셈한 목록이 같으면 아래로 퍼지지 않게 할 때 쓴다. */
@@ -252,7 +252,7 @@ export const makeReaderSession = ({
    * 찍은 것이 남는다. 남은 스프레드는 여기서 마운트해 두어, 그리는 동안 URL이 놓이지 않는다.
    */
   const shown = Atom.make((get): ShownSpread => {
-    const words = catalogFor(get(localeAtom)).error
+    const t = translatorFor(get(localeAtom))
     const now = get(model)
     const here = spreadPages(now)
     // 여는 중이면 부를 스프레드가 없다. 빈 목록으로 스프레드 atom을 부르면 0번 페이지를
@@ -285,7 +285,7 @@ export const makeReaderSession = ({
       maybeShown: maybeHeld,
       isReady: false,
       maybeFailure: AsyncResult.isFailure(current)
-        ? Option.some(failureText(current.cause, words, words.showPage))
+        ? Option.some(failureText(current.cause, t, t('error.showPage')))
         : Option.none(),
     }
   })
@@ -297,7 +297,7 @@ export const makeReaderSession = ({
    * 구독하는 동안 책 atom이 걸려 있으므로, 스프레드 사이의 틈에 책을 다시 열지도 않는다.
    */
   const opening = Atom.make((get) => {
-    const words = catalogFor(get(localeAtom)).error
+    const t = translatorFor(get(localeAtom))
     get.subscribe(
       pages.book(bookId),
       (book) => {
@@ -313,7 +313,7 @@ export const makeReaderSession = ({
         } else if (AsyncResult.isFailure(book)) {
           get.set(
             send,
-            Message.FailedOpenBook({ text: failureText(book.cause, words, words.openBook) }),
+            Message.FailedOpenBook({ text: failureText(book.cause, t, t('error.openBook')) }),
           )
         }
       },

@@ -97,14 +97,14 @@ export const neighbour = (
 /**
  * 카드가 분량을 말하는 방식. 페이지 수가 없는 레코드면 모른다고 적는다.
  *
- * 문구를 받아 쓰는 이유는 도메인이 언어를 몰라야 하기 때문이다(`S-151`). 단수와 복수를
- * 가르는 것도 언어마다 다르므로 `words.pages`의 몫이다.
+ * 찍는 함수를 받는 이유는 도메인이 언어를 몰라야 하기 때문이다(`S-151`). 단수와 복수를
+ * 가르는 것도 언어마다 다르므로 카탈로그의 ICU 문구가 맡는다.
  */
 export const pageCountLabel = (
   book: BookSummary,
-  words: Readonly<{ pages: (count: number) => string; unknownPages: string }>,
+  t: (key: 'shelf.pages' | 'shelf.unknownPages', values?: Readonly<{ count: number }>) => string,
 ): string =>
   Option.match(book.maybePageCount, {
-    onNone: () => words.unknownPages,
-    onSome: (count) => words.pages(count),
+    onNone: () => t('shelf.unknownPages'),
+    onSome: (count) => t('shelf.pages', { count }),
   })

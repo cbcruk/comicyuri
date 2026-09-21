@@ -57,15 +57,15 @@ import type { ShelfBook } from './shelfAtoms.ts'
 import type { Theme } from '../types.ts'
 import { nudgedSlideSeconds, nudgedThreshold } from '../settings.ts'
 import { SettingsPanel } from './settings/index.ts'
-import type { Catalog } from './i18n/en.ts'
+import type { Translate } from './i18n/format.ts'
 import { useChooseLocale } from './i18n/atoms.ts'
 import { useMessages } from './i18n/messages.ts'
 import { useDocumentTitle } from './title.ts'
 import { settingsAtom } from './state/index.ts'
 
 /** 토글은 지금 있는 곳이 아니라 데려갈 곳을 말한다(`S-141`). */
-const themeToggleLabel = (theme: Theme, shelf: Catalog['shelf']): string =>
-  theme === 'dark' ? shelf.toLightTheme : shelf.toDarkTheme
+const themeToggleLabel = (theme: Theme, t: Translate): string =>
+  theme === 'dark' ? t('shelf.toLightTheme') : t('shelf.toDarkTheme')
 
 /**
  * 책장 화면의 모양.
@@ -207,7 +207,7 @@ const ConfirmDelete = ({
   onConfirm: (book: ShelfBook) => void
   onCancel: () => void
 }>) => {
-  const { shelf } = useMessages()
+  const t = useMessages()
 
   return (
     <AlertDialog
@@ -215,10 +215,10 @@ const ConfirmDelete = ({
       onOpenChange={(isOpen) => {
         if (!isOpen && !isDeleting) onCancel()
       }}
-      title={shelf.removeTitle(maybeBook?.title ?? '')}
-      description={shelf.removeBody}
-      actionLabel={shelf.remove}
-      cancelLabel={shelf.keep}
+      title={t('shelf.removeTitle', { title: maybeBook?.title ?? '' })}
+      description={t('shelf.removeBody')}
+      actionLabel={t('shelf.remove')}
+      cancelLabel={t('shelf.keep')}
       isActionLoading={isDeleting}
       onAction={() => {
         if (maybeBook !== null) onConfirm(maybeBook)
@@ -252,7 +252,7 @@ const Card = ({ book, onAsk }: Readonly<{ book: ShelfBook; onAsk: () => void }>)
     </Link>
     <div {...stylex.props(styles.bin)}>
       <Button
-        label={useMessages().shelf.removeBook(book.title)}
+        label={useMessages()('shelf.removeBook', { title: book.title })}
         icon={<span aria-hidden={true}>🗑</span>}
         isIconOnly={true}
         variant="ghost"
@@ -264,12 +264,12 @@ const Card = ({ book, onAsk }: Readonly<{ book: ShelfBook; onAsk: () => void }>)
 )
 
 const Empty = () => {
-  const { shelf } = useMessages()
+  const t = useMessages()
 
   return (
     <EmptyState
-      title={shelf.emptyTitle}
-      description={shelf.emptyBody}
+      title={t('shelf.emptyTitle')}
+      description={t('shelf.emptyBody')}
       xstyle={styles.placeholder}
     />
   )
@@ -283,7 +283,7 @@ const Placeholder = ({ text }: Readonly<{ text: string }>) => (
 
 /** 책장을 그린다. 헤더, 상태 줄, 그리고 임포트를 받는 드롭 존 안의 책 격자. */
 export const ShelfScreen = () => {
-  const words = useMessages().shelf
+  const t = useMessages()
   const chooseLocale = useChooseLocale()
   const shelf = useAtomValue(shelfAtom)
   const [theme, setTheme] = useAtom(themeAtom)
@@ -303,7 +303,7 @@ export const ShelfScreen = () => {
   const importFiles = async (files: ReadonlyArray<File>) => {
     if (files.length === 0) return
 
-    setNotice({ tone: 'busy', text: words.importing })
+    setNotice({ tone: 'busy', text: t('shelf.importing') })
     const maybeError = await runImport(files)
     setNotice((standing) =>
       Option.match(maybeError, {
@@ -337,7 +337,7 @@ export const ShelfScreen = () => {
 
     const files = event.dataTransfer ? [...event.dataTransfer.files] : []
     if (files.length === 0) {
-      setNotice({ tone: 'failed', text: words.onlyFiles })
+      setNotice({ tone: 'failed', text: t('shelf.onlyFiles') })
       return
     }
 
@@ -360,11 +360,15 @@ export const ShelfScreen = () => {
         heading={<TopNavHeading heading="comicyuri" />}
         endContent={
           <>
-            <Button label={words.openFiles} variant="primary" onClick={() => pick(pickFiles)} />
-            <Button label={words.openFolder} onClick={() => pick(pickFolder)} />
             <Button
-              label={themeToggleLabel(theme, words)}
-              tooltip={themeToggleLabel(theme, words)}
+              label={t('shelf.openFiles')}
+              variant="primary"
+              onClick={() => pick(pickFiles)}
+            />
+            <Button label={t('shelf.openFolder')} onClick={() => pick(pickFolder)} />
+            <Button
+              label={themeToggleLabel(theme, t)}
+              tooltip={themeToggleLabel(theme, t)}
               icon={<span aria-hidden={true}>◐</span>}
               isIconOnly={true}
               variant="ghost"
@@ -372,7 +376,7 @@ export const ShelfScreen = () => {
             />
             {/* 설정 패널로 들어가는 문(`R-2B6`). 패널은 리더의 것과 한 벌이다. */}
             <Button
-              label={words.readingSettings}
+              label={t('shelf.readingSettings')}
               icon={<span aria-hidden={true}>⚙</span>}
               isIconOnly={true}
               variant="ghost"
@@ -430,7 +434,7 @@ export const ShelfScreen = () => {
         {notice === null
           ? ''
           : notice.tone === 'failed'
-            ? words.actionFailed(notice.text)
+            ? t('shelf.actionFailed', { text: notice.text })
             : notice.text}
       </p>
       {/*
@@ -439,7 +443,7 @@ export const ShelfScreen = () => {
         파일 고르기는 헤더 버튼이 맡는다.
       */}
       <main
-        aria-label={words.region}
+        aria-label={t('shelf.region')}
         data-drag-over={isDragOver ? '' : undefined}
         onDragEnter={() => setIsDragOver(true)}
         onDragLeave={(event) => {
@@ -457,8 +461,8 @@ export const ShelfScreen = () => {
         {Option.match(maybeBooks, {
           onNone: () =>
             Option.match(maybeError, {
-              onNone: () => <Placeholder text={words.opening} />,
-              onSome: (text) => <Placeholder text={words.openFailed(text)} />,
+              onNone: () => <Placeholder text={t('shelf.opening')} />,
+              onSome: (text) => <Placeholder text={t('shelf.openFailed', { text })} />,
             }),
           onSome: (books) =>
             books.length === 0 ? (
