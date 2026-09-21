@@ -10,8 +10,7 @@ const loadImage = (url: string): Effect.Effect<HTMLImageElement, CoverError> =>
   Effect.callback<HTMLImageElement, CoverError>((resume) => {
     const img = new Image()
     img.onload = () => resume(Effect.succeed(img))
-    img.onerror = () =>
-      resume(Effect.fail(new CoverError({ reason: 'Could not decode the cover image' })))
+    img.onerror = () => resume(Effect.fail(new CoverError({ reason: 'decode' })))
     img.src = url
     // 중단되면(타임아웃이든 임포트를 그만두든) 받아오던 것도 취소한다.
     return Effect.sync(() => {
@@ -20,7 +19,7 @@ const loadImage = (url: string): Effect.Effect<HTMLImageElement, CoverError> =>
   }).pipe(
     Effect.timeoutOrElse({
       duration: DECODE_TIMEOUT,
-      orElse: () => new CoverError({ reason: 'Timed out decoding the cover image' }),
+      orElse: () => new CoverError({ reason: 'timeout' }),
     }),
   )
 
@@ -42,17 +41,13 @@ export function makeCover(url: string, maxSize = 400): Effect.Effect<Blob, Cover
     canvas.width = w
     canvas.height = h
     const ctx = canvas.getContext('2d')
-    if (!ctx) return yield* new CoverError({ reason: 'Canvas 2D is unavailable' })
+    if (!ctx) return yield* new CoverError({ reason: 'noCanvas' })
     ctx.drawImage(img, 0, 0, w, h)
 
     return yield* Effect.callback<Blob, CoverError>((resume) => {
       canvas.toBlob(
         (blob) =>
-          resume(
-            blob
-              ? Effect.succeed(blob)
-              : Effect.fail(new CoverError({ reason: 'Could not encode the cover image' })),
-          ),
+          resume(blob ? Effect.succeed(blob) : Effect.fail(new CoverError({ reason: 'encode' }))),
         'image/webp',
         0.75,
       )

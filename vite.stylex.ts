@@ -128,6 +128,9 @@ export const astryxFromSource: Pick<UserConfig, 'resolve' | 'optimizeDeps'> = {
         root,
         'node_modules/@astryxdesign/core/src/theme/tokens.stylex.ts',
       ),
+      // 로케일 JSON은 소스가 아니라 패키지 뿌리에 있다. 아래의 넓은 별칭이 그것까지
+      // `src/locales`로 보내 버리므로 먼저 가로챈다(`S-151`).
+      '@astryxdesign/core/locales': path.resolve(root, 'node_modules/@astryxdesign/core/locales'),
       '@astryxdesign/core': path.resolve(root, 'node_modules/@astryxdesign/core/src'),
     },
   },

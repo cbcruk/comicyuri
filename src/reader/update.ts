@@ -207,6 +207,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     SelectedResume: ({ resume }): UpdateReturn =>
       withSettings(model, evo(model.settings, { resume: () => resume })),
 
+    SelectedLocale: ({ locale }): UpdateReturn =>
+      withSettings(model, evo(model.settings, { locale: () => locale })),
+
     ClickedNudgeThreshold: ({ by }): UpdateReturn =>
       withSettings(
         model,

@@ -23,6 +23,9 @@ import { deleteBook, getAllBooks, putBook } from '../io/db.ts'
 import type { StoredBook } from '../io/db.ts'
 import { bookFromStored, measurePages, storedBooksFromFiles } from '../io/loader.ts'
 import { loadSettings, saveSettings } from '../io/storage.ts'
+import { localeAtom } from './i18n/atoms.ts'
+import { translatorFor } from './i18n/format.ts'
+import type { Translate } from './i18n/format.ts'
 import { makeCover } from '../io/thumbnail.ts'
 import type { Theme } from '../types.ts'
 
@@ -34,10 +37,10 @@ export type ShelfBook = Readonly<{
   countLabel: string
 }>
 
-const toShelfBook = (stored: StoredBook): ShelfBook => ({
+const toShelfBook = (stored: StoredBook, t: Translate): ShelfBook => ({
   id: stored.id,
   title: stored.title,
-  countLabel: Book.pageCountLabel(Book.fromRecord(stored, Option.none())),
+  countLabel: Book.pageCountLabel(Book.fromRecord(stored, Option.none()), t),
 })
 
 /**
@@ -55,12 +58,14 @@ const recordsAtom = Atom.make(getAllBooks)
  * 실패는 문구로 바꿔 둔다. 화면이 `Couldn't open your shelf — `에 이어 붙일 수 있는
  * 것은 `Cause`가 아니라 문장이다.
  */
-export const shelfAtom = Atom.make((get) =>
-  get.result(recordsAtom).pipe(
-    Effect.map((records) => records.map(toShelfBook)),
-    Effect.catch((error) => Effect.fail(describe(error))),
-  ),
-)
+export const shelfAtom = Atom.make((get) => {
+  const t = translatorFor(get(localeAtom))
+
+  return get.result(recordsAtom).pipe(
+    Effect.map((records) => records.map((record) => toShelfBook(record, t))),
+    Effect.catch((error) => Effect.fail(describe(error, translatorFor(get(localeAtom))))),
+  )
+})
 
 /**
  * 책 한 권의 표지 object URL. 표지가 없는 책은 없음이다(`S-103`).
@@ -148,7 +153,9 @@ export const importFilesAtom = Atom.fn<ReadonlyArray<File>>()((files, get) =>
     Effect.tap(() => Effect.sync(() => get.refresh(recordsAtom))),
     Effect.tap(() => requestPersistentStorage),
     Effect.as(Option.none<string>()),
-    Effect.catch((error) => Effect.succeed(Option.some(describe(error)))),
+    Effect.catch((error) =>
+      Effect.succeed(Option.some(describe(error, translatorFor(get(localeAtom))))),
+    ),
   ),
 )
 
@@ -163,7 +170,9 @@ export const deleteBookAtom = Atom.fn<string>()((id: string, get) =>
   deleteBook(id).pipe(
     Effect.tap(() => Effect.sync(() => get.refresh(recordsAtom))),
     Effect.as(Option.none<string>()),
-    Effect.catch((error) => Effect.succeed(Option.some(describe(error)))),
+    Effect.catch((error) =>
+      Effect.succeed(Option.some(describe(error, translatorFor(get(localeAtom))))),
+    ),
   ),
 )
 

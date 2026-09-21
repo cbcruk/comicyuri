@@ -81,7 +81,7 @@ export const makePageAtoms = (loading: PageLoading): PageAtoms => {
         const opened = yield* get.result(book(bookId))
         const source = opened.pages[page]
         if (source === undefined) {
-          return yield* new ArchiveError({ reason: `Page ${page + 1} is not in this book` })
+          return yield* new ArchiveError({ reason: { kind: 'pageMissing', page: page + 1 } })
         }
 
         const blob = yield* source.read()

@@ -132,7 +132,7 @@ describe('a spread', () => {
     registry.mount(spread)
     await eventually(() => AsyncResult.isFailure(registry.get(spread)))
     expect(AsyncResult.error(registry.get(spread))).toStrictEqual(
-      Option.some(new ArchiveError({ reason: 'Page 10 is not in this book' })),
+      Option.some(new ArchiveError({ reason: { kind: 'pageMissing', page: 10 } })),
     )
   })
 })

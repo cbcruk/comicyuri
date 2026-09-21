@@ -272,6 +272,53 @@ JSON이 깨졌거나 `theme`이 아는 값이 아니면 아무것도 하지 않�
 | ✅ e2e "S-144 · 라이트를 고른 사람은 어두운 첫 프레임을 보지 않는다", "S-144 · 다크를 |
 | 고른 사람의 첫 프레임은 그대로 어둡다"                                                |
 
+### 1.5 화면 언어
+
+**S-151 · 화면 문구의 언어**
+문구는 언어별 카탈로그(`src/app/i18n/`)에 키 하나에 ICU MessageFormat 문자열 하나로 모여
+있다. 영어 카탈로그가 키 목록의 원천이고 다른 언어는 `Record<MessageKey, string>`이라, 키를
+잘못 적거나 번역을 빠뜨리면 타입 검사가 잡는다. 지금 있는 언어는 영어와 한국어다.
+
+문구를 찍는 것은 `intl-messageformat`(FormatJS의 ICU 구현)이다. 복수형·성별·숫자·날짜의
+규칙은 언어마다 다르고, 그것을 손으로 적는 대신 검증된 구현에 맡긴다 — `{count, plural, …}`
+하나로 영어는 단수와 복수를 가르고 한국어는 가르지 않는다. Astryx가 제 문구에 쓰는 것과 같은
+엔진이라 i18n 런타임이 둘 서지 않는다. Astryx의 `useTranslator`를 쓰지 않는 이유는 그것이
+React 훅이어서다 — 이 앱은 atom과 실패 문구처럼 화면 밖에서도 문구가 필요하다.
+
+언어는 설정 패널의 `Language` 줄에서 고른다 — `Browser`·`English`·`한국어`. 언어 이름은 그
+언어로 적는다. 영어로 보는 중에 한국어를 찾는 사람에게 `Korean`은 읽을 수 없는 이름이다.
+`Browser`만은 무엇을 따른다는 말이라 옮긴다. 리더에서 고른 것도 다른 설정과 같은 길로 가므로
+(`SelectedLocale`), 그 뒤에 바꾼 설정이 옛 언어를 되돌리지 않는다.
+
+설정의 `locale`이 `auto`(기본값)이면 브라우저가 매겨 둔 언어 순서(`navigator.languages`)를
+앞에서부터 훑어 카탈로그가 있는 첫 언어를 고른다. 지역 태그는 앞자리만 본다 — `ko-KR`도
+`ko`도 한국어다. 아는 언어가 없으면 영어다.
+
+고른 언어는 세 곳에 함께 걸린다. 앱의 문구, 문서 루트의 `lang`, 그리고 Astryx의 제 문구
+("Close popover" 같은 것)다. `lang`은 첫 글자가 그려지기 전에 서야 해서 `main.tsx`가 모듈을
+받자마자 세운다.
+
+읽는 방향(`R-221`)과는 아무 상관이 없다. 한국어로 읽으면서 오른쪽에서 왼쪽으로 넘길 수 있다.
+값이 끼는 자리는 문구 안에 `{title}`처럼 적는다. 문장을 밖에서 이어 붙이면 영어의 어순이
+코드에 박힌다. 화면 아래의 모듈(도메인의 `pageCountLabel`, 실패를 문장으로 바꾸는
+`describe`)은 문구가 아니라 찍는 함수를 받는다 — 언어를 아는 것은 화면이고, 그 아래에서 아는
+것은 무엇을 말할지의 키까지다.
+✅ i18n/format "a message with nothing to fill in is the message", "values go where the
+message says, in the order that language wants", "English counts in singular and plural,
+Korean in neither",
+i18n/locale "a chosen language wins over what the browser says", "automatic takes the
+first language it has words for", "a regional tag is the language in front of it", "a browser
+that speaks nothing it knows gets English",
+domain/book "a book that knows its length says it in the words it was given",
+errors "each failure asks for the key that says it, with what it knows", "an archive failure
+says which of its reasons it was",
+settings/screen "S-151 · the language row offers the browser default and the languages there
+are words for",
+e2e "S-151 · 책장이 한국어로 선다", "S-151 · 실패도 한국어로 말한다", "S-151 · 설정에서 고른
+언어가 화면에 걸리고 새로고침을 넘긴다"
+실패도 읽는 사람의 언어로 말한다. io 계층은 영어 문장이 아니라 무엇이 잘못됐는지의 이름만
+남기고(`ArchiveReason`·`CoverReason`), 문장으로 바꾸는 일은 `describe`가 화면의 언어로 한다.
+
 ---
 
 ## 2. 리더

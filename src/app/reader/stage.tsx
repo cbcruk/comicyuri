@@ -22,6 +22,7 @@ import {
 
 import { PAGE_ID, STAGE_ID } from '../../reader/constant.ts'
 import { ZOOM_MIN } from '../../reader/gesture.ts'
+import { useMessages } from '../i18n/messages.ts'
 import type { Point } from '../../reader/gesture.ts'
 import { sideOf } from '../../reader/half.ts'
 import { swapsSides } from '../../reader/rotation.ts'
@@ -251,6 +252,7 @@ type SplitHalf = Readonly<{
  * 상자가 누우면 `cqw`·`cqh`도 함께 누우므로 반쪽이 그것을 따라간다.
  */
 const HalfPanel = ({ panel, half }: Readonly<{ panel: SpreadPanel; half: SplitHalf }>) => {
+  const t = useMessages()
   const ratio = half.ratio / 2
 
   return (
@@ -262,7 +264,7 @@ const HalfPanel = ({ panel, half }: Readonly<{ panel: SpreadPanel; half: SplitHa
         {...stylex.props(styles.halfImage)}
         style={{ left: half.side === 'left' ? '0' : '-100%' }}
         src={panel.url}
-        alt={`Page ${panel.page + 1}`}
+        alt={t('reader.pageAlt', { page: panel.page + 1 })}
         draggable={false}
       />
     </div>
@@ -283,12 +285,18 @@ const FitPanel = ({
       !enlargeToFit && NO_ENLARGE_STYLE[fit],
     )}
     src={panel.url}
-    alt={`Page ${panel.page + 1}`}
+    // eslint-disable-next-line react-hooks/rules-of-hooks -- 컴포넌트의 본문이다. JSX 안이라 눈에 그렇게 보일 뿐이다.
+    alt={useMessages()('reader.pageAlt', { page: panel.page + 1 })}
     // 이미지는 기본으로 끌 수 있고, 끌기 시작하면 브라우저가 포인터 이벤트를 거두어 드래그
     // 이벤트로 갈아탄다. 그러면 스와이프가 첫 움직임 뒤에 잘린다 — 포인터로 넘기려던
     // 페이지 대신 이미지가 끌려간다.
     draggable={false}
   />
+)
+
+/** 아직 아무것도 그릴 수 없을 때 스테이지 가운데 서는 글자(`R-207`). */
+const LoadingMessage = () => (
+  <p {...stylex.props(styles.message)}>{useMessages()('reader.loading')}</p>
 )
 
 /**
@@ -368,6 +376,16 @@ const SpreadPanels = ({
   )
 }
 
+/**
+ * 늦을 때만 서는 표시. 부르는 쪽이 페이지 번호를 `key`로 주므로, 넘어가면 다시 세워져
+ * 나타남을 미루는 시간이 처음부터 간다.
+ */
+const LateMessage = () => (
+  <p role="status" {...stylex.props(styles.late)}>
+    {useMessages()('reader.loading')}
+  </p>
+)
+
 /** 스테이지가 받는 것. */
 export type ReaderStageProps = Readonly<{
   model: Model
@@ -429,7 +447,7 @@ export const ReaderStage = ({
         {Option.match(maybeFailure, {
           onNone: () =>
             Option.match(maybeShown, {
-              onNone: () => (isLoading ? <p {...stylex.props(styles.message)}>Loading…</p> : null),
+              onNone: () => (isLoading ? <LoadingMessage /> : null),
               onSome: (shown) => <SpreadPanels model={model} layout={layout} shown={shown} />,
             }),
           onSome: (text) => <p {...stylex.props(styles.message, styles.failure)}>{text}</p>,
@@ -440,9 +458,7 @@ export const ReaderStage = ({
         넘기면 보일 일이 없다. 늦는지 재는 타이머를 Model에 두지 않으려고 CSS에 맡긴다.
       */}
       {isLoading && Option.isSome(maybeShown) ? (
-        <p key={`loading-${model.page}`} role="status" {...stylex.props(styles.late)}>
-          Loading…
-        </p>
+        <LateMessage key={`loading-${model.page}`} />
       ) : null}
       {SHOWS_TAP_FLASH
         ? Option.match(model.maybeTapFlash, {

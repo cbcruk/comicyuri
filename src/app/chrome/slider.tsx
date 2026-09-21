@@ -16,6 +16,7 @@ import { Slider } from '@astryxdesign/core/Slider'
 import type { KeyboardEvent, PointerEvent } from 'react'
 import { useRef } from 'react'
 
+import { useMessages } from '../i18n/messages.ts'
 import type { ReadingDirection } from '../../types.ts'
 import { pageTicks } from './ticks.ts'
 
@@ -56,6 +57,7 @@ export type PageSliderProps = Readonly<{
  * 찍고, 눈금을 누르면 그 페이지로 간다.
  */
 export const PageSlider = ({ page, pageCount, direction, onSlide }: PageSliderProps) => {
+  const t = useMessages()
   const isRightToLeft = direction === 'rtl'
   const max = Math.max(pageCount - 1, 0)
   const dragRef = useRef<Drag | null>(null)
@@ -106,7 +108,7 @@ export const PageSlider = ({ page, pageCount, direction, onSlide }: PageSliderPr
       {...stylex.props(styles.root)}
     >
       <Slider
-        label="Page"
+        label={t('footer.slider')}
         isLabelHidden={true}
         width="100%"
         min={0}
@@ -114,7 +116,7 @@ export const PageSlider = ({ page, pageCount, direction, onSlide }: PageSliderPr
         value={Math.min(page, max)}
         valueDisplay="tooltip"
         marks={pageTicks(pageCount).map((value) => ({ value }))}
-        formatValue={(value) => `Page ${value + 1}`}
+        formatValue={(value) => t('footer.sliderValue', { page: value + 1 })}
         onChange={slideTo}
       />
     </div>

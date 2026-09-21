@@ -72,7 +72,8 @@ class BlobPage implements Page {
   measure(): Effect.Effect<Option.Option<ImageSize>, ArchiveError> {
     return Effect.tryPromise({
       try: async () => new Uint8Array(await this.blob.slice(0, HEADER_BYTES).arrayBuffer()),
-      catch: (cause) => new ArchiveError({ reason: `Could not read "${this.name}"`, cause }),
+      catch: (cause) =>
+        new ArchiveError({ reason: { kind: 'unreadable', name: this.name }, cause }),
     }).pipe(Effect.map(imageSize))
   }
 }

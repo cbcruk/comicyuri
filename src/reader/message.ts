@@ -114,6 +114,8 @@ export type Message = Data.TaggedEnum<{
   ToggledRememberBookSettings: { readonly isChecked: boolean }
   SelectedAtBookEnd: { readonly atBookEnd: AtBookEnd }
   SelectedResume: { readonly resume: Resume }
+  /** 설정 패널에서 화면 문구의 언어를 골랐다(`S-151`). */
+  SelectedLocale: { readonly locale: Settings['locale'] }
   ClickedNudgeThreshold: { readonly by: number }
 
   ClickedToggleThumbs: {}

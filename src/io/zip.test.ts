@@ -2,6 +2,7 @@ import { Effect, Option } from 'effect'
 import { describe, expect, test } from 'vite-plus/test'
 
 import { ArchiveError } from '../errors.ts'
+import type { ArchiveReason } from '../errors.ts'
 import { ZipArchive } from './zip.ts'
 
 const u16 = (value: number): number[] => [value & 0xff, (value >> 8) & 0xff]
@@ -119,10 +120,12 @@ const textOf = (bytes: Uint8Array): string => new TextDecoder().decode(bytes)
 const open = (blob: Blob): Promise<ZipArchive> => Effect.runPromise(ZipArchive.open(blob))
 
 /** 실패한 이유. 성공했으면 없음이다. */
-const reasonOf = async (effect: Effect.Effect<unknown, ArchiveError>): Promise<string | null> =>
+const reasonOf = async (
+  effect: Effect.Effect<unknown, ArchiveError>,
+): Promise<ArchiveReason | null> =>
   Effect.runPromise(
     effect.pipe(
-      Effect.as(Option.none<string>()),
+      Effect.as(Option.none<ArchiveReason>()),
       Effect.catchTag('ArchiveError', (error) => Effect.succeed(Option.some(error.reason))),
       Effect.map(Option.getOrNull),
     ),
@@ -215,7 +218,7 @@ describe('reading the directory', () => {
   test('bytes that are not a ZIP fail rather than opening empty', async () => {
     const reason = await reasonOf(ZipArchive.open(new Blob([bytesOf('not an archive at all')])))
 
-    expect(reason).toBe('Not a valid ZIP/CBZ archive')
+    expect(reason).toStrictEqual({ kind: 'notAnArchive' })
   })
 })
 
@@ -282,7 +285,10 @@ describe('pulling an entry out', () => {
     const archive = await open(await zip([stored('page.png', 'whole page')]))
     const entry = { ...archive.entries[0]!, compressedSize: 1_000_000 }
 
-    expect(await reasonOf(archive.extract(entry))).toBe('Could not read "page.png"')
+    expect(await reasonOf(archive.extract(entry))).toStrictEqual({
+      kind: 'unreadable',
+      name: 'page.png',
+    })
   })
 
   test('a method this reader does not know is refused by name', async () => {
@@ -291,6 +297,6 @@ describe('pulling an entry out', () => {
     )
     const reason = await reasonOf(archive.extract(archive.entries[0]!))
 
-    expect(reason).toBe('Unsupported compression method 99')
+    expect(reason).toStrictEqual({ kind: 'unsupportedMethod', method: 99 })
   })
 })

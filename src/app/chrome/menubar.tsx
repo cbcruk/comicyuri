@@ -38,6 +38,8 @@ import { Schema } from 'effect'
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 
+import type { Translate } from '../i18n/format.ts'
+import { useMessages } from '../i18n/messages.ts'
 import { FitMode, ReadingDirection } from '../../types.ts'
 import { SHORTCUTS } from './shortcuts.ts'
 import type { ChromeActions, ChromeState } from './types.ts'
@@ -49,30 +51,16 @@ const MENU_IDS = ['book', 'view', 'go', 'play', 'settings'] as const
 type MenuId = (typeof MENU_IDS)[number]
 
 /**
- * 트리거에 적히는 이름. 네이티브 메뉴바처럼 한 낱말이다.
- *
- * 앱의 다른 모든 문구와 같이 영어다 — 한국어는 주석·커밋·`SPEC.md`의 것이지
- * 화면에 적히는 글자의 것이 아니다.
- */
-const MENU_LABELS: Readonly<Record<MenuId, string>> = {
-  book: 'Book',
-  view: 'View',
-  go: 'Go',
-  play: 'Play',
-  settings: 'Settings',
-}
-
-/**
  * `Fit to` 서브메뉴에 서는 맞춤 모드들, 위에서부터(`R-224`).
  *
  * 이름은 서브메뉴 이름에 이어 읽힌다 — "Fit to Page", "Fit to Width". 원래 크기만은 맞추는
  * 것이 아니라서 제 이름을 그대로 쓴다.
  */
-const FIT_CHOICES: ReadonlyArray<Readonly<{ fit: FitMode; label: string }>> = [
-  { fit: 'contain', label: 'Page' },
-  { fit: 'width', label: 'Width' },
-  { fit: 'height', label: 'Height' },
-  { fit: 'original', label: 'Original size' },
+const fitChoices = (t: Translate): ReadonlyArray<Readonly<{ fit: FitMode; label: string }>> => [
+  { fit: 'contain', label: t('item.fitPage') },
+  { fit: 'width', label: t('item.fitWidth') },
+  { fit: 'height', label: t('item.fitHeight') },
+  { fit: 'original', label: t('item.fitOriginal') },
 ]
 
 /** 메뉴바와 곁글의 모양. */
@@ -138,18 +126,20 @@ const isChosenItem = (target: EventTarget): boolean =>
 /** 메뉴 하나. 열림 여부를 메뉴바가 쥐므로 그것만 밖에서 받는다. */
 const Menu = ({
   id,
+  label,
   openMenu,
   onOpenChange,
   children,
 }: Readonly<{
   id: MenuId
+  label: string
   openMenu: MenuId | null
   onOpenChange: (id: MenuId, isOpen: boolean) => void
   children: ReactNode
 }>) => (
   <DropdownMenu
     button={{
-      label: MENU_LABELS[id],
+      label,
       // 메뉴바의 자식은 `menuitem`이어야 한다. Astryx의 트리거는 버튼이지만
       // `role`을 받아 그대로 내보내므로 여기서 바꿔 단다.
       role: 'menuitem',
@@ -184,6 +174,7 @@ export type MenubarProps = Readonly<{
  * 움직인다. 위아래 화살표·Enter·Escape·글자로 찾기는 `DropdownMenu`의 것이다.
  */
 export const ReaderMenubar = ({ state, actions, onOpenGoToPage }: MenubarProps) => {
+  const t = useMessages()
   const [openMenu, setOpenMenu] = useState<MenuId | null>(null)
 
   const { listRef, handleKeyDown, handleFocus } = useListFocus<HTMLDivElement>({
@@ -246,157 +237,160 @@ export const ReaderMenubar = ({ state, actions, onOpenGoToPage }: MenubarProps) 
       ref={listRef}
       onClick={handleMenubarClick}
       role="menubar"
-      aria-label="Reader menus"
+      aria-label={t('menu.bar')}
       aria-orientation="horizontal"
       align="center"
       gap={1}
       onKeyDown={handleMenubarKeyDown}
       onFocus={handleFocus}
     >
-      <Menu id="book" openMenu={openMenu} onOpenChange={changeOpen}>
+      <Menu id="book" label={t('menu.book')} openMenu={openMenu} onOpenChange={changeOpen}>
         <DropdownMenuItem
-          label="← Shelf"
+          label={t('item.shelf')}
           onClick={actions.onExit}
           endContent={<MenuHint shortcut={SHORTCUTS.exit} />}
         />
         <DropdownMenuItem
-          label={state.isBookmarked ? 'Remove bookmark from this page' : 'Bookmark this page'}
+          label={state.isBookmarked ? t('item.removeBookmark') : t('item.addBookmark')}
           onClick={actions.onToggleBookmark}
           endContent={<MenuHint shortcut={SHORTCUTS.bookmark} />}
         />
         <DropdownMenuItem
-          label="Show every page"
+          label={t('item.everyPage')}
           onClick={actions.onToggleThumbs}
           endContent={<MenuHint shortcut={SHORTCUTS.thumbs} />}
         />
       </Menu>
 
-      <Menu id="view" openMenu={openMenu} onOpenChange={changeOpen}>
+      <Menu id="view" label={t('menu.view')} openMenu={openMenu} onOpenChange={changeOpen}>
         {/*
           뒤집기가 아니라 고르기다. 두 값이 나란히 서고 걸린 쪽에 표시가 붙으므로,
           지금 어느 쪽인지 따로 적어 둘 곁글이 없다(`R-221`).
         */}
-        <DropdownMenuSubMenu label="Read from">
+        <DropdownMenuSubMenu label={t('item.readFrom')}>
           <DropdownMenuRadioGroup
-            label="Read from"
+            label={t('item.readFrom')}
             value={state.direction}
             onChange={(value) => {
               if (Schema.is(ReadingDirection)(value)) actions.onChooseDirection(value)
             }}
           >
-            <DropdownMenuRadioItem value="rtl" label="Right to left" />
-            <DropdownMenuRadioItem value="ltr" label="Left to right" />
+            <DropdownMenuRadioItem value="rtl" label={t('item.rightToLeft')} />
+            <DropdownMenuRadioItem value="ltr" label={t('item.leftToRight')} />
           </DropdownMenuRadioGroup>
         </DropdownMenuSubMenu>
         <DropdownMenuItem
-          label="Toggle one or two pages"
+          label={t('item.toggleView')}
           onClick={actions.onToggleView}
           endContent={
-            <MenuHint value={state.view === 'spread' ? 'Two' : 'One'} shortcut={SHORTCUTS.view} />
+            <MenuHint
+              value={state.view === 'spread' ? t('item.twoPages') : t('item.onePage')}
+              shortcut={SHORTCUTS.view}
+            />
           }
         />
         {/* 순환이 아니라 고르기다. 원하는 모드까지 여러 번 열고 누를 일이 없다(`R-224`). */}
-        <DropdownMenuSubMenu label="Fit to">
+        <DropdownMenuSubMenu label={t('item.fitTo')}>
           <DropdownMenuRadioGroup
-            label="Fit to"
+            label={t('item.fitTo')}
             value={state.fit}
             onChange={(value) => {
               if (Schema.is(FitMode)(value)) actions.onChooseFit(value)
             }}
           >
-            {FIT_CHOICES.map(({ fit, label }) => (
+            {fitChoices(t).map(({ fit, label }) => (
               <DropdownMenuRadioItem key={fit} value={fit} label={label} />
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuSubMenu>
         <DropdownMenuItem
-          label="Turn the page a quarter clockwise"
+          label={t('item.rotate')}
           onClick={actions.onRotate}
           endContent={<MenuHint shortcut={SHORTCUTS.rotate} />}
         />
         {/* 한 장 모드에는 뒤집을 묶기가 없으므로 자리도 두지 않는다(`R-227`). */}
         {state.view === 'spread' ? (
           <DropdownMenuItem
-            label="Flip how this spread is paired"
+            label={t('item.flipBinding')}
             onClick={actions.onToggleBinding}
             endContent={<MenuHint shortcut={SHORTCUTS.binding} />}
           />
         ) : null}
         <DropdownMenuDivider />
         <DropdownMenuItem
-          label="Zoom in"
+          label={t('item.zoomIn')}
           onClick={actions.onZoomIn}
           endContent={<MenuHint shortcut={SHORTCUTS.zoomIn} />}
         />
         <DropdownMenuItem
-          label="Zoom out"
+          label={t('item.zoomOut')}
           onClick={actions.onZoomOut}
           endContent={<MenuHint shortcut={SHORTCUTS.zoomOut} />}
         />
         <DropdownMenuDivider />
         <DropdownMenuItem
-          label={state.isFullscreen ? 'Leave fullscreen' : 'Enter fullscreen'}
+          label={state.isFullscreen ? t('item.leaveFullscreen') : t('item.enterFullscreen')}
           onClick={actions.onToggleFullscreen}
           endContent={<MenuHint shortcut={SHORTCUTS.fullscreen} />}
         />
         <DropdownMenuItem
-          label="Hide the toolbar"
+          label={t('item.hideToolbar')}
           onClick={actions.onToggleChrome}
           endContent={<MenuHint shortcut={SHORTCUTS.chrome} />}
         />
       </Menu>
 
-      <Menu id="go" openMenu={openMenu} onOpenChange={changeOpen}>
+      <Menu id="go" label={t('menu.go')} openMenu={openMenu} onOpenChange={changeOpen}>
         <DropdownMenuItem
-          label="First"
+          label={t('item.first')}
           onClick={actions.onFirst}
           endContent={<MenuHint shortcut={SHORTCUTS.first} />}
         />
         <DropdownMenuItem
-          label="Previous"
+          label={t('item.previous')}
           onClick={actions.onPrevious}
           endContent={<MenuHint shortcut={SHORTCUTS.previous} />}
         />
         <DropdownMenuItem
-          label="Next"
+          label={t('item.next')}
           onClick={actions.onNext}
           endContent={<MenuHint shortcut={SHORTCUTS.next} />}
         />
         <DropdownMenuItem
-          label="Last"
+          label={t('item.last')}
           onClick={actions.onLast}
           endContent={<MenuHint shortcut={SHORTCUTS.last} />}
         />
         <DropdownMenuDivider />
         <DropdownMenuItem
-          label="Go to page"
+          label={t('item.goToPage')}
           onClick={onOpenGoToPage}
           isDisabled={onOpenGoToPage === undefined}
         />
         <DropdownMenuDivider />
         <DropdownMenuItem
-          label="Next bookmark"
+          label={t('item.nextBookmark')}
           onClick={() => actions.onStepBookmark(1)}
           endContent={<MenuHint shortcut={SHORTCUTS.nextBookmark} />}
         />
         <DropdownMenuItem
-          label="Previous bookmark"
+          label={t('item.previousBookmark')}
           onClick={() => actions.onStepBookmark(-1)}
           endContent={<MenuHint shortcut={SHORTCUTS.previousBookmark} />}
         />
       </Menu>
 
-      <Menu id="play" openMenu={openMenu} onOpenChange={changeOpen}>
+      <Menu id="play" label={t('menu.play')} openMenu={openMenu} onOpenChange={changeOpen}>
         <DropdownMenuItem
-          label={state.isPlaying ? 'Stop the slideshow' : 'Start the slideshow'}
+          label={state.isPlaying ? t('item.stopSlideshow') : t('item.startSlideshow')}
           onClick={actions.onToggleSlideshow}
           endContent={<MenuHint shortcut={SHORTCUTS.slideshow} />}
         />
       </Menu>
 
-      <Menu id="settings" openMenu={openMenu} onOpenChange={changeOpen}>
+      <Menu id="settings" label={t('menu.settings')} openMenu={openMenu} onOpenChange={changeOpen}>
         <DropdownMenuItem
-          label="Reading settings"
+          label={t('item.readingSettings')}
           onClick={actions.onToggleSettings}
           endContent={<MenuHint shortcut={SHORTCUTS.settings} />}
         />
