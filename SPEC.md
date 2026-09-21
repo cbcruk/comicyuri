@@ -1169,10 +1169,20 @@ e2e "R-2B5 · 기본값은 조용히 읽던 자리로 간다" 외 5개
 
 `d`만은 짝이 되는 항목이 없다. 메뉴는 방향을 고르고(`R-221`) 키는 뒤집으므로, 둘이 보내는
 Message가 다르고 메뉴에 `d`를 적어 둘 항목도 없다.
+
+글자 단축키는 한글 입력 상태에서도 먹는다. 그때는 `b` 자리를 눌러도 `key`가 `ㅠ`로 오고,
+입력기가 조합 중이면 `Process`로 온다. 들어온 것이 라틴 글자가 아니면 물리 키 자리(`code`,
+`KeyB`)의 글자로 읽는다. 라틴 글자가 들어왔으면 자리가 아니라 그 글자를 따른다 — 드보락
+자판의 `d`는 `KeyH` 자리에 있다.
 ✅ keys `"d" is the same thing the ClickedToggleDirection control does` 외 11개,
 "Home and End are the ends of the book, whichever way it reads", "the bracket keys are the
 bookmarks either side",
-chrome/screen "every item shows the key that does the same thing"
+reader/subscription "a letter key typed in Hangul still means its letter", "and so does one
+the input method is still composing", "a Latin letter from another layout keeps the letter
+printed on the key",
+chrome/screen "every item shows the key that does the same thing",
+e2e "R-2A2 · 한글 입력 상태에서도 글자 단축키가 먹는다"
+❓ 실제 한글 입력기로 눌러 보는 것 — 시험은 그 이벤트를 흉내 낼 뿐이다
 
 **R-2A3 · Escape는 한 겹씩 벗긴다**
 설정 → 썸네일 → 슬라이드쇼 → 전체화면 → 책장.

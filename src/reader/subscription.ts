@@ -17,7 +17,7 @@ import { EDGE_SLACK, NO_ROOM, deviceFor } from '../reader/scroll.ts'
 import type { Room } from '../reader/scroll.ts'
 import type { Point } from '../reader/gesture.ts'
 import type { Half } from '../reader/half.ts'
-import { handlesKeysItself, isReaderKey } from './keys.ts'
+import { handlesKeysItself, isReaderKey, readerKeyOf } from './keys.ts'
 import { Message } from './message.ts'
 import type { Model } from './model.ts'
 
@@ -141,12 +141,13 @@ export const messageForKeydown = (event: KeyboardEvent): Option.Option<Message> 
   if (event.defaultPrevented) return Option.none()
   if (handlesKeysItself(event.target)) return Option.none()
 
-  if (!isReaderKey(event.key, { ctrl: event.ctrlKey, meta: event.metaKey, alt: event.altKey })) {
+  const key = readerKeyOf(event)
+  if (!isReaderKey(key, { ctrl: event.ctrlKey, meta: event.metaKey, alt: event.altKey })) {
     return Option.none()
   }
 
   event.preventDefault()
-  return Option.some(Message.PressedKey({ key: event.key, withShift: event.shiftKey }))
+  return Option.some(Message.PressedKey({ key, withShift: event.shiftKey }))
 }
 
 /** 페이지 위에 떨어진 누름만 제스처가 된다. */
