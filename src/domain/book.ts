@@ -95,11 +95,16 @@ export const neighbour = (
   )
 
 /**
- * 카드가 분량을 말하는 방식. 한 장이면 단수로, 여럿이면 복수로, 페이지 수가 없는
- * 레코드면 모른다고 적는다.
+ * 카드가 분량을 말하는 방식. 페이지 수가 없는 레코드면 모른다고 적는다.
+ *
+ * 문구를 받아 쓰는 이유는 도메인이 언어를 몰라야 하기 때문이다(`S-151`). 단수와 복수를
+ * 가르는 것도 언어마다 다르므로 `words.pages`의 몫이다.
  */
-export const pageCountLabel = (book: BookSummary): string =>
+export const pageCountLabel = (
+  book: BookSummary,
+  words: Readonly<{ pages: (count: number) => string; unknownPages: string }>,
+): string =>
   Option.match(book.maybePageCount, {
-    onNone: () => 'Page count unknown',
-    onSome: (count) => (count === 1 ? '1 page' : `${count} pages`),
+    onNone: () => words.unknownPages,
+    onSome: (count) => words.pages(count),
   })

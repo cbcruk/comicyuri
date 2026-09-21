@@ -1,5 +1,6 @@
 /** 화면 언어를 쥐는 atom들(`S-151`). */
 
+import { useAtomSet } from '@effect/atom-react'
 import { Atom } from 'effect/unstable/reactivity'
 import { Effect } from 'effect'
 
@@ -31,6 +32,21 @@ export const applyAndSaveLocale = (setting: LocaleSetting): Effect.Effect<void> 
 
     applyLanguage(resolveLocale(setting, navigator.languages))
   })
+
+/**
+ * 언어를 고르는 손잡이. 화면에 바로 걸고, 저장하고, 문서 루트의 `lang`까지 함께 세운다.
+ *
+ * 설정 자체를 저장하는 일은 부르는 쪽이 이미 하고 있을 수도 있다(리더는 Message로 간다).
+ * 두 번 적어도 같은 값이라 해롭지 않다.
+ */
+export const useChooseLocale = (): ((setting: LocaleSetting) => void) => {
+  const setSetting = useAtomSet(localeSettingAtom)
+
+  return (setting) => {
+    setSetting(setting)
+    void Effect.runPromise(applyAndSaveLocale(setting))
+  }
+}
 
 /**
  * 문서 루트에 언어를 적는다.

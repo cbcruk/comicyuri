@@ -31,6 +31,7 @@ const spies = () => ({
   onNudgeSlideSeconds: vi.fn(),
   onSelectAtBookEnd: vi.fn(),
   onSelectResume: vi.fn(),
+  onSelectLocale: vi.fn(),
 })
 
 /**
@@ -90,6 +91,10 @@ const StatefulPanel = ({
       onSelectResume={(resume) => {
         handlers.onSelectResume(resume)
         change('resume', resume)
+      }}
+      onSelectLocale={(locale) => {
+        handlers.onSelectLocale(locale)
+        change('locale', locale)
       }}
     />
   )
@@ -245,4 +250,19 @@ test('the close button hands the panel back to whoever opened it', async () => {
   await screen.getByRole('button', { name: 'Close' }).click()
 
   expect(handlers.onClose).toHaveBeenCalled()
+})
+
+test('S-151 · the language row offers the browser default and the languages there are words for', async () => {
+  const { handlers, screen } = await renderPanel()
+
+  const row = screen.getByRole('radiogroup', { name: 'Language' })
+  await expect.element(row).toBeVisible()
+
+  const chosen = [...row.element().querySelectorAll('[role="radio"]')].map(
+    (radio) => `${radio.textContent} ${radio.getAttribute('aria-checked')}`,
+  )
+  expect(chosen).toEqual(['Browser true', 'English false', '한국어 false'])
+
+  await screen.getByRole('radio', { name: '한국어' }).click()
+  expect(handlers.onSelectLocale).toHaveBeenLastCalledWith('ko')
 })

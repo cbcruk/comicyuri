@@ -278,6 +278,11 @@ JSON이 깨졌거나 `theme`이 아는 값이 아니면 아무것도 하지 않�
 문구는 언어별 카탈로그(`src/app/i18n/`)에 모여 있고, 영어 카탈로그가 다른 언어의 본이다 —
 키가 하나라도 빠지면 타입 검사가 잡는다. 지금 있는 언어는 영어와 한국어다.
 
+언어는 설정 패널의 `Language` 줄에서 고른다 — `Browser`·`English`·`한국어`. 언어 이름은 그
+언어로 적는다. 영어로 보는 중에 한국어를 찾는 사람에게 `Korean`은 읽을 수 없는 이름이다.
+`Browser`만은 무엇을 따른다는 말이라 옮긴다. 리더에서 고른 것도 다른 설정과 같은 길로 가므로
+(`SelectedLocale`), 그 뒤에 바꾼 설정이 옛 언어를 되돌리지 않는다.
+
 설정의 `locale`이 `auto`(기본값)이면 브라우저가 매겨 둔 언어 순서(`navigator.languages`)를
 앞에서부터 훑어 카탈로그가 있는 첫 언어를 고른다. 지역 태그는 앞자리만 본다 — `ko-KR`도
 `ko`도 한국어다. 아는 언어가 없으면 영어다.
@@ -287,13 +292,19 @@ JSON이 깨졌거나 `theme`이 아는 값이 아니면 아무것도 하지 않�
 받자마자 세운다.
 
 읽는 방향(`R-221`)과는 아무 상관이 없다. 한국어로 읽으면서 오른쪽에서 왼쪽으로 넘길 수 있다.
+숫자가 끼는 문구는 카탈로그의 함수다. 문장을 밖에서 이어 붙이면 영어의 어순이 코드에
+박힌다. 단수와 복수를 가르는 것도 언어마다 다르므로 카탈로그의 몫이고, 그래서 도메인의
+`pageCountLabel`은 문구를 받아 쓴다.
 ✅ i18n/locale "a chosen language wins over what the browser says", "automatic takes the
 first language it has words for", "a regional tag is the language in front of it", "a browser
 that speaks nothing it knows gets English",
-e2e "S-151 · 한국어 브라우저에서는 메뉴가 한국어로 선다", "S-151 · 문서의 언어도 한국어가 된다"
-⚠️ 옮긴 것은 아직 메뉴바와 넘김 줄뿐이다. 책장·설정 패널·오류 문구는 영어로 남아 있어서,
-한국어 브라우저에서는 두 언어가 섞여 보인다. 남은 화면을 옮기는 것이 다음 단계다.
-📖 설정에서 언어를 고르는 자리 — 아직 없다. `locale`을 적을 수는 있어도 화면에 그 줄이 없다
+domain/book "a book that knows its length says it in the words it was given",
+settings/screen "S-151 · the language row offers the browser default and the languages there
+are words for",
+e2e "S-151 · 책장이 한국어로 선다", "S-151 · 설정에서 고른 언어가 화면에 걸리고 새로고침을
+넘긴다"
+⚠️ 오류 문구(`src/errors.ts`와 io 계층의 `reason`)는 아직 영어다. 화면에 나오는 것은 대부분
+책장의 상태 줄이고, 그것을 옮기려면 io 계층까지 함께 고쳐야 한다.
 
 ---
 

@@ -18,6 +18,7 @@ import {
 
 import { ReaderScreen } from './reader.tsx'
 import { RouterLink } from './routerLink.tsx'
+import { useMessages } from './i18n/messages.ts'
 import { useDocumentTitle } from './title.ts'
 import { ShelfScreen } from './shelf.tsx'
 
@@ -28,14 +29,15 @@ import { ShelfScreen } from './shelf.tsx'
  * 가리킨다(`N-407`).
  */
 const NotFound = () => {
+  const { notFound } = useMessages()
   useDocumentTitle('comicyuri — not found')
 
   return (
     <VStack as="main" align="center" justify="center" gap={3} padding={6} height="100%">
-      <Heading level={1}>Nothing here</Heading>
+      <Heading level={1}>{notFound.title}</Heading>
       <Text color="secondary">{window.location.pathname}</Text>
       <RouterLink to="/" hasUnderline={true}>
-        Back to the shelf
+        {notFound.backToShelf}
       </RouterLink>
     </VStack>
   )

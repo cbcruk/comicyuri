@@ -38,6 +38,8 @@ import { Message } from '../../reader/message.ts'
 import { OpenState } from '../../reader/model.ts'
 import type { Model } from '../../reader/model.ts'
 import { ReaderChrome } from '../chrome/index.ts'
+import { useChooseLocale } from '../i18n/atoms.ts'
+import { useMessages } from '../i18n/messages.ts'
 import type { ChromeActions, ChromeState } from '../chrome/index.ts'
 import { SettingsPanel } from '../settings/index.ts'
 import { ThumbsPanel } from '../thumbs/index.ts'
@@ -71,7 +73,7 @@ const styles = stylex.create({
 const OpeningScreen = ({ text, onExit }: Readonly<{ text: string; onExit: () => void }>) => (
   <VStack as="main" align="center" justify="center" gap={3} padding={6} height="100%">
     <Text color="secondary">{text}</Text>
-    <Button label="← Shelf" variant="secondary" onClick={onExit} />
+    <Button label={useMessages().item.shelf} variant="secondary" onClick={onExit} />
   </VStack>
 )
 
@@ -85,26 +87,30 @@ const ResumeRow = ({
   page,
   onResume,
   onDismiss,
-}: Readonly<{ page: number; onResume: () => void; onDismiss: () => void }>) => (
-  <HStack
-    role="status"
-    wrap="wrap"
-    align="center"
-    gap={2}
-    paddingInline={4}
-    paddingBlock={2}
-    xstyle={styles.resume}
-  >
-    <span {...stylex.props(styles.resumeText)}>
-      <Text color="secondary">{`You left this book on page ${page + 1}`}</Text>
-    </span>
-    <Button label="Go there" variant="secondary" size="sm" onClick={onResume} />
-    {/* 보이는 글자는 짧게, 이름은 무엇을 하는지 끝까지 말한다. */}
-    <Button label="Stay on the first page" variant="secondary" size="sm" onClick={onDismiss}>
-      Stay
-    </Button>
-  </HStack>
-)
+}: Readonly<{ page: number; onResume: () => void; onDismiss: () => void }>) => {
+  const { reader } = useMessages()
+
+  return (
+    <HStack
+      role="status"
+      wrap="wrap"
+      align="center"
+      gap={2}
+      paddingInline={4}
+      paddingBlock={2}
+      xstyle={styles.resume}
+    >
+      <span {...stylex.props(styles.resumeText)}>
+        <Text color="secondary">{reader.resume(page + 1)}</Text>
+      </span>
+      <Button label={reader.goThere} variant="secondary" size="sm" onClick={onResume} />
+      {/* 보이는 글자는 짧게, 이름은 무엇을 하는지 끝까지 말한다. */}
+      <Button label={reader.stayOnFirst} variant="secondary" size="sm" onClick={onDismiss}>
+        {reader.stay}
+      </Button>
+    </HStack>
+  )
+}
 
 /** 리더 화면이 받는 것. */
 export type ReaderViewProps = Readonly<{
@@ -149,6 +155,8 @@ export const ReaderView = ({
   )
   useAtomMount(session.runtime)
 
+  const { reader } = useMessages()
+  const chooseLocale = useChooseLocale()
   const model = useAtomValue(session.model)
   const maybeLayout = useAtomValue(session.layout)
   const { maybeShown, isReady, maybeFailure } = useAtomValue(session.shown)
@@ -158,8 +166,8 @@ export const ReaderView = ({
     onNone: () => (
       <OpeningScreen
         text={OpenState.$match(model.openState, {
-          Opening: () => 'Opening…',
-          Ready: () => 'Opening…',
+          Opening: () => reader.opening,
+          Ready: () => reader.opening,
           Failed: ({ text }) => text,
         })}
         onExit={() => send(Message.ClickedExit())}
@@ -253,6 +261,12 @@ export const ReaderView = ({
             onNudgeSlideSeconds={(by) => send(Message.ClickedNudgeSlideSeconds({ by }))}
             onSelectAtBookEnd={(atBookEnd) => send(Message.SelectedAtBookEnd({ atBookEnd }))}
             onSelectResume={(resume) => send(Message.SelectedResume({ resume }))}
+            onSelectLocale={(locale) => {
+              // 리더가 쥔 설정에도 적어 둔다. 그러지 않으면 그 뒤에 바꾼 설정이 저장될 때 옛
+              // 언어가 함께 실려 돌아간다.
+              send(Message.SelectedLocale({ locale }))
+              chooseLocale(locale)
+            }}
           />
         </VStack>
       )

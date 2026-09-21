@@ -35,23 +35,40 @@ import {
   THRESHOLD_MIN,
   THRESHOLD_STEP,
 } from '../../settings.ts'
-import type { AtBookEnd, Resume, Settings } from '../../types.ts'
-
-const AT_BOOK_END_LABEL: Readonly<Record<AtBookEnd, string>> = {
-  next: 'Next book',
-  wrap: 'Back to start',
-  stop: 'Stay put',
-}
+import type { AtBookEnd, LocaleSetting, Resume, Settings } from '../../types.ts'
+import type { Catalog } from '../i18n/en.ts'
+import { useMessages } from '../i18n/messages.ts'
 
 const AT_BOOK_END_ORDER: ReadonlyArray<AtBookEnd> = ['next', 'wrap', 'stop']
 
-const RESUME_LABEL: Readonly<Record<Resume, string>> = {
-  continue: 'Go there',
-  ask: 'Ask',
-  restart: 'Start over',
-}
-
 const RESUME_ORDER: ReadonlyArray<Resume> = ['continue', 'ask', 'restart']
+
+const LOCALE_ORDER: ReadonlyArray<LocaleSetting> = ['auto', 'en', 'ko']
+
+/** 고르는 줄에 적히는 이름들. 같은 카탈로그에서 온다(`S-151`). */
+const atBookEndLabels = (words: Catalog['settings']): Readonly<Record<AtBookEnd, string>> => ({
+  next: words.nextBook,
+  wrap: words.backToStart,
+  stop: words.stayPut,
+})
+
+const resumeLabels = (words: Catalog['settings']): Readonly<Record<Resume, string>> => ({
+  continue: words.goThere,
+  ask: words.ask,
+  restart: words.startOver,
+})
+
+/**
+ * 언어를 고르는 줄에 적히는 이름들.
+ *
+ * 언어 이름은 그 언어로 적는다 — `English`와 `한국어`다. 영어로 보는 중에 한국어를 찾는
+ * 사람에게 `Korean`은 읽을 수 없는 이름이다. `auto`만은 무엇을 따른다는 말이라 옮긴다.
+ */
+const localeLabels = (words: Catalog['settings']): Readonly<Record<LocaleSetting, string>> => ({
+  auto: words.languageAuto,
+  en: words.languageEnglish,
+  ko: words.languageKorean,
+})
 
 /**
  * 설정 패널의 모양. 크기와 색은 모두 Astryx 토큰에서 온다.
@@ -245,6 +262,8 @@ export type SettingsPanelProps = Readonly<{
   onNudgeSlideSeconds: (by: number) => void
   onSelectAtBookEnd: (atBookEnd: AtBookEnd) => void
   onSelectResume: (resume: Resume) => void
+  /** 화면 문구의 언어를 골랐다(`S-151`). */
+  onSelectLocale: (locale: LocaleSetting) => void
 }>
 
 /**
@@ -257,7 +276,7 @@ export type SettingsPanelProps = Readonly<{
 export const SettingsPanel = ({
   isOpen,
   settings,
-  title = 'Reading settings',
+  title,
   onClose,
   onToggleCoverAlone,
   onToggleSplitWide,
@@ -267,95 +286,107 @@ export const SettingsPanel = ({
   onNudgeSlideSeconds,
   onSelectAtBookEnd,
   onSelectResume,
-}: SettingsPanelProps) => (
-  <Dialog
-    isOpen={isOpen}
-    onOpenChange={(open) => {
-      if (!open) onClose()
-    }}
-    variant="fullscreen"
-    purpose="form"
-    padding={0}
-    aria-label={title}
-  >
-    <Layout
+  onSelectLocale,
+}: SettingsPanelProps) => {
+  const words = useMessages().settings
+
+  return (
+    <Dialog
+      isOpen={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+      variant="fullscreen"
+      purpose="form"
       padding={0}
-      xstyle={styles.panel}
-      header={
-        <LayoutHeader hasDivider={true} padding={0}>
-          <HStack align="center" gap={2} paddingInline={4} paddingBlock={2}>
-            <span {...stylex.props(styles.title)}>{title}</span>
-            <Button label="Close" variant="secondary" size="sm" onClick={onClose} />
-          </HStack>
-        </LayoutHeader>
-      }
+      aria-label={title ?? words.title}
     >
-      <LayoutContent padding={0} xstyle={styles.rows}>
-        <SwitchRow
-          label="Cover on its own"
-          isChecked={settings.coverAlone}
-          onToggle={onToggleCoverAlone}
-        />
-        <SettingRow label="A page wider than this stands alone">
-          <NudgeRow
-            shown={settings.singleThreshold.toFixed(2)}
-            down={{
-              label: 'Pair more pages',
-              isBlocked: settings.singleThreshold <= THRESHOLD_MIN,
-              onNudge: () => onNudgeThreshold(-THRESHOLD_STEP),
-            }}
-            up={{
-              label: 'Pair fewer pages',
-              isBlocked: settings.singleThreshold >= THRESHOLD_MAX,
-              onNudge: () => onNudgeThreshold(THRESHOLD_STEP),
-            }}
+      <Layout
+        padding={0}
+        xstyle={styles.panel}
+        header={
+          <LayoutHeader hasDivider={true} padding={0}>
+            <HStack align="center" gap={2} paddingInline={4} paddingBlock={2}>
+              <span {...stylex.props(styles.title)}>{title ?? words.title}</span>
+              <Button label={words.close} variant="secondary" size="sm" onClick={onClose} />
+            </HStack>
+          </LayoutHeader>
+        }
+      >
+        <LayoutContent padding={0} xstyle={styles.rows}>
+          <SwitchRow
+            label={words.coverAlone}
+            isChecked={settings.coverAlone}
+            onToggle={onToggleCoverAlone}
           />
-        </SettingRow>
-        <SwitchRow
-          label="Read wide pages in halves"
-          isChecked={settings.splitWide}
-          onToggle={onToggleSplitWide}
-        />
-        <SwitchRow
-          label="Stretch small pages to fit"
-          isChecked={settings.enlargeToFit}
-          onToggle={onToggleEnlargeToFit}
-        />
-        <SwitchRow
-          label="Remember these for each book"
-          isChecked={settings.rememberBookSettings}
-          onToggle={onToggleRememberBookSettings}
-        />
-        <SettingRow label="A slideshow stays on a page for">
-          <NudgeRow
-            shown={`${settings.slideSeconds}s`}
-            down={{
-              label: 'Spend less time on a page',
-              isBlocked: settings.slideSeconds <= SLIDE_MIN,
-              onNudge: () => onNudgeSlideSeconds(-SLIDE_STEP),
-            }}
-            up={{
-              label: 'Spend more time on a page',
-              isBlocked: settings.slideSeconds >= SLIDE_MAX,
-              onNudge: () => onNudgeSlideSeconds(SLIDE_STEP),
-            }}
+          <SettingRow label={words.threshold}>
+            <NudgeRow
+              shown={settings.singleThreshold.toFixed(2)}
+              down={{
+                label: words.pairMore,
+                isBlocked: settings.singleThreshold <= THRESHOLD_MIN,
+                onNudge: () => onNudgeThreshold(-THRESHOLD_STEP),
+              }}
+              up={{
+                label: words.pairFewer,
+                isBlocked: settings.singleThreshold >= THRESHOLD_MAX,
+                onNudge: () => onNudgeThreshold(THRESHOLD_STEP),
+              }}
+            />
+          </SettingRow>
+          <SwitchRow
+            label={words.splitWide}
+            isChecked={settings.splitWide}
+            onToggle={onToggleSplitWide}
           />
-        </SettingRow>
-        <ChoiceRow
-          label="At the end of a book"
-          options={AT_BOOK_END_ORDER}
-          chosen={settings.atBookEnd}
-          labels={AT_BOOK_END_LABEL}
-          onSelect={onSelectAtBookEnd}
-        />
-        <ChoiceRow
-          label="Opening a book you were part way through"
-          options={RESUME_ORDER}
-          chosen={settings.resume}
-          labels={RESUME_LABEL}
-          onSelect={onSelectResume}
-        />
-      </LayoutContent>
-    </Layout>
-  </Dialog>
-)
+          <SwitchRow
+            label={words.enlargeToFit}
+            isChecked={settings.enlargeToFit}
+            onToggle={onToggleEnlargeToFit}
+          />
+          <SwitchRow
+            label={words.rememberBookSettings}
+            isChecked={settings.rememberBookSettings}
+            onToggle={onToggleRememberBookSettings}
+          />
+          <SettingRow label={words.slideSeconds}>
+            <NudgeRow
+              shown={`${settings.slideSeconds}s`}
+              down={{
+                label: words.lessTime,
+                isBlocked: settings.slideSeconds <= SLIDE_MIN,
+                onNudge: () => onNudgeSlideSeconds(-SLIDE_STEP),
+              }}
+              up={{
+                label: words.moreTime,
+                isBlocked: settings.slideSeconds >= SLIDE_MAX,
+                onNudge: () => onNudgeSlideSeconds(SLIDE_STEP),
+              }}
+            />
+          </SettingRow>
+          <ChoiceRow
+            label={words.atBookEnd}
+            options={AT_BOOK_END_ORDER}
+            chosen={settings.atBookEnd}
+            labels={atBookEndLabels(words)}
+            onSelect={onSelectAtBookEnd}
+          />
+          <ChoiceRow
+            label={words.resume}
+            options={RESUME_ORDER}
+            chosen={settings.resume}
+            labels={resumeLabels(words)}
+            onSelect={onSelectResume}
+          />
+          <ChoiceRow
+            label={words.language}
+            options={LOCALE_ORDER}
+            chosen={settings.locale}
+            labels={localeLabels(words)}
+            onSelect={onSelectLocale}
+          />
+        </LayoutContent>
+      </Layout>
+    </Dialog>
+  )
+}
