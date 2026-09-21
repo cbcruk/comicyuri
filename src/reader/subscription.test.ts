@@ -45,10 +45,14 @@ describe('what the slideshow wait is tied to', () => {
 })
 
 describe('the keys the reader takes from the browser', () => {
-  /** 그 요소 위에서 누른 키 하나. 아직 아무도 가져가지 않았다. */
-  const keydownOn = (target: Element, key: string): KeyboardEvent => {
+  /**
+   * 그 요소 위에서 누른 키 하나. 아직 아무도 가져가지 않았다.
+   *
+   * @param code 물리 키 자리(`KeyB`). 입력기가 `key`를 바꿔 놓는 경우를 흉내 낼 때 준다.
+   */
+  const keydownOn = (target: Element, key: string, code = ''): KeyboardEvent => {
     document.body.append(target)
-    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+    const event = new KeyboardEvent('keydown', { key, code, bubbles: true, cancelable: true })
     target.dispatchEvent(event)
     return event
   }
@@ -68,6 +72,35 @@ describe('the keys the reader takes from the browser', () => {
     trigger.setAttribute('role', 'menuitem')
 
     expect(messageForKeydown(keydownOn(trigger, 'ArrowLeft'))).toStrictEqual(Option.none())
+  })
+
+  // 한글 입력 상태에서 `b` 자리를 누르면 `key`는 `ㅠ`다. 자리(`code`)는 그대로 `KeyB`이므로
+  // 그 자리의 글자로 읽는다.
+  test('a letter key typed in Hangul still means its letter', () => {
+    const event = keydownOn(document.createElement('main'), 'ㅠ', 'KeyB')
+
+    expect(messageForKeydown(event)).toStrictEqual(
+      Option.some(Message.PressedKey({ key: 'b', withShift: false })),
+    )
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  test('and so does one the input method is still composing', () => {
+    const event = keydownOn(document.createElement('main'), 'Process', 'KeyD')
+
+    expect(messageForKeydown(event)).toStrictEqual(
+      Option.some(Message.PressedKey({ key: 'd', withShift: false })),
+    )
+  })
+
+  // 드보락 자판에서 `d`가 찍힌 키의 자리는 `KeyH`다. 라틴 글자가 들어오면 찍힌 글자를 따른다
+  // — 자리를 따르면 방향을 뒤집으려다 메뉴바를 숨긴다.
+  test('a Latin letter from another layout keeps the letter printed on the key', () => {
+    const event = keydownOn(document.createElement('main'), 'd', 'KeyH')
+
+    expect(messageForKeydown(event)).toStrictEqual(
+      Option.some(Message.PressedKey({ key: 'd', withShift: false })),
+    )
   })
 
   test('a key someone has already taken is not the reader’s', () => {

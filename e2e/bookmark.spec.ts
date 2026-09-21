@@ -2,7 +2,7 @@
 
 import { expect, test } from '@playwright/test'
 
-import { counter, readBook, use } from './fixture/app.ts'
+import { counter, readBook, readMenuItem, use } from './fixture/app.ts'
 
 test('R-284 · 그리드를 북마크만으로 좁힌다', async ({ page }) => {
   await readBook(page)
@@ -78,4 +78,20 @@ test('R-286 · 목록에서 북마크를 바로 지우고, 그것이 새로고�
   await page.getByRole('button', { name: 'Show bookmarks only' }).click()
   await expect(bookmarks.getByRole('button', { name: 'Go to page 3' })).toBeVisible()
   await expect(bookmarks.getByRole('button', { name: 'Go to page 1' })).toHaveCount(0)
+})
+
+test('R-2A2 · 한글 입력 상태에서도 글자 단축키가 먹는다', async ({ page }) => {
+  await readBook(page)
+
+  // 한글 입력 상태에서 `b` 자리를 누르면 브라우저는 `key`를 `ㅠ`로 보낸다. 실제 입력기는 켤 수
+  // 없으므로 그 이벤트를 그대로 흉내 낸다.
+  await page.evaluate(() => {
+    document.body.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ㅠ', code: 'KeyB', bubbles: true, cancelable: true }),
+    )
+  })
+
+  await readMenuItem(page, 'bookmark', async (item) => {
+    await expect(item).toHaveText(/Remove bookmark from this page/)
+  })
 })

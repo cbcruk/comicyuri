@@ -77,6 +77,39 @@ const SELF_HANDLED = [
 export const handlesKeysItself = (target: EventTarget | null): boolean =>
   target instanceof Element && target.closest(SELF_HANDLED) !== null
 
+/** 라틴 자판의 글자 키 자리. `KeyB`의 `B`를 꺼낸다. */
+const LETTER_CODE = /^Key([A-Z])$/
+
+/** 인쇄 가능한 ASCII 문자 하나. 라틴 자판이 찍어 보낸 글자다. */
+const ASCII_CHARACTER = /^[\x20-\x7e]$/
+
+/**
+ * 리더가 읽을 키 이름. 대개 `key` 그대로다.
+ *
+ * 한글·키릴 문자 같은 입력 상태에서는 `b` 자리를 눌러도 `key`가 `ㅠ`로 오고, 입력기가 조합
+ * 중이면 `Process`로 온다. 그러면 글자 단축키가 하나도 먹지 않는다. 그때는 물리 키 자리
+ * (`code`)의 라틴 글자로 읽는다 — Shift가 눌려 있으면 대문자다.
+ *
+ * 라틴 글자가 들어왔으면 자리가 아니라 그 글자를 따른다. 드보락 자판의 `d`는 `KeyH` 자리에
+ * 있어서, 자리를 따르면 방향을 뒤집으려다 메뉴바를 숨긴다. 화살표 같은 이름 있는 키는
+ * `code`가 글자 자리가 아니므로 그대로다.
+ *
+ * @example 한글 입력 상태
+ * ```ts
+ * import { readerKeyOf } from './keys.ts'
+ *
+ * readerKeyOf({ key: 'ㅠ', code: 'KeyB', shiftKey: false }) // 'b'
+ * ```
+ */
+export const readerKeyOf = (
+  event: Readonly<{ key: string; code: string; shiftKey: boolean }>,
+): string => {
+  if (ASCII_CHARACTER.test(event.key)) return event.key
+  const letter = LETTER_CODE.exec(event.code)?.[1]
+  if (letter === undefined) return event.key
+  return event.shiftKey ? letter : letter.toLowerCase()
+}
+
 /** 키를 누를 때 함께 눌려 있던 수정키. */
 export type Modifiers = Readonly<{
   /** Control이 눌려 있었는지. */
