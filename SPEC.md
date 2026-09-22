@@ -57,6 +57,15 @@
 ✅ shelf/screen "an empty shelf says so"
 📖 읽는 중인 책장이 비었다고 말하지 않는 쪽 — 재는 테스트가 없다
 
+**S-105 · 책장 머리에는 로고가 선다**
+`public/logo.svg`를 40px 높이로 세우고, 폭은 그림의 비가 정한다. 주소 앞에 `BASE_URL`을
+붙이므로 저장소 이름 아래에 놓여도 같은 그림을 가리킨다(`N-407`).
+
+그림은 장식이다(`alt=""`). 화면의 이름은 보이지 않는 `h1`("comicyuri")이 이미 말하고 있어서,
+그림이 한 번 더 말하면 보조기기로 훑을 때 같은 이름이 둘 선다.
+✅ shelf/screen "the header wears the logo, and the screen is still named for screen readers",
+e2e "N-407 · 저장소 이름 아래에서도 로고가 온다"
+
 **S-102 · 책은 최근에 추가한 것이 먼저 온다**
 `createdAt` 내림차순. 뷰가 아니라 저장 계층이 정한다(`P-301`).
 ✅ db "the most recently imported book comes first",

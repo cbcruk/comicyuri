@@ -1,5 +1,7 @@
 # comicyuri
 
+<img src="public/logo.svg" alt="" width="360">
+
 A browser-based comic / manga viewer, inspired by [ComicGlass](https://comicglass.net/).
 Everything runs client-side — your files never leave the browser.
 

@@ -59,3 +59,14 @@ test('N-407 · 끝의 슬래시 없이 와도 책장이다', async ({ page }) =>
   await expect(page).toHaveURL(/\/comicyuri\/$/)
   await expect(page.getByRole('button', { name: 'Open files' })).toBeVisible()
 })
+
+test('N-407 · 저장소 이름 아래에서도 로고가 온다', async ({ page }) => {
+  await page.goto(SHELF)
+
+  const logo = page.locator('img[src$="logo.svg"]')
+  await expect(logo).toHaveAttribute('src', '/comicyuri/logo.svg')
+  // 주소가 맞는 것과 그림이 온 것은 다른 말이다. 온 그림만 폭을 가진다.
+  await expect
+    .poll(() => logo.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBeGreaterThan(0)
+})
