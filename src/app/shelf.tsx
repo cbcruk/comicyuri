@@ -158,6 +158,16 @@ const styles = stylex.create({
     fontSize: textSizeVars['--font-size-base'],
     fontWeight: fontWeightVars['--font-weight-medium'],
   },
+  /**
+   * 머리에 서는 로고. 높이만 정하고 폭은 그림의 비가 정한다.
+   *
+   * `public/`에 그대로 놓인 파일이라 주소를 손으로 짓는다. 저장소 이름 아래에 놓일 때를
+   * 위해 `BASE_URL`을 앞에 붙인다(`N-407`).
+   */
+  logo: {
+    height: spacingVars['--spacing-10'],
+    width: 'auto',
+  },
   bin: {
     position: 'absolute',
     top: spacingVars['--spacing-2'],
@@ -357,7 +367,19 @@ export const ShelfScreen = () => {
       <VisuallyHidden as="h1">comicyuri</VisuallyHidden>
       <TopNav
         label="comicyuri"
-        heading={<TopNavHeading heading="comicyuri" />}
+        heading={
+          <TopNavHeading
+            logo={
+              // 이름은 위의 `h1`이 이미 말한다. 그림이 그것을 한 번 더 말하면 읽는 자리에
+              // 같은 이름이 둘 선다.
+              <img
+                src={`${import.meta.env.BASE_URL}logo.svg`}
+                alt=""
+                {...stylex.props(styles.logo)}
+              />
+            }
+          />
+        }
         endContent={
           <>
             <Button

@@ -75,6 +75,18 @@ afterEach(() => {
   delete document.documentElement.dataset['theme']
 })
 
+test('the header wears the logo, and the screen is still named for screen readers', async () => {
+  const screen = await renderShelf()
+
+  const logo = screen.container.querySelector('img[src$="logo.svg"]')
+  if (!(logo instanceof HTMLImageElement)) throw new Error('로고가 없다')
+  // 이름은 보이지 않는 `h1`이 말한다. 그림이 한 번 더 말하면 같은 이름이 둘 선다.
+  expect(logo.alt).toBe('')
+  await expect.poll(() => logo.naturalWidth).toBeGreaterThan(0)
+
+  expect(screen.container.querySelector('h1')?.textContent).toBe('comicyuri')
+})
+
 test('an empty shelf says so', async () => {
   const screen = await renderShelf()
 
