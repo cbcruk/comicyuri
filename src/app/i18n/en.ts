@@ -133,6 +133,8 @@ export const en = {
   'error.archive.inflate': 'Could not decompress an archive entry',
   'error.archive.unsupportedMethod': 'Unsupported compression method {method}',
   'error.archive.unreadable': 'Could not read "{name}"',
+  'error.archive.noPermission': 'comicyuri needs permission to read "{name}" again',
+  'error.archive.fileGone': '"{name}" is no longer where it was on your disk',
   'error.archive.pageMissing': 'Page {page} is not in this book',
   'error.cover.decode': 'Could not decode the cover image',
   'error.cover.timeout': 'Timed out decoding the cover image',

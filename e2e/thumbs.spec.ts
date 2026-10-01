@@ -3,7 +3,7 @@
  * 브라우저에서만 드러난다.
  */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { readBook, use } from './fixture/app.ts'

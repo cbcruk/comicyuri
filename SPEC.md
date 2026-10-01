@@ -66,6 +66,26 @@
 ✅ shelf/screen "the header wears the logo, and the screen is still named for screen readers",
 e2e "N-407 · 저장소 이름 아래에서도 로고가 온다"
 
+**S-122 · 손잡이로 들여온 책은 바이트를 복사하지 않는다**
+사용자가 고른 파일을 손잡이(`FileSystemFileHandle`)로 받을 수 있는 브라우저에서는 그것을
+책장에 남긴다. 레코드가 지는 것은 손잡이와 메타데이터뿐이고, 책을 열 때 그 손잡이로 디스크의
+파일을 다시 연다. 1GB 폴더를 들여와도 디스크에 1GB가 더 쌓이지 않는다(`P-301`).
+
+손잡이를 주는 선택기(`showOpenFilePicker`·`showDirectoryPicker`)는 **Chromium에만 있다.**
+Firefox와 Safari는 지금까지처럼 바이트를 복사한다 — 고르는 길이 기능 탐지로 갈릴 뿐, 들여온
+뒤의 모양은 같다. 드롭(`S-111`)은 어느 브라우저에서나 복사다.
+
+새 세션에서 손잡이를 쓰려면 허락이 필요하다. 허락을 받지 못했거나 그 사이 파일이 옮겨졌으면
+그렇게 말한다 — "다시 읽으려면 허락이 필요합니다", "디스크의 그 자리에 없습니다".
+✅ handles "a handle we already may read opens without asking again", "a handle from an earlier
+session asks once, and opens when allowed", "saying no is not a broken book — it is a book we
+may not read", "a file that moved away says so, rather than failing as unreadable"
+🔍 2026-10-01 · 실제 Chrome에서 손잡이를 IndexedDB에 넣고 다시 꺼내 `getFile()`까지 되는 것을
+확인함. e2e는 이것을 재지 못한다 — Playwright가 쓰는 Chromium은 꺼내는 순간 렌더러가 죽고,
+선택기 자체도 자동화로 열 수 없다(`e2e/handles.spec.ts`가 그 사정과 함께 건너뛴다)
+❓ **선택기로 받은 손잡이의 허락을 새 세션에서 다시 묻는 길** — OPFS 손잡이로는 재어지지
+않는다. 손으로 확인할 것
+
 **S-102 · 책은 최근에 추가한 것이 먼저 온다**
 `createdAt` 내림차순. 뷰가 아니라 저장 계층이 정한다(`P-301`).
 ✅ db "the most recently imported book comes first",

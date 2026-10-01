@@ -54,6 +54,8 @@ import {
   themeAtom,
 } from './shelfAtoms.ts'
 import type { ShelfBook } from './shelfAtoms.ts'
+import { pickedFromFiles } from '../io/loader.ts'
+import type { PickedFile } from '../io/loader.ts'
 import type { Theme } from '../types.ts'
 import { nudgedSlideSeconds, nudgedThreshold } from '../settings.ts'
 import { SettingsPanel } from './settings/index.ts'
@@ -310,11 +312,11 @@ export const ShelfScreen = () => {
   const [isDragOver, setIsDragOver] = useState(false)
 
   /** 고른 파일을 들여온다. 아무것도 고르지 않은 것은 아무 일도 아니다(`S-118`). */
-  const importFiles = async (files: ReadonlyArray<File>) => {
-    if (files.length === 0) return
+  const importFiles = async (picked: ReadonlyArray<PickedFile>) => {
+    if (picked.length === 0) return
 
     setNotice({ tone: 'busy', text: t('shelf.importing') })
-    const maybeError = await runImport(files)
+    const maybeError = await runImport(picked)
     setNotice((standing) =>
       Option.match(maybeError, {
         // 끝난 작업은 자기가 세운 대기만 거둔다. 도는 동안 실패가 들어왔다면 그것은
@@ -325,7 +327,7 @@ export const ShelfScreen = () => {
     )
   }
 
-  const pick = (picker: Effect.Effect<ReadonlyArray<File>>) => {
+  const pick = (picker: Effect.Effect<ReadonlyArray<PickedFile>>) => {
     void Effect.runPromise(picker).then(importFiles)
   }
 
@@ -351,7 +353,7 @@ export const ShelfScreen = () => {
       return
     }
 
-    void importFiles(files)
+    void importFiles(pickedFromFiles(files))
   }
 
   const maybeBooks = AsyncResult.value(shelf)

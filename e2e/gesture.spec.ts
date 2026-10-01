@@ -1,6 +1,6 @@
 /** R-232~234, R-241, R-243 · 실제 포인터로만 확인되는 것들. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { counter, openReader, pageBox, readBook, stage, use, zoomOf } from './fixture/app.ts'

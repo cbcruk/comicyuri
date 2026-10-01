@@ -1,6 +1,6 @@
 /** P-301~303 · 새로고침을 넘겨 남는 것들. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import {

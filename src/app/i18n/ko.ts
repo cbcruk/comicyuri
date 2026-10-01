@@ -129,6 +129,8 @@ export const ko: Readonly<Record<keyof typeof en, string>> = {
   'error.archive.inflate': '아카이브 안의 항목을 풀지 못했습니다',
   'error.archive.unsupportedMethod': '다루지 못하는 압축 방식입니다 ({method})',
   'error.archive.unreadable': '"{name}"을(를) 읽지 못했습니다',
+  'error.archive.noPermission': '"{name}"을(를) 다시 읽으려면 허락이 필요합니다',
+  'error.archive.fileGone': '"{name}"이(가) 디스크의 그 자리에 없습니다',
   'error.archive.pageMissing': '{page}페이지는 이 책에 없습니다',
   'error.cover.decode': '표지 이미지를 읽지 못했습니다',
   'error.cover.timeout': '표지 이미지를 읽다가 시간이 다 됐습니다',

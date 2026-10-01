@@ -1,6 +1,6 @@
 /** S-117 · 한 권을 들여와도 이미 선 책의 표지는 다시 그려지지 않는다. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { importBook, openShelf } from './fixture/app.ts'

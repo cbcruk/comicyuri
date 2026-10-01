@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 
 import { png } from './fixture/archive.ts'
 import { counter, importBook, openReader, openShelf, use } from './fixture/app.ts'

@@ -1,6 +1,6 @@
 /** R-204 · 책을 떠나면 페이지가 내준 object URL이 하나도 남지 않는다. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { readBook, stage, use } from './fixture/app.ts'

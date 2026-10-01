@@ -1,6 +1,6 @@
 /** R-229 · 넓은 페이지를 좌우 반씩 읽는다. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { counter, readBook, stage, use } from './fixture/app.ts'

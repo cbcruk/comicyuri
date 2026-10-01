@@ -6,7 +6,7 @@
  * Pages처럼 행동하는 서버(`fixture/pages-host.ts`)가 내준다.
  */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 
 import { counter, importBook, openReader, stage, use } from './fixture/app.ts'
 

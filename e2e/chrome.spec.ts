@@ -1,6 +1,6 @@
 /** R-251, R-252, R-272, R-291 · 툴바, 시간과 브라우저 API가 걸린 것들. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { readBook, readMenuItem, stage, use } from './fixture/app.ts'

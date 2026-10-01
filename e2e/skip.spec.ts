@@ -1,6 +1,6 @@
 /** R-2A5 · Shift가 넘김 키를 크게 만든다. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 
 import { counter, readBook } from './fixture/app.ts'
 

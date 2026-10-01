@@ -1,6 +1,6 @@
 /** R-213 · 카운터가 지금 화면에 걸린 스프레드를 센다. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { counter, readBook, readMenuItem, use } from './fixture/app.ts'

@@ -1,6 +1,6 @@
 /** R-216 · 한 권을 다 읽고 계속 넘기면 다음 권이 그 자리에서 열리는지. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 
 import { counter, importBooks, openReader, openShelf, use } from './fixture/app.ts'
 

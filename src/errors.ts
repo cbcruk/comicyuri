@@ -27,6 +27,10 @@ export type ArchiveReason =
   | { readonly kind: 'unsupportedMethod'; readonly method: number }
   /** 그 이름의 파일이나 엔트리를 읽지 못했다. */
   | { readonly kind: 'unreadable'; readonly name: string }
+  /** 디스크 위의 그 파일을 읽을 허락을 받지 못했다(`S-122`). */
+  | { readonly kind: 'noPermission'; readonly name: string }
+  /** 책장에 남은 자리를 따라갔더니 그 파일이 없었다 — 옮겼거나 지웠다(`S-122`). */
+  | { readonly kind: 'fileGone'; readonly name: string }
   /** 책에 없는 페이지를 찾았다. `page`는 1부터 센 번호다. */
   | { readonly kind: 'pageMissing'; readonly page: number }
 

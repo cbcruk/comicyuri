@@ -1,6 +1,6 @@
 /** S-142 · 라이트 테마 전체 배색. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { openShelf } from './fixture/app.ts'

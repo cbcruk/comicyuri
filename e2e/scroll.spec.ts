@@ -1,6 +1,6 @@
 /** R-240·R-246·R-247 · 굴려서 읽고, 끝에 닿으면 넘기고, 들어선 쪽에서 시작한다. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { chooseFit, counter, readBook, stage, use } from './fixture/app.ts'

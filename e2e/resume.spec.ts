@@ -1,6 +1,6 @@
 /** R-2B5 · 읽던 자리가 있는 책을 다시 열 때 무엇을 할지. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 
 import { counter, openReader, readBook, use } from './fixture/app.ts'
 
