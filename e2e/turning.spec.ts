@@ -1,6 +1,6 @@
 /** R-207 · 다음 페이지가 그릴 수 있게 될 때까지 이전 페이지가 화면에 남는다. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { readBook, stage, use, zoomOf } from './fixture/app.ts'

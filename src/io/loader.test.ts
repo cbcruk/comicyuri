@@ -15,6 +15,7 @@ import {
   isArchiveName,
   isImageName,
   measurePages,
+  pickedFromFiles,
   storedBooksFromFiles,
 } from './loader.ts'
 import type { StoredBook } from './db.ts'
@@ -128,7 +129,7 @@ const archiveFile = (name: string, entries: ReadonlyArray<string>): File =>
   new File([zip(entries)], name)
 
 const recordsOf = (files: ReadonlyArray<File>): Promise<StoredBook[]> =>
-  Effect.runPromise(storedBooksFromFiles(files))
+  Effect.runPromise(storedBooksFromFiles(pickedFromFiles(files)))
 
 /** 이 계층이 낼 수 있는 실패. */
 type LoaderError = ArchiveError | EmptyBookError | NoComicFilesError
@@ -210,7 +211,9 @@ describe('turning chosen files into shelf records', () => {
   })
 
   test('choosing nothing importable is a failure, not an empty shelf', async () => {
-    expect(await failureOf(storedBooksFromFiles([file('notes.txt')]))).toBe('NoComicFilesError')
+    expect(await failureOf(storedBooksFromFiles(pickedFromFiles([file('notes.txt')])))).toBe(
+      'NoComicFilesError',
+    )
   })
 
   // 같은 파일을 다시 들여와도 같은 id여야 읽던 자리가 제 책을 찾는다.

@@ -1,6 +1,6 @@
 /** S-121 · R-226 · R-227 — 페이지 크기와 손으로 고친 묶기가 스프레드를 정하는지. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { readBook, readMenuItem, stage, use } from './fixture/app.ts'

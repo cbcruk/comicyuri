@@ -3,7 +3,7 @@
  * R-2B6 · 같은 패널을 책장에서도 여는지.
  */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import {

@@ -1,6 +1,6 @@
 /** R-266 · 번호를 적어 그 페이지로 간다. R-2C1 · 슬라이드쇼. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 
 import { counter, openGoToPage, readBook, stage, use } from './fixture/app.ts'
 

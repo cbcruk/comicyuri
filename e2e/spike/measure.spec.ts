@@ -7,7 +7,7 @@
 
 import { writeFileSync } from 'node:fs'
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { importBook, openReader, openShelf, stage, use } from '../fixture/app.ts'

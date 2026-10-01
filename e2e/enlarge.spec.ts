@@ -1,6 +1,6 @@
 /** R-2B4 · 작은 페이지를 화면에 맞춰 늘릴지. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { chooseFit, expectFit, readBook, stage, use } from './fixture/app.ts'

@@ -21,7 +21,14 @@ import { describe } from '../errors.ts'
 import type { AppError } from '../errors.ts'
 import { deleteBook, getAllBooks, putBook } from '../io/db.ts'
 import type { StoredBook } from '../io/db.ts'
-import { bookFromStored, measurePages, storedBooksFromFiles } from '../io/loader.ts'
+import { pickFilesWithHandles, pickFolderWithHandles, supportsHandles } from '../io/handles.ts'
+import {
+  bookFromStored,
+  measurePages,
+  pickedFromFiles,
+  storedBooksFromFiles,
+} from '../io/loader.ts'
+import type { PickedFile } from '../io/loader.ts'
 import { loadSettings, saveSettings } from '../io/storage.ts'
 import { localeAtom } from './i18n/atoms.ts'
 import { translatorFor } from './i18n/format.ts'
@@ -114,13 +121,10 @@ const importOne = (record: StoredBook): Effect.Effect<void, AppError> =>
         )
       : Option.none<Blob>()
 
+    // 레코드가 지고 온 것 위에 들여오며 알게 된 것만 얹는다. 하나씩 옮겨 적으면 손잡이처럼
+    // 나중에 생긴 자리가 소리 없이 떨어진다(`S-122`).
     yield* putBook({
-      id: record.id,
-      title: record.title,
-      source: record.source,
-      names: record.names,
-      blobs: record.blobs,
-      createdAt: record.createdAt,
+      ...record,
       pageCount: book.pages.length,
       pageSizes,
       cover: Option.getOrUndefined(maybeCover),
@@ -147,8 +151,8 @@ const requestPersistentStorage: Effect.Effect<void> = Effect.tryPromise(async ()
  *
  * @returns 실패 문구. 성공이면 없음이다.
  */
-export const importFilesAtom = Atom.fn<ReadonlyArray<File>>()((files, get) =>
-  storedBooksFromFiles(files).pipe(
+export const importFilesAtom = Atom.fn<ReadonlyArray<PickedFile>>()((picked, get) =>
+  storedBooksFromFiles(picked).pipe(
     Effect.flatMap((records) => Effect.forEach(records, importOne, { discard: true })),
     Effect.tap(() => Effect.sync(() => get.refresh(recordsAtom))),
     Effect.tap(() => requestPersistentStorage),
@@ -289,11 +293,24 @@ const selectFiles = (
     input.click()
   })
 
-/** 아카이브와 낱장 이미지를 여러 개 고르는 선택기를 연다(`S-112`). */
-export const pickFiles: Effect.Effect<ReadonlyArray<File>> = selectFiles((input) => {
+/** 숨은 `input`으로 고르는 길. 손잡이가 없는 브라우저가 이쪽으로 간다. */
+const pickFilesAsFiles: Effect.Effect<ReadonlyArray<File>> = selectFiles((input) => {
   input.multiple = true
   input.accept = ARCHIVE_ACCEPT.join(',')
 })
+
+/**
+ * 아카이브와 낱장 이미지를 여러 개 고르는 선택기를 연다(`S-112`).
+ *
+ * 손잡이를 주는 선택기가 있으면 그쪽이다(`S-122`). 그때는 책장에 바이트를 복사하지 않는다.
+ * 손잡이를 얻다 실패하면 — 허락하지 않았거나 파일이 사라졌거나 — 아무것도 고르지 않은 것으로
+ * 친다. 선택기를 닫은 것과 같은 자리이기 때문이다(`S-118`).
+ */
+export const pickFiles: Effect.Effect<ReadonlyArray<PickedFile>> = Effect.suspend(() =>
+  supportsHandles()
+    ? pickFilesWithHandles.pipe(Effect.orElseSucceed(() => []))
+    : Effect.map(pickFilesAsFiles, pickedFromFiles),
+)
 
 /**
  * 폴더를 고르는 선택기를 열고, 그 안의 파일을 모두 받는다(`S-113`).
@@ -301,6 +318,13 @@ export const pickFiles: Effect.Effect<ReadonlyArray<File>> = selectFiles((input)
  * `accept`를 걸지 않는다. 폴더 선택기에서는 거를 것이 아니라 하위 파일 전체를 받아
  * 페이지가 될 수 있는 것만 남기기 때문이다(`S-114`).
  */
-export const pickFolder: Effect.Effect<ReadonlyArray<File>> = selectFiles((input) => {
-  input.webkitdirectory = true
-})
+export const pickFolder: Effect.Effect<ReadonlyArray<PickedFile>> = Effect.suspend(() =>
+  supportsHandles()
+    ? pickFolderWithHandles.pipe(Effect.orElseSucceed(() => []))
+    : Effect.map(
+        selectFiles((input) => {
+          input.webkitdirectory = true
+        }),
+        pickedFromFiles,
+      ),
+)

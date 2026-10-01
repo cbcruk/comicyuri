@@ -1,6 +1,6 @@
 /** S-131 · 책을 지우기 전에 묻는다. 지운 것은 새로고침을 넘겨 돌아오지 않는다. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { counter, importBook, importBooks, openReader, openShelf, use } from './fixture/app.ts'

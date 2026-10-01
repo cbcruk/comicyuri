@@ -1,6 +1,6 @@
 /** R-228 · 페이지를 세우면 맞춤이 눕힌 상자를 따르고, 그 각도가 책에 남는다. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { expectFit, openReader, readBook, stage, use } from './fixture/app.ts'

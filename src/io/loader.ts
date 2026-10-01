@@ -4,6 +4,7 @@ import type { StoredBook } from './db.ts'
 import { ArchiveError, EmptyBookError, NoComicFilesError } from '../errors.ts'
 import { imageSize } from './imageSize.ts'
 import type { ImageSize } from './imageSize.ts'
+import { fileFromHandle } from './handles.ts'
 import { ZipArchive } from './zip.ts'
 import type { ZipEntry } from './zip.ts'
 
@@ -132,41 +133,67 @@ class ZipPage implements Page {
 }
 
 /**
+ * 고른 파일 하나. 손잡이가 함께 오면 바이트를 복사하지 않고 책장에 둘 수 있다(`S-122`).
+ *
+ * `path`는 책 제목과 페이지 차례를 정하는 자리다(`S-114`). 폴더에서 왔으면 그 폴더부터의
+ * 경로이고, 그렇지 않으면 파일 이름이다.
+ */
+export type PickedFile = Readonly<{
+  file: File
+  path: string
+  handle?: FileSystemFileHandle
+}>
+
+/** 드롭이나 `input`으로 받은 파일들을 {@linkcode PickedFile}로. 손잡이는 없다. */
+export function pickedFromFiles(files: ReadonlyArray<File>): ReadonlyArray<PickedFile> {
+  return files.map((file) => ({ file, path: file.webkitRelativePath || file.name }))
+}
+
+/**
  * 고른 파일 목록을 책장 레코드로 바꾼다. 아카이브는 각각 한 권이 되고, 낱장
  * 이미지들은 한 권으로 묶인다.
+ *
+ * 손잡이가 함께 온 파일은 레코드에 손잡이를 남긴다. 한 권 안에서 손잡이가 하나라도 빠지면
+ * 그 권은 통째로 바이트를 복사한다 — 반만 손잡이인 책은 열 때 두 길을 다 타야 한다.
  */
 export function storedBooksFromFiles(
-  files: ReadonlyArray<File>,
+  picked: ReadonlyArray<PickedFile>,
   groupTitle = 'Imported images',
 ): Effect.Effect<StoredBook[], NoComicFilesError> {
   return Effect.gen(function* () {
     const now = Date.now()
-    const archives = files.filter((f) => isArchiveName(f.name)).sort(byName((f) => f.name))
-    const images = files
-      .filter((f) => isImageName(f.name))
-      .sort(byName((f) => f.webkitRelativePath || f.name))
+    const archives = picked
+      .filter(({ file }) => isArchiveName(file.name))
+      .sort(byName(({ file }) => file.name))
+    const images = picked
+      .filter(({ file }) => isImageName(file.name))
+      .sort(byName(({ path }) => path))
     const books: StoredBook[] = []
 
-    for (const file of archives) {
+    for (const { file, handle } of archives) {
       books.push({
         id: bookId(file.name, file.size),
         title: stripExt(file.name),
         source: 'zip',
         names: [file.name],
-        blobs: [file],
+        ...bytesOf([file], handle === undefined ? undefined : [handle]),
         createdAt: now,
       })
     }
 
     if (images.length) {
-      const folder = images[0]?.webkitRelativePath?.split('/')[0]
-      const size = images.reduce((sum, f) => sum + f.size, 0)
+      const folder = images[0]?.path.includes('/') ? images[0].path.split('/')[0] : undefined
+      const size = images.reduce((sum, { file }) => sum + file.size, 0)
+      const handles = images.map(({ handle }) => handle)
       books.push({
         id: bookId(folder || groupTitle, size),
         title: folder || groupTitle,
         source: folder ? 'folder' : 'images',
-        names: images.map((f) => f.webkitRelativePath || f.name),
-        blobs: images,
+        names: images.map(({ path }) => path),
+        ...bytesOf(
+          images.map(({ file }) => file),
+          handles.every((handle) => handle !== undefined) ? handles : undefined,
+        ),
         createdAt: now,
       })
     }
@@ -174,6 +201,17 @@ export function storedBooksFromFiles(
     if (!books.length) return yield* new NoComicFilesError()
     return books
   })
+}
+
+/**
+ * 레코드가 바이트를 지는 방식. 손잡이가 모두 있으면 그것만 남기고 blob은 비운다 — 둘을 다
+ * 남기면 복사하지 않으려고 손잡이를 쓴 뜻이 사라진다.
+ */
+function bytesOf(
+  files: ReadonlyArray<File>,
+  handles: ReadonlyArray<FileSystemFileHandle> | undefined,
+): Pick<StoredBook, 'blobs' | 'handles'> {
+  return handles === undefined ? { blobs: [...files] } : { blobs: [], handles: [...handles] }
 }
 
 /**
@@ -199,13 +237,29 @@ export function measurePages(book: LoadedBook): Effect.Effect<Array<ImageSize | 
   )
 }
 
+/**
+ * 레코드가 가리키는 바이트. 손잡이로 들여온 책이면 디스크에서 다시 열고, 아니면 복사해 둔
+ * blob 그대로다(`S-122`).
+ *
+ * 손잡이를 여는 쪽은 허락을 물을 수 있으므로, 이것을 부르는 길은 사용자의 누름에서
+ * 이어져야 한다.
+ */
+export function blobsFromStored(stored: StoredBook): Effect.Effect<Blob[], ArchiveError> {
+  const { handles } = stored
+  if (handles === undefined || handles.length === 0) return Effect.succeed(stored.blobs)
+
+  return Effect.forEach(handles, (handle) => fileFromHandle(handle))
+}
+
 /** 책장 레코드에서 책을 되살린다. 페이지는 필요할 때 읽는다. */
 export function bookFromStored(
   stored: StoredBook,
 ): Effect.Effect<LoadedBook, ArchiveError | EmptyBookError> {
   return Effect.gen(function* () {
+    const blobs = yield* blobsFromStored(stored)
+
     if (stored.source !== 'zip') {
-      const pages: Page[] = stored.blobs.map(
+      const pages: Page[] = blobs.map(
         (blob, i) => new BlobPage(baseName(stored.names[i] ?? `page ${i + 1}`), blob),
       )
       return {
@@ -217,7 +271,7 @@ export function bookFromStored(
       }
     }
 
-    const file = stored.blobs[0]
+    const file = blobs[0]
     if (!file) return yield* new EmptyBookError({ title: stored.title })
 
     const archive = yield* ZipArchive.open(file)

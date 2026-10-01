@@ -51,6 +51,7 @@ export const readerLayout = (model: Model): Option.Option<ReaderLayout> =>
   OpenState.$match(model.openState, {
     Opening: (): Option.Option<ReaderLayout> => Option.none(),
     Failed: (): Option.Option<ReaderLayout> => Option.none(),
+    NeedsPermission: (): Option.Option<ReaderLayout> => Option.none(),
     Ready: ({ title, pageCount, ratios }): Option.Option<ReaderLayout> => {
       const layout: Layout = { pageCount, ratios, marks: model.marks }
       const spreads = spreadsFor(layout, model.settings)

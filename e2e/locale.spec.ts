@@ -1,6 +1,6 @@
 /** S-151 · 화면 문구의 언어. 브라우저가 말하는 것을 따르고, 설정에서 고를 수도 있다. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 
 import { readBook, use } from './fixture/app.ts'
 

@@ -1,6 +1,6 @@
 /** R-224 · 맞춤 모드가 실제로 그렇게 보이는지, 그리고 스테이지가 높이를 다 쓰는지. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 import type { Page } from '@playwright/test'
 
 import { chooseFit, readBook, stage, use } from './fixture/app.ts'

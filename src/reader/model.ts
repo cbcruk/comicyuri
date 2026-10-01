@@ -33,6 +33,14 @@ export type OpenState = Data.TaggedEnum<{
     readonly ratios: ReadonlyArray<Option.Option<number>>
   }
   Failed: { readonly text: string }
+  /**
+   * 열 수 있지만 사용자의 허락이 아직 없다(`S-122`).
+   *
+   * 디스크의 파일을 손잡이로 가리키는 책이 새 세션에서 여기로 온다. 실패와 가르는 이유는
+   * 할 일이 다르기 때문이다 — 실패에는 돌아가는 길뿐이고, 여기에는 한 번 누르면 열리는
+   * 길이 있다. 묻는 일은 누름이 있어야 하므로 리더가 스스로 할 수 없다.
+   */
+  NeedsPermission: { readonly text: string }
 }>
 
 /** {@linkcode OpenState} 유니온의 생성자와 `$match`. */
@@ -175,6 +183,7 @@ export const spreadPages = (model: Model): ReadonlyArray<number> =>
   OpenState.$match(model.openState, {
     Opening: () => [],
     Failed: () => [],
+    NeedsPermission: () => [],
     Ready: ({ pageCount, ratios }) => {
       const spreads = spreadsFor({ pageCount, ratios, marks: model.marks }, model.settings)
       return pagesAt(spreads, indexOfPage(spreads, model.page))

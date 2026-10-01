@@ -6,7 +6,7 @@
  * 실패에 닿으므로, 그 문구 역시 브라우저에서만 나온다.
  */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 
 import { counter, importBook, openReader, openShelf, stage } from './fixture/app.ts'
 

@@ -1,6 +1,6 @@
 /** R-284~285 · 북마크 목록과 그 사이의 이동. */
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixture/test.ts'
 
 import { counter, readBook, readMenuItem, use } from './fixture/app.ts'
 
