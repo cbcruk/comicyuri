@@ -112,6 +112,12 @@ export type ReaderSession = Readonly<{
   layout: Atom.Atom<Option.Option<ReaderLayout>>
   shown: Atom.Atom<ShownSpread>
   /**
+   * 책을 다시 열어 본다(`S-122`). 허락이 없어 열지 못한 책에만 쓸 자리가 있다.
+   *
+   * 묻는 일은 방금 누른 것이 있어야 하므로, 화면이 버튼으로 그 누름을 받아 여기로 잇는다.
+   */
+  reopen: Atom.Writable<Option.Option<void>, void>
+  /**
    * 리더가 서 있는 동안 걸어 둘 것 전부. 책, 리스너, 슬라이드쇼, 쥐고 있을 페이지다.
    *
    * 마운트하는 동안만 돈다. 화면이 내려가 아무도 원하지 않게 되면 레지스트리가 치우면서
@@ -153,6 +159,27 @@ const failureText = (cause: Cause.Cause<AppError>, t: TranslateError, fallback: 
   Option.match(Cause.findErrorOption(cause), {
     onNone: () => fallback,
     onSome: (error) => describe(error, t),
+  })
+
+/**
+ * 책을 열지 못한 까닭을 리더에게 어떻게 알릴지.
+ *
+ * 허락이 없는 것은 실패와 다르다 — 한 번 누르면 열리는 길이 남아 있다(`S-122`). 묻는 일은
+ * 누름이 있어야 하므로 리더가 스스로 할 수 없고, 화면이 버튼으로 그 누름을 받는다.
+ */
+const openFailureMessage = (cause: Cause.Cause<AppError>, t: TranslateError): Message => {
+  const text = failureText(cause, t, t('error.openBook'))
+
+  return needsPermission(cause)
+    ? Message.NeedsPermissionToOpen({ text })
+    : Message.FailedOpenBook({ text })
+}
+
+/** 그 실패가 "허락이 없다"인지. */
+const needsPermission = (cause: Cause.Cause<AppError>): boolean =>
+  Option.match(Cause.findErrorOption(cause), {
+    onNone: () => false,
+    onSome: (error) => error._tag === 'ArchiveError' && error.reason.kind === 'noPermission',
   })
 
 /** 둘이 같은 페이지 목록인지. 다시 셈한 목록이 같으면 아래로 퍼지지 않게 할 때 쓴다. */
@@ -311,10 +338,7 @@ export const makeReaderSession = ({
             }),
           )
         } else if (AsyncResult.isFailure(book)) {
-          get.set(
-            send,
-            Message.FailedOpenBook({ text: failureText(book.cause, t, t('error.openBook')) }),
-          )
+          get.set(send, openFailureMessage(book.cause, t))
         }
       },
       { immediate: true },
@@ -423,6 +447,16 @@ export const makeReaderSession = ({
     for (const page of get(held)) get.mount(pages.pageUrl(bookId, page))
   })
 
+  /**
+   * 책을 다시 열어 본다(`S-122`). 허락을 묻는 일이 이 쓰기를 부른 누름에서 이어진다.
+   *
+   * 책 atom을 다시 읽게 하는 것이 전부다. 허락을 받았으면 그 길로 책이 열리고, 또 거절당하면
+   * 같은 자리에 같은 줄이 다시 선다.
+   */
+  const reopen = Atom.fnSync((_: void, get) => {
+    get.refresh(pages.book(bookId))
+  })
+
   const runtime = Atom.make((get) => {
     get.mount(opening)
     get.mount(shown)
@@ -435,5 +469,5 @@ export const makeReaderSession = ({
     get.mount(slideshow)
   })
 
-  return { model, send, layout, shown, runtime }
+  return { model, send, layout, shown, reopen, runtime }
 }

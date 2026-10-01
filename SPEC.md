@@ -75,9 +75,18 @@ e2e "N-407 · 저장소 이름 아래에서도 로고가 온다"
 Firefox와 Safari는 지금까지처럼 바이트를 복사한다 — 고르는 길이 기능 탐지로 갈릴 뿐, 들여온
 뒤의 모양은 같다. 드롭(`S-111`)은 어느 브라우저에서나 복사다.
 
-새 세션에서 손잡이를 쓰려면 허락이 필요하다. 허락을 받지 못했거나 그 사이 파일이 옮겨졌으면
-그렇게 말한다 — "다시 읽으려면 허락이 필요합니다", "디스크의 그 자리에 없습니다".
-✅ handles "a handle we already may read opens without asking again", "a handle from an earlier
+새 세션에서 손잡이를 쓰려면 허락이 필요하고, **묻는 일에는 사용자의 누름이 있어야 한다.**
+그래서 허락이 없는 책은 실패가 아니라 제 겹에 선다(`OpenState.NeedsPermission`) — 실패에는
+돌아가는 길뿐이지만 여기에는 한 번 누르면 열리는 길이 있다. 리더가 "허락하고 열기" 버튼으로
+그 누름을 받아 책을 다시 연다.
+
+책장 카드를 눌러 들어가는 길에는 그 누름이 이미 있다. 버튼이 서는 것은 새로고침처럼 누름
+없이 들어온 자리다(`N-403`).
+
+그 사이 파일이 옮겨졌으면 다르게 말한다 — "디스크의 그 자리에 없습니다".
+✅ reader/story "a book we may not read yet is not a failure — it waits for a press",
+reader/screen "a book we may not read yet offers to ask, and opens once allowed",
+handles "a handle we already may read opens without asking again", "a handle from an earlier
 session asks once, and opens when allowed", "saying no is not a broken book — it is a book we
 may not read", "a file that moved away says so, rather than failing as unreadable"
 🔍 2026-10-01 · 실제 Chrome에서 손잡이를 IndexedDB에 넣고 다시 꺼내 `getFile()`까지 되는 것을
@@ -1408,6 +1417,10 @@ Application › Storage에서 확인
 **N-403 · 새로고침해도 읽던 책으로 돌아온다**
 URL이 어느 책인지 말하고, 어느 자리에서 열지는 `R-2B5`가 정한다. 기본값은 읽던
 자리다.
+
+손잡이로 들여온 책(`S-122`)만은 한 번의 누름을 거친다. 디스크의 파일을 읽을 허락은 묻는
+순간에 누른 것이 있어야 받을 수 있는데, 새로고침에는 그런 누름이 없다. 그래서 리더가 "허락이
+필요하다"는 겹에 서고, 버튼을 누르면 그 누름으로 묻고 열린다.
 ✅ e2e "N-403 · 새로고침해도 읽던 책으로 돌아온다"
 
 **N-404 · 링크 클릭은 페이지를 다시 읽지 않는다**

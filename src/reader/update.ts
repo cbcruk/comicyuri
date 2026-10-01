@@ -69,6 +69,7 @@ const flipBindingHere = (model: Model): UpdateReturn =>
     : OpenState.$match(model.openState, {
         Opening: (): UpdateReturn => ({ model }),
         Failed: (): UpdateReturn => ({ model }),
+        NeedsPermission: (): UpdateReturn => ({ model }),
         Ready: ({ pageCount, ratios }): UpdateReturn => {
           const layout = { pageCount, ratios, marks: model.marks }
           const spreads = spreadsFor(layout, model.settings)
@@ -100,6 +101,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       return { model: opened.model, commands: opened.commands }
     },
 
+    NeedsPermissionToOpen: ({ text }): UpdateReturn => ({
+      model: evo(model, { openState: () => OpenState.NeedsPermission({ text }) }),
+    }),
+
     FailedOpenBook: ({ text }): UpdateReturn => ({
       model: evo(model, { openState: () => OpenState.Failed({ text }) }),
     }),
@@ -112,6 +117,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       OpenState.$match(model.openState, {
         Opening: (): UpdateReturn => ({ model }),
         Failed: (): UpdateReturn => ({ model }),
+        NeedsPermission: (): UpdateReturn => ({ model }),
         Ready: ({ pageCount }): UpdateReturn => goToPage(model, Math.max(0, pageCount - 1)),
       }),
 
@@ -146,6 +152,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       OpenState.$match(model.openState, {
         Opening: (): UpdateReturn => ({ model }),
         Failed: (): UpdateReturn => ({ model }),
+        NeedsPermission: (): UpdateReturn => ({ model }),
         Ready: ({ pageCount }): UpdateReturn => {
           const page = Number.parseInt(text, 10) - 1
           return Number.isInteger(page) && page >= 0 && page < pageCount

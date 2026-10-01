@@ -18,6 +18,7 @@ import { render } from 'vitest-browser-react'
 import { expect, test, vi } from 'vite-plus/test'
 
 import { makePageAtoms } from '../../atoms/pages.ts'
+import { ArchiveError } from '../../errors.ts'
 import type { PageAtoms } from '../../atoms/pages.ts'
 import { PAGE_ID, STAGE_ID } from '../../reader/constant.ts'
 import { init } from '../../reader/model.ts'
@@ -533,4 +534,72 @@ test('pages within three spreads keep their URLs, and the ones beyond let them g
 
   // 세 스프레드 밖으로 밀려난 둘은 놓는다. 긴 책이 메모리를 채우지 않는 이유다.
   await expect.poll(livePages).toEqual([2, 3, 4, 5, 6])
+})
+
+test('a book we may not read yet offers to ask, and opens once allowed', async () => {
+  // 디스크의 파일을 가리키는 책이 새 세션에서 오는 자리다(`S-122`). 허락을 묻는 일은 누른 것이
+  // 있어야 하므로, 처음 열기는 거절되고 버튼이 그 누름을 받는다.
+  let allowed = false
+  const book: LoadedBook = {
+    id: 'volume-1',
+    title: 'volume-1',
+    source: 'images',
+    pages: [
+      {
+        name: 'page-1.png',
+        load: () => Effect.succeed(URL.createObjectURL(new Blob([PAGE_BYTES]))),
+        read: () => Effect.succeed(new Blob([PAGE_BYTES])),
+        unload: () => undefined,
+        measure: () => Effect.succeed(Option.some({ width: PAGE_WIDTH, height: PAGE_HEIGHT })),
+      },
+    ],
+    pageSizes: [Option.some({ width: PAGE_WIDTH, height: PAGE_HEIGHT })],
+  }
+
+  const screen = await render(
+    <Providers>
+      <div style={VIEWPORT}>
+        <ReaderView
+          initial={init({
+            bookId: 'volume-1',
+            page: 0,
+            maybeResumePage: Option.none(),
+            bookmarks: [],
+            marks: [],
+            rotation: 0,
+            maybeBookSettings: Option.none(),
+            settings: defaultSettings,
+          })}
+          pages={makePageAtoms({
+            // 판정을 Effect 안에서 한다. 밖에서 하면 다시 읽어도 처음의 답이 재생된다 —
+            // 진짜는 열 때마다 허락을 묻는다.
+            openBook: () =>
+              Effect.suspend(() =>
+                allowed
+                  ? Effect.succeed(book)
+                  : Effect.fail(
+                      new ArchiveError({ reason: { kind: 'noPermission', name: 'volume-1.cbz' } }),
+                    ),
+              ),
+            createUrl: (blob) => URL.createObjectURL(blob),
+            revokeUrl: (url) => URL.revokeObjectURL(url),
+            decode: () => Effect.void,
+          })}
+          persistence={makePersistence([], defaultSettings, Option.none())}
+          onExit={vi.fn()}
+          onOpenBook={vi.fn()}
+        />
+      </div>
+    </Providers>,
+  )
+
+  const ask = screen.getByRole('button', { name: 'Allow and open' })
+  await expect.element(ask).toBeVisible()
+  await expect.element(screen.getByText(/needs permission to read/)).toBeVisible()
+
+  // 누름이 있어야 물을 수 있다. 그 누름에서 이어진 길에서는 열린다.
+  allowed = true
+  await ask.click()
+
+  await expect.element(screen.getByAltText('Page 1')).toBeVisible()
 })

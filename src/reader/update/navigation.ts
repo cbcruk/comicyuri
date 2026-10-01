@@ -47,6 +47,7 @@ export const showPage = (model: Model, page: number): UpdateReturn =>
   OpenState.$match(model.openState, {
     Opening: (): UpdateReturn => ({ model: evo(model, { page: () => page }) }),
     Failed: (): UpdateReturn => ({ model: evo(model, { page: () => page }) }),
+    NeedsPermission: (): UpdateReturn => ({ model: evo(model, { page: () => page }) }),
     Ready: (): UpdateReturn => ({
       model: evo(model, { page: () => page }),
       outMessage: OutMessage.UpdatedProgress({
@@ -119,6 +120,7 @@ export const skip = (model: Model, pages: number): UpdateReturn =>
   OpenState.$match(model.openState, {
     Opening: (): UpdateReturn => ({ model }),
     Failed: (): UpdateReturn => ({ model }),
+    NeedsPermission: (): UpdateReturn => ({ model }),
     Ready: ({ pageCount }): UpdateReturn => {
       const page = Number.clamp(model.page + pages, { minimum: 0, maximum: pageCount - 1 })
       return page === model.page ? { model } : goToPage(model, page)
@@ -135,6 +137,7 @@ export const step = (model: Model, by: number): UpdateReturn =>
   OpenState.$match(model.openState, {
     Opening: (): UpdateReturn => ({ model }),
     Failed: (): UpdateReturn => ({ model }),
+    NeedsPermission: (): UpdateReturn => ({ model }),
     Ready: ({ pageCount, ratios }): UpdateReturn => {
       const layout = { pageCount, ratios, marks: model.marks }
       const spreads = spreadsFor(layout, model.settings)

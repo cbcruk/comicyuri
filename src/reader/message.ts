@@ -33,6 +33,8 @@ export type Message = Data.TaggedEnum<{
     readonly ratios: ReadonlyArray<Option.Option<number>>
   }
   FailedOpenBook: { readonly text: string }
+  /** 책을 열려면 사용자의 허락이 필요하다(`S-122`). */
+  NeedsPermissionToOpen: { readonly text: string }
 
   ClickedPrevious: {}
   ClickedNext: {}

@@ -79,13 +79,21 @@ const ensurePermission = (handle: FileSystemFileHandle): Effect.Effect<void, Arc
     // 지고 있다면 다른 브라우저에서 들여온 것이므로, 열어 보고 되는지로 가른다.
     if (query === undefined || request === undefined) return
 
-    const standing = yield* Effect.promise(() => query.call(asking, { mode: 'read' }))
+    const refused = new ArchiveError({ reason: { kind: 'noPermission', name: handle.name } })
+
+    const standing = yield* Effect.tryPromise({
+      try: () => query.call(asking, { mode: 'read' }),
+      catch: () => refused,
+    })
     if (standing === 'granted') return
 
-    const asked = yield* Effect.promise(() => request.call(asking, { mode: 'read' }))
-    if (asked !== 'granted') {
-      return yield* new ArchiveError({ reason: { kind: 'noPermission', name: handle.name } })
-    }
+    // 묻는 일은 방금 누른 것이 있어야 한다. 새로고침처럼 누름 없이 열리는 길에서는 묻지도
+    // 못하고 거절되므로, 그것도 "허락이 없다"로 받는다 — 결함으로 두면 리더가 까닭을 잃는다.
+    const asked = yield* Effect.tryPromise({
+      try: () => request.call(asking, { mode: 'read' }),
+      catch: () => refused,
+    })
+    if (asked !== 'granted') return yield* refused
   })
 
 /** 선택기가 거른 뒤에도 쓸 수 없는 것이 섞여 올 수 있다. 페이지가 될 수 있는 것만 남긴다. */

@@ -116,6 +116,23 @@ describe('opening', () => {
       }),
     )
   })
+
+  test('a book we may not read yet is not a failure — it waits for a press', () => {
+    story(
+      update,
+      given(openingModel()),
+      message(
+        Message.NeedsPermissionToOpen({
+          text: 'comicyuri needs permission to read "volume-1.cbz" again',
+        }),
+      ),
+      expectNoOutMessage(),
+      model((model) => {
+        // 실패와 가르는 이유는 할 일이 다르기 때문이다. 여기에는 한 번 누르면 열리는 길이 있다.
+        expect(model.openState._tag).toBe('NeedsPermission')
+      }),
+    )
+  })
 })
 
 describe('turning pages', () => {

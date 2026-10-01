@@ -114,6 +114,7 @@ export const en = {
   'reader.loading': 'Loading…',
   'reader.pageAlt': 'Page {page}',
   'reader.resume': 'You left this book on page {page}',
+  'reader.allowAndOpen': 'Allow and open',
   'reader.goThere': 'Go there',
   'reader.stayOnFirst': 'Stay on the first page',
   'reader.stay': 'Stay',

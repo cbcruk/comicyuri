@@ -110,6 +110,7 @@ export const ko: Readonly<Record<keyof typeof en, string>> = {
   'reader.loading': '읽는 중…',
   'reader.pageAlt': '{page}페이지',
   'reader.resume': '{page}페이지까지 읽었습니다',
+  'reader.allowAndOpen': '허락하고 열기',
   'reader.goThere': '그 자리로',
   'reader.stayOnFirst': '첫 장부터',
   'reader.stay': '그대로',

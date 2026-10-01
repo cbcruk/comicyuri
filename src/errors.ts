@@ -89,6 +89,8 @@ export type ErrorKey =
   | 'error.emptyBook'
   | 'error.missingBook'
   | 'error.noComicFiles'
+  | 'error.openBook'
+  | 'error.showPage'
   | `error.archive.${ArchiveReason['kind']}`
   | `error.cover.${CoverReason}`
 

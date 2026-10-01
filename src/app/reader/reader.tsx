@@ -69,13 +69,32 @@ const styles = stylex.create({
   },
 })
 
-/** 책을 여는 동안과, 끝내 열지 못했을 때 서는 화면. */
-const OpeningScreen = ({ text, onExit }: Readonly<{ text: string; onExit: () => void }>) => (
-  <VStack as="main" align="center" justify="center" gap={3} padding={6} height="100%">
-    <Text color="secondary">{text}</Text>
-    <Button label={useMessages()('item.shelf')} variant="secondary" onClick={onExit} />
-  </VStack>
-)
+/**
+ * 책을 여는 동안과, 열지 못했을 때 서는 화면.
+ *
+ * 허락이 없어서 열지 못한 책에는 다시 열어 보는 버튼이 함께 선다(`S-122`). 디스크의 파일을
+ * 읽을 허락은 묻는 순간에 누른 것이 있어야 받을 수 있어서, 그 누름을 이 버튼이 받는다 —
+ * 새로고침처럼 누름 없이 들어온 길에서는 리더가 스스로 물을 수 없다.
+ */
+const OpeningScreen = ({
+  text,
+  onExit,
+  onRetry,
+}: Readonly<{ text: string; onExit: () => void; onRetry?: () => void }>) => {
+  const t = useMessages()
+
+  return (
+    <VStack as="main" align="center" justify="center" gap={3} padding={6} height="100%">
+      <Text color="secondary">{text}</Text>
+      <HStack align="center" gap={2}>
+        {onRetry === undefined ? null : (
+          <Button label={t('reader.allowAndOpen')} variant="primary" onClick={onRetry} />
+        )}
+        <Button label={t('item.shelf')} variant="secondary" onClick={onExit} />
+      </HStack>
+    </VStack>
+  )
+}
 
 /**
  * 저장된 자리로 갈지 묻는 줄(`R-2B5`).
@@ -154,6 +173,8 @@ export const ReaderView = ({
     makeReaderSession({ initial, pages, persistence, onExit, onOpenBook }),
   )
   useAtomMount(session.runtime)
+  // 허락을 묻는 일은 이 누름에서 이어져야 한다(`S-122`). 다시 읽는 일은 세션이 한다.
+  const reopen = useAtomSet(session.reopen)
 
   const t = useMessages()
   const chooseLocale = useChooseLocale()
@@ -169,8 +190,10 @@ export const ReaderView = ({
           Opening: () => t('reader.opening'),
           Ready: () => t('reader.opening'),
           Failed: ({ text }) => text,
+          NeedsPermission: ({ text }) => text,
         })}
         onExit={() => send(Message.ClickedExit())}
+        {...(model.openState._tag === 'NeedsPermission' ? { onRetry: () => reopen() } : {})}
       />
     ),
 
